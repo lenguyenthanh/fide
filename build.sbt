@@ -1,7 +1,7 @@
-ThisBuild / scalaVersion := "2.13.12"
+ThisBuild / scalaVersion := "3.4.1"
 ThisBuild / version := "0.1.0-SNAPSHOT"
-ThisBuild / organization := "com.example"
-ThisBuild / organizationName := "example"
+ThisBuild / organization := "se.thanh"
+ThisBuild / organizationName := "Thanh Le"
 
 lazy val root = (project in file("."))
   .enablePlugins(Smithy4sCodegenPlugin)
