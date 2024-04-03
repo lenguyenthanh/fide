@@ -26,12 +26,10 @@ object Routes:
   private val federations: Resource[IO, HttpRoutes[IO]] =
     SimpleRestJsonBuilder.routes(federationServiceImpl).resource
 
-  private val docs: HttpRoutes[IO] =
-    smithy4s.http4s.swagger.docs[IO](PlayerService, FederationService, HealthService)
+  private val docs: Resource[IO, HttpRoutes[IO]] =
+    smithy4s.http4s.swagger.docs[IO](PlayerService, FederationService, HealthService).pure[Resource[IO, *]]
 
-  val serviceRoutes: Resource[IO, HttpRoutes[IO]] = (players, federations, health).mapN(_ <+> _ <+> _)
-
-  val all: Resource[IO, HttpRoutes[IO]] = serviceRoutes.map(_ <+> docs)
+  val all: Resource[IO, HttpRoutes[IO]] = List(players, federations, health).fold(docs)(_ <+> _)
 
 object Main extends IOApp.Simple:
   val run = Routes.all
