@@ -1,6 +1,6 @@
 package fide
 
-import hello.*
+import fide.*
 import cats.syntax.all.*
 import cats.effect.*
 import org.http4s.implicits.*
@@ -10,19 +10,16 @@ import com.comcast.ip4s.*
 import smithy4s.http4s.SimpleRestJsonBuilder
 import scala.concurrent.duration.*
 
-object HelloWorldImpl extends HelloWorldService[IO]:
-  def hello(name: String, town: Option[String]): IO[Greeting] = IO.pure {
-    town match
-      case None    => Greeting(s"Hello " + name + "!")
-      case Some(t) => Greeting(s"Hello " + name + " from " + t + "!")
-  }
+object FideServiceImpl extends FideService[IO]:
+  def getPlayer(id: String): IO[Greeting] =
+    IO.pure(Greeting(s"Hello, $id!"))
 
 object Routes:
   private val example: Resource[IO, HttpRoutes[IO]] =
-    SimpleRestJsonBuilder.routes(HelloWorldImpl).resource
+    SimpleRestJsonBuilder.routes(FideServiceImpl).resource
 
   private val docs: HttpRoutes[IO] =
-    smithy4s.http4s.swagger.docs[IO](HelloWorldService)
+    smithy4s.http4s.swagger.docs[IO](FideService)
 
   val all: Resource[IO, HttpRoutes[IO]] = example.map(_ <+> docs)
 
