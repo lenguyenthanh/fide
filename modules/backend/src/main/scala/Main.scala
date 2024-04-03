@@ -10,20 +10,20 @@ import com.comcast.ip4s.*
 import smithy4s.http4s.SimpleRestJsonBuilder
 import scala.concurrent.duration.*
 
-val stubbedServiceImpl: PlayerService[IO] = new PlayerService.Default[IO](IO.stub)
-// object FideServiceImpl extends FideService[IO]:
-//   def getPlayer(id: String): IO[Greeting] =
-//     IO.pure(Greeting(s"Hello, $id!"))
-//
+val playerServiceImpl: PlayerService[IO] = new PlayerService.Default[IO](IO.stub)
+val healthServiceImpl: HealthService[IO] = new HealthService.Default[IO](IO.stub)
 
 object Routes:
-  private val example: Resource[IO, HttpRoutes[IO]] =
-    SimpleRestJsonBuilder.routes(stubbedServiceImpl).resource
+  private val players: Resource[IO, HttpRoutes[IO]] =
+    SimpleRestJsonBuilder.routes(playerServiceImpl).resource
+
+  private val health: Resource[IO, HttpRoutes[IO]] =
+    SimpleRestJsonBuilder.routes(healthServiceImpl).resource
 
   private val docs: HttpRoutes[IO] =
-    smithy4s.http4s.swagger.docs[IO](PlayerService)
+    smithy4s.http4s.swagger.docs[IO](PlayerService, HealthService)
 
-  val all: Resource[IO, HttpRoutes[IO]] = example.map(_ <+> docs)
+  val all: Resource[IO, HttpRoutes[IO]] = (players, health).mapN((p, h) => p <+> h <+> docs)
 
 object Main extends IOApp.Simple:
   val run = Routes.all
