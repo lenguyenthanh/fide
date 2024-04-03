@@ -40,3 +40,6 @@ lazy val root = project
   .in(file("."))
   .settings(publish := {}, publish / skip := true)
   .aggregate(smithy, backend)
+
+addCommandAlias("prepare", "scalafixAll; scalafmtAll")
+addCommandAlias("check", "; scalafixAll --check ; scalafmtCheckAll")
