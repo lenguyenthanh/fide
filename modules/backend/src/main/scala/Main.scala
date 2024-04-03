@@ -10,21 +10,27 @@ import com.comcast.ip4s.*
 import smithy4s.http4s.SimpleRestJsonBuilder
 import scala.concurrent.duration.*
 
-val playerServiceImpl: PlayerService[IO] = new PlayerService.Default[IO](IO.stub)
-val healthServiceImpl: HealthService[IO] = new HealthService.Default[IO](IO.stub)
+val playerServiceImpl: PlayerService[IO]         = new PlayerService.Default[IO](IO.stub)
+val healthServiceImpl: HealthService[IO]         = new HealthService.Default[IO](IO.stub)
+val federationServiceImpl: FederationService[IO] = new FederationService.Default[IO](IO.stub)
 
 object Routes:
+
   private val players: Resource[IO, HttpRoutes[IO]] =
     SimpleRestJsonBuilder.routes(playerServiceImpl).resource
 
   private val health: Resource[IO, HttpRoutes[IO]] =
     SimpleRestJsonBuilder.routes(healthServiceImpl).resource
 
-  private val docs: HttpRoutes[IO] =
-    smithy4s.http4s.swagger.docs[IO](PlayerService, HealthService)
+  private val federations: Resource[IO, HttpRoutes[IO]] =
+    SimpleRestJsonBuilder.routes(federationServiceImpl).resource
 
-  val serviceRoutes: Resource[IO, HttpRoutes[IO]] = (players, health).mapN(_ <+> _)
-  val all: Resource[IO, HttpRoutes[IO]]           = serviceRoutes.map(_ <+> docs)
+  private val docs: HttpRoutes[IO] =
+    smithy4s.http4s.swagger.docs[IO](PlayerService, FederationService, HealthService)
+
+  val serviceRoutes: Resource[IO, HttpRoutes[IO]] = (players, federations, health).mapN(_ <+> _ <+> _)
+
+  val all: Resource[IO, HttpRoutes[IO]] = serviceRoutes.map(_ <+> docs)
 
 object Main extends IOApp.Simple:
   val run = Routes.all

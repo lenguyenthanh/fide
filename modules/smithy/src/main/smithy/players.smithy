@@ -39,57 +39,25 @@ operation GetPlayerByIds {
 structure GetPlayerByIdInput {
   @httpLabel
   @required
-  id: FideId
+  id: PlayerId
 }
 
 structure GetPlayerByIdsInput {
   @required
-  ids: FideIds
+  ids: PlayerIds
 }
 
 structure GetPlayersInput {
-    @httpQuery("query")
-    query: String
+  @httpQuery("query")
+  query: String
 }
 
 structure GetPlayersOutput {
   players: Players
 }
 
-list Players {
-  member: Player
-}
-
-list FideIds {
-  member: FideId
-}
-
-structure Player {
-  @required
-  id: FideId
-
-  @required
-  name: String
-
-  title: FideTitle
-
-  standard: Rating
-  rapid: Rating
-  blitz: Rating
-
-  year: Integer
-  inactive: Boolean
-  fetchedAt: Timestamp
-
-  federationId: FederationId
-}
-
-structure Federation {
-  @required
-  id: FederationId
-
-  @required
-  name: String
+list PlayerIds {
+  member: PlayerId
 }
 
 @error("client")
