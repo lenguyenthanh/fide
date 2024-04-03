@@ -23,15 +23,15 @@ object Routes:
   private val docs: HttpRoutes[IO] =
     smithy4s.http4s.swagger.docs[IO](PlayerService, HealthService)
 
-  val all: Resource[IO, HttpRoutes[IO]] = (players, health).mapN((p, h) => p <+> h <+> docs)
+  val serviceRoutes: Resource[IO, HttpRoutes[IO]] = (players, health).mapN(_ <+> _)
+  val all: Resource[IO, HttpRoutes[IO]]           = serviceRoutes.map(_ <+> docs)
 
 object Main extends IOApp.Simple:
   val run = Routes.all
     .flatMap: routes =>
       val thePort = port"9000"
       val theHost = host"localhost"
-      val message =
-        s"Server started on: $theHost:$thePort, press enter to stop"
+      val message = s"Server started on: $theHost:$thePort, press enter to stop"
 
       EmberServerBuilder
         .default[IO]
