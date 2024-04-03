@@ -1,7 +1,15 @@
-ThisBuild / scalaVersion     := "3.4.1"
-ThisBuild / version          := "0.1.0-SNAPSHOT"
-ThisBuild / organization     := "se.thanh"
-ThisBuild / organizationName := "Thanh Le"
+inThisBuild(
+  Seq(
+    scalaVersion       := "3.4.1",
+    version            := "0.1.0-SNAPSHOT",
+    organization       := "se.thanh",
+    organizationName   := "Thanh Le",
+    licenses += ("agpl-v3" -> url("https://opensource.org/license/agpl-v3")),
+    publishTo          := Option(Resolver.file("file", new File(sys.props.getOrElse("publishTo", "")))),
+    semanticdbEnabled  := true, // for scalafix
+    Compile / packageDoc / publishArtifact := false
+  )
+)
 
 lazy val smithy = (project in file("modules/smithy"))
   .enablePlugins(Smithy4sCodegenPlugin)
