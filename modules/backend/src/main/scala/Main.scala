@@ -1,13 +1,14 @@
 package fide
 
-import fide.spec.*
-import cats.syntax.all.*
 import cats.effect.*
-import org.http4s.implicits.*
-import org.http4s.ember.server.*
-import org.http4s.*
+import cats.syntax.all.*
 import com.comcast.ip4s.*
+import fide.spec.*
+import org.http4s.*
+import org.http4s.ember.server.*
+import org.http4s.implicits.*
 import smithy4s.http4s.SimpleRestJsonBuilder
+
 import scala.concurrent.duration.*
 
 val playerServiceImpl: PlayerService[IO]         = new PlayerService.Default[IO](IO.stub)
