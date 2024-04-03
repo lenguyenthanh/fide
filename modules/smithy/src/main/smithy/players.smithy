@@ -16,13 +16,14 @@ service PlayerService {
 @readonly
 @http(method: "GET", uri: "/api/players", code: 200)
 operation GetPlayers {
-  output: GetPlayersOutPut
+  input: GetPlayersInput,
+  output: GetPlayersOutput
 }
 
 @readonly
 @http(method: "GET", uri: "/api/players/{id}", code: 200)
 operation GetPlayerById {
-  input: GetPlayerByIdInPut,
+  input: GetPlayerByIdInput,
   output: Player
   errors: [PlayerNotFound]
 }
@@ -31,22 +32,27 @@ operation GetPlayerById {
 @readonly
 @http(method: "POST", uri: "/api/players", code: 200)
 operation GetPlayerByIds {
-  input: GetPlayerByIdsInPut,
-  output: GetPlayersOutPut
+  input: GetPlayerByIdsInput,
+  output: GetPlayersOutput
 }
 
-structure GetPlayerByIdInPut {
+structure GetPlayerByIdInput {
   @httpLabel
   @required
   id: FideId
 }
 
-structure GetPlayerByIdsInPut {
+structure GetPlayerByIdsInput {
   @required
   ids: FideIds
 }
 
-structure GetPlayersOutPut {
+structure GetPlayersInput {
+    @httpQuery("query")
+    query: String
+}
+
+structure GetPlayersOutput {
   players: Players
 }
 
