@@ -1,3 +1,5 @@
+import Dependencies.*
+
 inThisBuild(
   Seq(
     scalaVersion           := "3.4.1",
