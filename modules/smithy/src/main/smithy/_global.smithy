@@ -13,7 +13,7 @@ integer PlayerId
 string FederationId
 integer Rating
 
-enum FideTitle {
+enum Title {
   GM = "GM"
   WGM = "WGM"
   IM = "IM"
@@ -38,7 +38,7 @@ structure Player {
   @required
   name: String
 
-  title: FideTitle
+  title: Title
 
   standard: Rating
   rapid: Rating
