@@ -1,5 +1,6 @@
 package fide
 
+import cats.data.NonEmptyList
 import cats.effect.*
 import cats.syntax.all.*
 import com.comcast.ip4s.*
@@ -26,10 +27,9 @@ object Routes:
   private val federations: Resource[IO, HttpRoutes[IO]] =
     SimpleRestJsonBuilder.routes(federationServiceImpl).resource
 
-  private val docs: Resource[IO, HttpRoutes[IO]] =
-    smithy4s.http4s.swagger.docs[IO](PlayerService, FederationService, HealthService).pure[Resource[IO, *]]
-
-  val all: Resource[IO, HttpRoutes[IO]] = List(players, federations, health).fold(docs)(_ <+> _)
+  private val docs = smithy4s.http4s.swagger.docs[IO](PlayerService, FederationService, HealthService)
+  private val serviceRoutes = NonEmptyList.of(players, federations, health).sequence.map(_.reduceK)
+  val all                   = serviceRoutes.map(_ <+> docs)
 
 object Main extends IOApp.Simple:
   val run = Routes.all
