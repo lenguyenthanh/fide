@@ -13,6 +13,21 @@ inThisBuild(
   )
 )
 
+
+val commonSettings = Seq(
+  scalacOptions -= "-Xfatal-warnings",
+  scalacOptions ++= Seq("-source:future", "-rewrite", "-indent", "-Yexplicit-nulls", "-explain", "-Wunused:all"),
+  libraryDependencies ++= Seq(
+    catsCore,
+    catsEffect,
+    log4Cats,
+    log4CatsNoop,
+    weaver,
+    weaverScalaCheck,
+  ),
+)
+
+
 lazy val smithy = (project in file("modules/smithy"))
   .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
@@ -22,8 +37,23 @@ lazy val smithy = (project in file("modules/smithy"))
     )
   )
 
+lazy val db = (project in file("modules/db"))
+  .settings(
+    commonSettings,
+    libraryDependencies ++= Seq(
+      skunk,
+      postgres,
+      flyway,
+      flywayPostgres,
+      flyway4s,
+      otel,
+      testContainers,
+    ),
+  )
+
 lazy val backend = (project in file("modules/backend"))
   .settings(
+    commonSettings,
     name := "backend",
     libraryDependencies ++= Seq(
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s"         % smithy4sVersion.value,
@@ -41,7 +71,7 @@ lazy val backend = (project in file("modules/backend"))
 lazy val root = project
   .in(file("."))
   .settings(publish := {}, publish / skip := true)
-  .aggregate(smithy, backend)
+  .aggregate(smithy, db, backend)
 
 addCommandAlias("prepare", "scalafixAll; scalafmtAll")
 addCommandAlias("check", "; scalafixAll --check ; scalafmtCheckAll")
