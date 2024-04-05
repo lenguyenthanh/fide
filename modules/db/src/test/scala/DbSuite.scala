@@ -53,3 +53,12 @@ object RepositorySuite extends SimpleIOSuite:
       yield expect(
         playerInfo.to[NewPlayer] == player2 && playerInfo.federation.get.to[NewFederation] == federation2
       )
+  test("create and search player success"):
+    resource.use: db =>
+      for
+        _       <- db.upsert(newPlayer, newFederation.some)
+        players <- db.playersByName("Jo")
+      yield expect(
+        players.length == 1 && players.head.to[NewPlayer] == newPlayer && players.head.federation.get
+          .to[NewFederation] == newFederation
+      )
