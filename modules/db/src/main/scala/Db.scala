@@ -12,6 +12,7 @@ trait Db:
   def allPlayers: IO[List[PlayerInfo]]
   def allFederations: IO[List[FederationInfo]]
   def playersByName(name: String): IO[List[PlayerInfo]]
+  def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
 
 object Db:
   import io.github.arainko.ducktape.*
@@ -38,6 +39,9 @@ object Db:
 
     def playersByName(name: String): IO[List[PlayerInfo]] =
       postgres.use(_.execute(Sql.searchPlayersByName)(s"%$name%"))
+
+    def playersByFederationId(id: FederationId): IO[List[PlayerInfo]] =
+      postgres.use(_.execute(Sql.playersByFederationId)(id))
 
 private object Codecs:
 
@@ -80,6 +84,13 @@ private object Sql:
         SELECT p.id, p.name, p.title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
         WHERE p.id = $int4 AND p.federation_id = f.id
+       """.query(playerInfo)
+
+  val playersByFederationId: Query[FederationId, PlayerInfo] =
+    sql"""
+        SELECT p.id, p.name, p.title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
+        FROM players AS p, federations AS f
+        WHERE p.federation_id = $text AND p.federation_id = f.id
        """.query(playerInfo)
 
   val upsertFederation: Command[NewFederation] =
