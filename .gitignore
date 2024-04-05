@@ -50,3 +50,6 @@ metals.sbt
 
 # smithy lsp
 build/smithy/classpath.json
+
+# Docker data
+.containers_data/
