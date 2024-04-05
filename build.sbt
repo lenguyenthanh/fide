@@ -83,6 +83,7 @@ lazy val backend = (project in file("modules/backend"))
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s"         % smithy4sVersion.value,
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s-swagger" % smithy4sVersion.value,
       http4sServer,
+      http4sEmberClient,
       cirisCore,
       cirisHtt4s,
     ),
