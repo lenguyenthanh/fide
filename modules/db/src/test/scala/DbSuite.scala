@@ -20,13 +20,13 @@ object RepositorySuite extends SimpleIOSuite:
     2700.some,
     2700.some,
     2700.some,
-    1989.some,
+    1990.some,
     true.some
   )
 
   val newFederation = NewFederation(
-    "FIDE",
-    "fide"
+    "fide",
+    "FIDE"
   )
 
   test("create player success"):
@@ -53,11 +53,21 @@ object RepositorySuite extends SimpleIOSuite:
       yield expect(
         playerInfo.to[NewPlayer] == player2 && playerInfo.federation.get.to[NewFederation] == federation2
       )
-  test("create and search player success"):
+  test("search playersByName success"):
     resource.use: db =>
       for
         _       <- db.upsert(newPlayer, newFederation.some)
         players <- db.playersByName("Jo")
+      yield expect(
+        players.length == 1 && players.head.to[NewPlayer] == newPlayer && players.head.federation.get
+          .to[NewFederation] == newFederation
+      )
+
+  test("search playersByFederationId success"):
+    resource.use: db =>
+      for
+        _       <- db.upsert(newPlayer, newFederation.some)
+        players <- db.playersByFederationId("fide")
       yield expect(
         players.length == 1 && players.head.to[NewPlayer] == newPlayer && players.head.federation.get
           .to[NewFederation] == newFederation
