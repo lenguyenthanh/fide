@@ -4,6 +4,7 @@ package test
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
+import com.comcast.ip4s.*
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 import org.typelevel.log4cats.Logger
@@ -15,12 +16,14 @@ object Containers:
     IO:
       val jdbcUrl = java.net.URI.create(cont.jdbcUrl.substring(5))
       PostgresConfig(
-        jdbcUrl.getHost,
-        jdbcUrl.getPort,
+        Host.fromString(jdbcUrl.getHost).get,
+        Port.fromInt(jdbcUrl.getPort).get,
         cont.username,
         cont.password,
         cont.databaseName,
-        10
+        10,
+        "fide",
+        false
       )
 
   private def postgresContainer: Resource[IO, PostgreSQLContainer] =

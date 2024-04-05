@@ -2,13 +2,12 @@ import Dependencies.*
 
 inThisBuild(
   Seq(
-    scalaVersion           := "3.4.1",
-    version                := "0.1.0-SNAPSHOT",
-    organization           := "se.thanh",
-    organizationName       := "Thanh Le",
-    licenses += ("agpl-v3" -> url("https://opensource.org/license/agpl-v3")),
-    publishTo              := Option(Resolver.file("file", new File(sys.props.getOrElse("publishTo", "")))),
-    semanticdbEnabled      := true, // for scalafix
+    scalaVersion                           := "3.4.1",
+    version                                := "0.1.0-SNAPSHOT",
+    organization                           := "se.thanh",
+    organizationName                       := "Thanh Le",
+    licenses += ("agpl-v3"                 -> url("https://opensource.org/license/agpl-v3")),
+    semanticdbEnabled                      := true, // for scalafix
     Compile / packageDoc / publishArtifact := false
   )
 )
@@ -83,7 +82,9 @@ lazy val backend = (project in file("modules/backend"))
     libraryDependencies ++= Seq(
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s"         % smithy4sVersion.value,
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s-swagger" % smithy4sVersion.value,
-      http4sServer
+      http4sServer,
+      cirisCore,
+      cirisHtt4s,
     ),
     Compile / run / fork         := true,
     Compile / run / connectInput := true,
@@ -91,7 +92,7 @@ lazy val backend = (project in file("modules/backend"))
     Docker / packageName         := "thanh/fide"
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
-  .dependsOn(smithy, db)
+  .dependsOn(smithy, domain, db, crawler)
 
 lazy val root = project
   .in(file("."))
