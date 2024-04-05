@@ -15,16 +15,18 @@ object Dependencies {
   val catsCore   = "org.typelevel" %% "cats-core"   % "2.10.0"
   val catsEffect = "org.typelevel" %% "cats-effect" % V.catsEffect
 
-  val fs2   = "co.fs2" %% "fs2-core" % V.fs2
-  val fs2IO = "co.fs2" %% "fs2-io"   % V.fs2
+  val fs2         = "co.fs2"  %% "fs2-core"         % V.fs2
+  val fs2IO       = "co.fs2"  %% "fs2-io"           % V.fs2
+  val fs2Compress = "de.lhns" %% "fs2-compress-zip" % "1.0.0"
 
   val cirisCore  = "is.cir"             %% "ciris"        % V.ciris
   val cirisHtt4s = "is.cir"             %% "ciris-http4s" % V.ciris
   val iron       = "io.github.iltotore" %% "iron"         % V.iron
   val ironCiris  = "io.github.iltotore" %% "iron-ciris"   % V.iron
 
-  val http4sServer = http4s("ember-server")
-  val http4sClient = http4s("ember-client") % Test
+  val http4sServer      = http4s("ember-server")
+  val http4sClient      = http4s("client")
+  val http4sEmberClient = http4s("ember-client")
 
   val skunk          = "org.tpolecat"       %% "skunk-core"                 % "0.6.3"
   val flyway4s       = "com.github.geirolz" %% "fly4s"                      % "1.0.1"

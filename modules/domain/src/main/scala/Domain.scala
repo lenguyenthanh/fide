@@ -46,7 +46,7 @@ case class PlayerInfo(
     rapid: Option[Rating] = None,
     blitz: Option[Rating] = None,
     year: Option[Int] = None,
-    active: Option[Boolean] = None,
+    active: Boolean,
     updatedAt: OffsetDateTime,
     createdAt: OffsetDateTime,
     federation: Option[FederationInfo] = None
