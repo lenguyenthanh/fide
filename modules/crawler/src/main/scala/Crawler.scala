@@ -8,14 +8,16 @@ import fide.domain.*
 import org.http4s.*
 import org.http4s.client.Client
 import org.http4s.implicits.*
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.syntax.*
 
 trait Crawler:
   def crawl: IO[Unit]
 
 object Crawler:
 
-  def apply(db: Db, client: Client[IO]): Crawler = new:
-    def crawl: IO[Unit] = Crawler.crawl(db, client)
+  def apply(db: Db, client: Client[IO])(using Logger[IO]): Crawler = new:
+    def crawl: IO[Unit] = Crawler.crawl(db, client) *> info"Finished crawling"
 
   val uri = uri"http://ratings.fide.com/download/players_list.zip"
 
@@ -37,7 +39,7 @@ object Crawler:
       // .evalTap(IO.println)
       .collect:
         case Some(x) => x
-      .parEvalMapUnorderedUnbounded((player, federation) => db.upsert(player, federation))
+      .parEvalMapUnordered(50)((player, federation) => db.upsert(player, federation))
       .compile
       .drain
 
