@@ -53,3 +53,4 @@ build/smithy/classpath.json
 
 # Docker data
 .containers_data/
+.env
