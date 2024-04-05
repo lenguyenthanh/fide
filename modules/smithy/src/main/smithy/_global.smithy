@@ -9,6 +9,13 @@ structure ValidationError {
   message: String
 }
 
+@error("server")
+@httpError(501)
+structure NotImplementedYetError {
+  @required
+  message: String
+}
+
 integer PlayerId
 string FederationId
 integer Rating
