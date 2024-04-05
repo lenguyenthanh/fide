@@ -63,4 +63,7 @@ list PlayerIds {
 
 @error("client")
 @httpError(404)
-structure PlayerNotFound {}
+structure PlayerNotFound {
+  @required
+  id: PlayerId
+}
