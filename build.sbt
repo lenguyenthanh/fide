@@ -47,6 +47,7 @@ lazy val db = (project in file("modules/db"))
       flywayPostgres,
       flyway4s,
       otel,
+      ducktape,
       testContainers,
     ),
   )

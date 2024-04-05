@@ -36,6 +36,8 @@ object Dependencies {
   val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.6.0"
   val logback  = "ch.qos.logback" % "logback-classic" % "1.5.3"
 
+  val ducktape = "io.github.arainko" %% "ducktape" % "0.2.0"
+
   val log4CatsNoop = "org.typelevel" %% "log4cats-noop" % "2.6.0" % Test
 
   val testContainers    = "com.dimafeng"        %% "testcontainers-scala-postgresql" % "0.41.3"     % Test

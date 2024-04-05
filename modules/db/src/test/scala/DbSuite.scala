@@ -2,22 +2,26 @@ package fide
 package db
 package test
 
+import cats.effect.IO
+import cats.effect.kernel.Resource
+import cats.syntax.all.*
 import fide.domain.*
+import io.github.arainko.ducktape.*
 import weaver.*
 
 object RepositorySuite extends SimpleIOSuite:
 
-  private def resource = Containers.createDb
+  private def resource: Resource[IO, Db] = Containers.createDb
 
   val newPlayer = NewPlayer(
     1,
     "John",
-    None,
-    None,
-    None,
-    None,
-    None,
-    None
+    Option(Title.GM),
+    2700.some,
+    2700.some,
+    2700.some,
+    1989.some,
+    true.some
   )
 
   val newFederation = NewFederation(
@@ -27,4 +31,13 @@ object RepositorySuite extends SimpleIOSuite:
 
   test("create player success"):
     resource
-      .use(_.upsert(newPlayer, newFederation).map(_ => expect(true)))
+      .use(_.upsert(newPlayer, newFederation.some).map(_ => expect(true)))
+
+  test("create and query player success"):
+    resource.use: db =>
+      for
+        _          <- db.upsert(newPlayer, newFederation.some)
+        playerInfo <- db.playerById(1)
+      yield expect(
+        playerInfo.to[NewPlayer] == newPlayer && playerInfo.federation.get.to[NewFederation] == newFederation
+      )

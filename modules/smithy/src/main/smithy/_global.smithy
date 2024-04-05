@@ -50,4 +50,3 @@ structure Player {
 
   federationId: FederationId
 }
-
