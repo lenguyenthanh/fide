@@ -21,7 +21,7 @@ object Db:
       val player = newPlayer.into[InsertPlayer].transform(Field.const(_.federation, federation.map(_.id)))
       postgres.use: s =>
         for
-          playerCmd     <- s.prepare(Sql.upsertPlayer)
+          playerCmd     <- s.prepare(Sql.upsert)
           federationCmd <- s.prepare(Sql.upsertFederation)
           _ <- s.transaction.use: _ =>
             federation.traverse(federationCmd.execute) *>
@@ -29,13 +29,13 @@ object Db:
         yield ()
 
     def playerById(id: PlayerId): IO[PlayerInfo] =
-      postgres.use(_.unique(Sql.findPlayerById)(id))
+      postgres.use(_.unique(Sql.playerById)(id))
 
     def allPlayers: IO[List[PlayerInfo]] =
-      postgres.use(_.execute(Sql.findPlayers))
+      postgres.use(_.execute(Sql.allPlayers))
 
     def allFederations: IO[List[FederationInfo]] =
-      postgres.use(_.execute(Sql.findFederations))
+      postgres.use(_.execute(Sql.allFederations))
 
     def playersByName(name: String): IO[List[PlayerInfo]] =
       postgres.use(_.execute(Sql.searchPlayersByName)(s"%$name%"))
@@ -71,7 +71,7 @@ private object Sql:
   import Codecs.*
 
   // TODO use returning
-  val upsertPlayer: Command[InsertPlayer] =
+  val upsert: Command[InsertPlayer] =
     sql"""
         INSERT INTO players (id, name, title, standard, rapid, blitz, year, active, federation_id)
         VALUES ($insertPlayer)
@@ -79,7 +79,7 @@ private object Sql:
         (EXCLUDED.name, EXCLUDED.title, EXCLUDED.standard, EXCLUDED.rapid, EXCLUDED.blitz, EXCLUDED.year, EXCLUDED.active, EXCLUDED.federation_id)
        """.command
 
-  val findPlayerById: Query[PlayerId, PlayerInfo] =
+  val playerById: Query[PlayerId, PlayerInfo] =
     sql"""
         SELECT p.id, p.name, p.title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
@@ -100,13 +100,13 @@ private object Sql:
         ON CONFLICT DO NOTHING
        """.command
 
-  val findFederations: Query[Void, FederationInfo] =
+  val allFederations: Query[Void, FederationInfo] =
     sql"""
         SELECT id, name
         FROM federations
        """.query(federationInfo)
 
-  val findPlayers: Query[Void, PlayerInfo] =
+  val allPlayers: Query[Void, PlayerInfo] =
     sql"""
         SELECT p.id, p.name, p.title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
