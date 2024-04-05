@@ -57,6 +57,7 @@ structure Player {
   blitz: Rating
 
   year: Integer
+  @required
   inactive: Boolean
   @required
   updatedAt: Timestamp

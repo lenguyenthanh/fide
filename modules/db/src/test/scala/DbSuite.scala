@@ -21,7 +21,7 @@ object RepositorySuite extends SimpleIOSuite:
     2700.some,
     2700.some,
     1990.some,
-    true.some
+    true
   )
 
   val newFederation = NewFederation(

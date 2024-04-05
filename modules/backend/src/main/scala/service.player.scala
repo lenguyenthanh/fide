@@ -32,7 +32,7 @@ class PlayerServiceImpl(db: Db) extends PlayerService[IO]:
     def transform: Player =
       playerInfo
         .into[Player]
-        .transform(Field.const(_.inactive, playerInfo.active.map(!_)))
+        .transform(Field.const(_.inactive, !playerInfo.active))
 
 object Transformers:
   given Transformer.Derived[Int, Rating]          = Transformer.Derived.FromFunction(Rating.apply)

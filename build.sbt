@@ -25,6 +25,7 @@ val commonSettings = Seq(
   libraryDependencies ++= Seq(
     catsCore,
     catsEffect,
+    fs2,
     log4Cats,
     log4CatsNoop,
     weaver,
@@ -66,7 +67,12 @@ lazy val db = (project in file("modules/db"))
 
 lazy val crawler = (project in file("modules/crawler"))
   .settings(
-    commonSettings
+    commonSettings,
+    name := "crawler",
+    libraryDependencies ++= Seq(
+      fs2Compress,
+      http4sClient
+    )
   )
   .dependsOn(domain, db)
 

@@ -61,7 +61,7 @@ private object Codecs:
     (text *: text).to[FederationInfo]
 
   val playerInfo: Codec[PlayerInfo] =
-    (int4 *: text *: title.opt *: int4.opt *: int4.opt *: int4.opt *: int4.opt *: bool.opt *: timestamptz *: timestamptz *: federationInfo.opt)
+    (int4 *: text *: title.opt *: int4.opt *: int4.opt *: int4.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
       .to[PlayerInfo]
 
 private object Sql:
