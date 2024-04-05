@@ -5,8 +5,9 @@ import cats.syntax.all.*
 
 import java.time.OffsetDateTime
 
-type PlayerId = Int
-type Rating   = Int
+type PlayerId     = Int
+type Rating       = Int
+type FederationId = String
 
 enum Title(val value: String):
   case GM   extends Title("GM")
@@ -24,7 +25,7 @@ object Title:
   def apply(value: String): Option[Title] =
     Title.values.find(_.value == value)
 
-case class Player(
+case class PlayerInfo(
     id: PlayerId,
     name: String,
     title: Option[Title] = None,
@@ -33,8 +34,9 @@ case class Player(
     blitz: Option[Rating] = None,
     year: Option[Int] = None,
     active: Option[Boolean] = None,
-    fetchedAt: OffsetDateTime,
-    createdAt: OffsetDateTime
+    updatedAt: OffsetDateTime,
+    createdAt: OffsetDateTime,
+    federation: Option[FederationInfo] = None
 )
 
 case class NewPlayer(
@@ -48,7 +50,17 @@ case class NewPlayer(
     active: Option[Boolean] = None
 )
 
-type FederationId = String
+case class InsertPlayer(
+    id: PlayerId,
+    name: String,
+    title: Option[Title] = None,
+    standard: Option[Rating] = None,
+    rapid: Option[Rating] = None,
+    blitz: Option[Rating] = None,
+    year: Option[Int] = None,
+    active: Option[Boolean] = None,
+    federation: Option[FederationId] = None
+)
 
 case class Federation(
     id: FederationId,
@@ -58,6 +70,11 @@ case class Federation(
 )
 
 case class NewFederation(
+    id: FederationId,
+    name: String
+)
+
+case class FederationInfo(
     id: FederationId,
     name: String
 )
