@@ -4,10 +4,10 @@ on:
   pull_request:
     branches: ['**']
   push:
-    branches: ['**']
+    branches: ['main']
 
 jobs:
-  openjdk21:
+  build:
     runs-on: ubuntu-latest
     steps:
 
@@ -24,8 +24,37 @@ jobs:
       - name: Build project
         run: sbt compile
 
+  test:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+
+      - name: Setup JVM
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: sbt
+
       - name: Test project
         run: sbt test
 
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+
+      - name: Setup JVM
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: sbt
+
       - name: Check Formatting
         run: sbt check
+
