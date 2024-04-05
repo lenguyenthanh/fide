@@ -9,7 +9,8 @@ import skunk.*
 trait Db:
   def upsert(player: NewPlayer, federation: Option[NewFederation]): IO[Unit]
   def playerById(id: PlayerId): IO[PlayerInfo]
-  // def all: IO[List[Player]]
+  def allPlayers: IO[List[PlayerInfo]]
+  def allFederation: IO[List[FederationInfo]]
 
 object Db:
   import Sql.*
@@ -28,6 +29,12 @@ object Db:
 
     def playerById(id: PlayerId): IO[PlayerInfo] =
       postgres.use(_.unique(findPlayerById)(id))
+
+    def allPlayers: IO[List[PlayerInfo]] =
+      postgres.use(_.execute(findPlayers))
+
+    def allFederation: IO[List[FederationInfo]] =
+      postgres.use(_.execute(findFederations))
 
 private object Codecs:
 
@@ -79,9 +86,15 @@ private object Sql:
         ON CONFLICT DO NOTHING
        """.command
 
-  // val upsertPlayerFederation: Command[(PlayerId, FederationId)] =
-  //   sql"""
-  //       INSERT INTO player_federation (player_id, federation_id)
-  //       VALUES ($int4, $text)
-  //       ON CONFLICT DO NOTHING
-  //      """.command
+  val findFederations: Query[Void, FederationInfo] =
+    sql"""
+        SELECT id, name
+        FROM federations
+       """.query(federationInfo)
+
+  val findPlayers: Query[Void, PlayerInfo] =
+    sql"""
+        SELECT p.id, p.name, p.title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
+        FROM players AS p, federations AS f
+        WHERE p.federation_id = f.id
+       """.query(playerInfo)
