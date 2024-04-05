@@ -36,10 +36,11 @@ object RepositorySuite extends SimpleIOSuite:
   test("create and query player success"):
     resource.use: db =>
       for
-        _          <- db.upsert(newPlayer, newFederation.some)
-        playerInfo <- db.playerById(1)
+        _      <- db.upsert(newPlayer, newFederation.some)
+        result <- db.playerById(1)
+        found = result.get
       yield expect(
-        playerInfo.to[NewPlayer] == newPlayer && playerInfo.federation.get.to[NewFederation] == newFederation
+        found.to[NewPlayer] == newPlayer && found.federation.get.to[NewFederation] == newFederation
       )
 
   test("overwriting player success"):
@@ -47,11 +48,12 @@ object RepositorySuite extends SimpleIOSuite:
     val federation2 = NewFederation("Lichess", "lichess")
     resource.use: db =>
       for
-        _          <- db.upsert(newPlayer, newFederation.some)
-        _          <- db.upsert(player2, federation2.some)
-        playerInfo <- db.playerById(1)
+        _      <- db.upsert(newPlayer, newFederation.some)
+        _      <- db.upsert(player2, federation2.some)
+        result <- db.playerById(1)
+        found = result.get
       yield expect(
-        playerInfo.to[NewPlayer] == player2 && playerInfo.federation.get.to[NewFederation] == federation2
+        found.to[NewPlayer] == player2 && found.federation.get.to[NewFederation] == federation2
       )
   test("search playersByName success"):
     resource.use: db =>

@@ -8,7 +8,7 @@ import skunk.*
 
 trait Db:
   def upsert(player: NewPlayer, federation: Option[NewFederation]): IO[Unit]
-  def playerById(id: PlayerId): IO[PlayerInfo]
+  def playerById(id: PlayerId): IO[Option[PlayerInfo]]
   def allPlayers: IO[List[PlayerInfo]]
   def allFederations: IO[List[FederationInfo]]
   def playersByName(name: String): IO[List[PlayerInfo]]
@@ -28,8 +28,8 @@ object Db:
               playerCmd.execute(player)
         yield ()
 
-    def playerById(id: PlayerId): IO[PlayerInfo] =
-      postgres.use(_.unique(Sql.playerById)(id))
+    def playerById(id: PlayerId): IO[Option[PlayerInfo]] =
+      postgres.use(_.option(Sql.playerById)(id))
 
     def allPlayers: IO[List[PlayerInfo]] =
       postgres.use(_.execute(Sql.allPlayers))
