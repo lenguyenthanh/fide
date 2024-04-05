@@ -1,11 +1,12 @@
 package fide
 
-import cats.effect.*
 import cats.syntax.all.*
-import fide.db.{ Db, DbResource, PostgresConfig }
+import cats.effect.*
+import fide.db.{ DbResource, PostgresConfig }
+import org.typelevel.log4cats.Logger
+import fide.db.Db
 import org.http4s.client.Client
 import org.http4s.ember.client.EmberClientBuilder
-import org.typelevel.log4cats.Logger
 
 class AppResources private (val db: Db, val client: Client[IO])
 
