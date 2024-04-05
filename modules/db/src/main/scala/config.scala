@@ -2,22 +2,23 @@ package fide
 package db
 
 import cats.syntax.all.*
+import com.comcast.ip4s.*
 
 case class PostgresConfig(
-    host: String,
-    port: Int,
+    host: Host,
+    port: Port,
     user: String,
     password: String,
     database: String,
     max: Int,
-    schema: String = "fide",
-    debug: Boolean = true
+    schema: String,
+    debug: Boolean
 ):
 
   def toFlywayConfig: FlywayConfig = FlywayConfig(
     url = s"jdbc:postgresql://$host:$port/$database",
-    user = user.toString.some,
-    password = password.toString.toCharArray.nn.some,
+    user = user.some,
+    password = password.toCharArray.nn.some,
     migrationsTable = "flyway",
     migrationsLocations = List("/db"),
     schema = schema

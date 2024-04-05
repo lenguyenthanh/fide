@@ -28,8 +28,8 @@ object DbResource:
     def mkPostgresResource(c: PostgresConfig): SessionPool[IO] =
       Session
         .pooled[IO](
-          host = c.host,
-          port = c.port,
+          host = c.host.toString(),
+          port = c.port.value,
           user = c.user,
           password = c.password.some,
           database = c.database,
