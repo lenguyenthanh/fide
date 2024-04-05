@@ -78,7 +78,7 @@ lazy val backend = (project in file("modules/backend"))
     Docker / packageName         := "thanh/fide"
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
-  .dependsOn(smithy)
+  .dependsOn(smithy, db)
 
 lazy val root = project
   .in(file("."))

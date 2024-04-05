@@ -10,16 +10,16 @@ type Rating       = Int
 type FederationId = String
 
 enum Title(val value: String):
-  case GM   extends Title("GM")
-  case IM   extends Title("IM")
-  case FM   extends Title("FM")
-  case WGM  extends Title("WGM")
-  case WIM  extends Title("WIM")
-  case WFM  extends Title("WFM")
-  case CM   extends Title("CM")
-  case WCM  extends Title("WCM")
-  case NM   extends Title("NM")
-  case WHCM extends Title("WHCM")
+  case GM  extends Title("GM")
+  case IM  extends Title("IM")
+  case FM  extends Title("FM")
+  case WGM extends Title("WGM")
+  case WIM extends Title("WIM")
+  case WFM extends Title("WFM")
+  case CM  extends Title("CM")
+  case WCM extends Title("WCM")
+  case NM  extends Title("NM")
+  case WNM extends Title("WNM")
 
 object Title:
   def apply(value: String): Option[Title] =
