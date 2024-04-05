@@ -10,31 +10,34 @@ trait Db:
   def upsert(player: NewPlayer, federation: Option[NewFederation]): IO[Unit]
   def playerById(id: PlayerId): IO[PlayerInfo]
   def allPlayers: IO[List[PlayerInfo]]
-  def allFederation: IO[List[FederationInfo]]
+  def allFederations: IO[List[FederationInfo]]
+  def playersByName(name: String): IO[List[PlayerInfo]]
 
 object Db:
-  import Sql.*
   import io.github.arainko.ducktape.*
   def apply(postgres: Resource[IO, Session[IO]]): Db = new:
     def upsert(newPlayer: NewPlayer, federation: Option[NewFederation]): IO[Unit] =
       val player = newPlayer.into[InsertPlayer].transform(Field.const(_.federation, federation.map(_.id)))
       postgres.use: s =>
         for
-          playerCmd     <- s.prepare(upsertPlayer)
-          federationCmd <- s.prepare(upsertFederation)
+          playerCmd     <- s.prepare(Sql.upsertPlayer)
+          federationCmd <- s.prepare(Sql.upsertFederation)
           _ <- s.transaction.use: _ =>
             federation.traverse(federationCmd.execute) *>
               playerCmd.execute(player)
         yield ()
 
     def playerById(id: PlayerId): IO[PlayerInfo] =
-      postgres.use(_.unique(findPlayerById)(id))
+      postgres.use(_.unique(Sql.findPlayerById)(id))
 
     def allPlayers: IO[List[PlayerInfo]] =
-      postgres.use(_.execute(findPlayers))
+      postgres.use(_.execute(Sql.findPlayers))
 
-    def allFederation: IO[List[FederationInfo]] =
-      postgres.use(_.execute(findFederations))
+    def allFederations: IO[List[FederationInfo]] =
+      postgres.use(_.execute(Sql.findFederations))
+
+    def playersByName(name: String): IO[List[PlayerInfo]] =
+      postgres.use(_.execute(Sql.searchPlayersByName)(s"%$name%"))
 
 private object Codecs:
 
@@ -97,4 +100,11 @@ private object Sql:
         SELECT p.id, p.name, p.title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
         WHERE p.federation_id = f.id
+       """.query(playerInfo)
+
+  val searchPlayersByName: Query[String, PlayerInfo] =
+    sql"""
+        SELECT p.id, p.name, p.title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
+        FROM players AS p, federations AS f
+        WHERE p.federation_id = f.id AND p.name LIKE $text
        """.query(playerInfo)
