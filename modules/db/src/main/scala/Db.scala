@@ -51,7 +51,7 @@ private object Codecs:
   val title: Codec[Title] = `enum`[Title](_.value, Title.apply, Type("title"))
 
   val insertPlayer: Codec[InsertPlayer] =
-    (int4 *: text *: title.opt *: int4.opt *: int4.opt *: int4.opt *: int4.opt *: bool.opt *: text.opt)
+    (int4 *: text *: title.opt *: int4.opt *: int4.opt *: int4.opt *: int4.opt *: bool *: text.opt)
       .to[InsertPlayer]
 
   val newFederation: Codec[NewFederation] =

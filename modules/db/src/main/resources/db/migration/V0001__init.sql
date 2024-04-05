@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS players
     rapid              integer,
     blitz              integer,
     year               integer,
-    active             boolean,
+    active             boolean NOT NULL,
     federation_id      text,
     created_at         timestamptz NOT NULL DEFAULT NOW(),
     updated_at         timestamptz NOT NULL DEFAULT NOW(),

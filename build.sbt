@@ -19,7 +19,6 @@ val commonSettings = Seq(
     "-source:future",
     "-rewrite",
     "-indent",
-    "-Yexplicit-nulls",
     "-explain",
     "-Wunused:all"
   ),
