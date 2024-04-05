@@ -27,8 +27,13 @@ enum Title {
 }
 
 
-list Players {
-  member: Player
+structure Federation {
+  @required
+  id: FederationId,
+
+  @required
+  name: String,
+
 }
 
 structure Player {
@@ -46,7 +51,13 @@ structure Player {
 
   year: Integer
   inactive: Boolean
-  fetchedAt: Timestamp
+  @required
+  updatedAt: Timestamp
 
-  federationId: FederationId
+  federation: Federation
 }
+
+list Players {
+  member: Player
+}
+

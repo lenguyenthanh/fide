@@ -66,29 +66,6 @@ list Federations {
   member: Federation
 }
 
-structure Federation {
-  @required
-  id: FederationId,
-
-  @required
-  name: String,
-
-  @required
-  nbPlayers: Integer,
-
-  @required
-  standard: Stats,
-
-  @required
-  rapid: Stats,
-
-  @required
-  blitz: Stats,
-
-  @required
-  updatedAt: Timestamp
-}
-
 structure Stats {
   @required
   rank: Integer,

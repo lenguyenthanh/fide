@@ -53,6 +53,7 @@ structure GetPlayersInput {
 }
 
 structure GetPlayersOutput {
+  @required
   players: Players
 }
 
