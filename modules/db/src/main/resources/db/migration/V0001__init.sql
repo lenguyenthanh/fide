@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS players
     FOREIGN KEY (federation_id) REFERENCES federations
 );
 
+CREATE INDEX players_name_idx ON players(name);
+
 CREATE TRIGGER set_players_updated_at
 BEFORE UPDATE ON players
 FOR EACH ROW
