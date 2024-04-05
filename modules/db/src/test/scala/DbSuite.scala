@@ -41,3 +41,15 @@ object RepositorySuite extends SimpleIOSuite:
       yield expect(
         playerInfo.to[NewPlayer] == newPlayer && playerInfo.federation.get.to[NewFederation] == newFederation
       )
+
+  test("overwriting player success"):
+    val player2     = newPlayer.copy(name = "Jane")
+    val federation2 = NewFederation("Lichess", "lichess")
+    resource.use: db =>
+      for
+        _          <- db.upsert(newPlayer, newFederation.some)
+        _          <- db.upsert(player2, federation2.some)
+        playerInfo <- db.playerById(1)
+      yield expect(
+        playerInfo.to[NewPlayer] == player2 && playerInfo.federation.get.to[NewFederation] == federation2
+      )
