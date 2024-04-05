@@ -19,13 +19,13 @@ val commonSettings = Seq(
     "-source:future",
     "-rewrite",
     "-indent",
-    "-Yexplicit-nulls",
     "-explain",
     "-Wunused:all"
   ),
   libraryDependencies ++= Seq(
     catsCore,
     catsEffect,
+    fs2,
     log4Cats,
     log4CatsNoop,
     weaver,
@@ -44,12 +44,14 @@ lazy val smithy = (project in file("modules/smithy"))
 
 lazy val domain = (project in file("modules/domain"))
   .settings(
+    name := "domain",
     commonSettings
   )
 
 lazy val db = (project in file("modules/db"))
   .settings(
     commonSettings,
+    name := "db",
     libraryDependencies ++= Seq(
       skunk,
       postgres,
@@ -62,6 +64,17 @@ lazy val db = (project in file("modules/db"))
     )
   )
   .dependsOn(domain)
+
+lazy val crawler = (project in file("modules/crawler"))
+  .settings(
+    commonSettings,
+    name := "crawler",
+    libraryDependencies ++= Seq(
+      fs2Compress,
+      http4sClient
+    )
+  )
+  .dependsOn(domain, db)
 
 lazy val backend = (project in file("modules/backend"))
   .settings(
@@ -83,7 +96,7 @@ lazy val backend = (project in file("modules/backend"))
 lazy val root = project
   .in(file("."))
   .settings(publish := {}, publish / skip := true)
-  .aggregate(smithy, domain, db, backend)
+  .aggregate(smithy, domain, db, crawler, backend)
 
 addCommandAlias("prepare", "scalafixAll; scalafmtAll")
 addCommandAlias("check", "; scalafixAll --check ; scalafmtCheckAll")
