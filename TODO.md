@@ -26,4 +26,4 @@
 ## Bugs
 
 - Crawler seems doesn't stop :sweat_smile:
-- [ ] search ignore case
+- [x] search ignore case

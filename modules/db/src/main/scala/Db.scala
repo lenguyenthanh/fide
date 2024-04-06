@@ -171,6 +171,6 @@ private object Sql:
     sql"""
         SELECT p.id, p.name, p.title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
-        WHERE p.federation_id = f.id AND p.name LIKE $text
+        WHERE p.federation_id = f.id AND p.name ILIKE $text
         LIMIT ${int4} OFFSET ${int4}
        """.query(playerInfo)
