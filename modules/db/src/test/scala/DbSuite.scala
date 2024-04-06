@@ -17,6 +17,7 @@ object RepositorySuite extends SimpleIOSuite:
     1,
     "John",
     Option(Title.GM),
+    Option(Title.GM),
     2700.some,
     2700.some,
     2700.some,

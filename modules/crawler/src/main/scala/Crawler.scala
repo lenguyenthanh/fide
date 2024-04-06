@@ -25,10 +25,10 @@ object Crawler:
   def apply(db: Db, client: Client[IO])(using Logger[IO]): Crawler = new:
     def crawl: IO[Unit] =
       IO.realTimeInstant.flatMap(now => info"Start crawling at $now")
-        *> fetch.handleErrorWith(e => error"Error while crawling: $e")
+        *> fetchAndSave.handleErrorWith(e => error"Error while crawling: $e")
         *> IO.realTimeInstant.flatMap(now => info"Finished crawling at $now")
 
-    private def fetch =
+    private def fetchAndSave =
       client
         .stream(request)
         .switchMap(_.body)
@@ -64,7 +64,8 @@ object Crawler:
         yield NewPlayer(
           id = id,
           name = name,
-          title = Title.mostValuable(title, wTitle),
+          title = title,
+          womenTitle = wTitle,
           standard = number(113, 117),
           rapid = number(126, 132),
           blitz = number(139, 145),

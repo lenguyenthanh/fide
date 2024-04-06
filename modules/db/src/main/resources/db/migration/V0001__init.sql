@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS players
     id                 integer PRIMARY KEY, -- fide id
     name               text NOT NULL,
     title              title,
+    women_title        title,
     standard           integer,
     rapid              integer,
     blitz              integer,

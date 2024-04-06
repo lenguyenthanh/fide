@@ -25,5 +25,6 @@
 
 ## Bugs
 
+- [ ] App doesn't terminate when flyway migration fails
 - Crawler seems doesn't stop :sweat_smile:
 - [x] search ignore case

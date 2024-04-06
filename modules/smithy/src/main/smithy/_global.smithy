@@ -51,6 +51,7 @@ structure Player {
   name: String
 
   title: Title
+  womenTitle: Title
 
   standard: Rating
   rapid: Rating
