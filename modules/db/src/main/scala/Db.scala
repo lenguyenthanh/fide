@@ -176,7 +176,7 @@ private object Sql:
     sql"""
         SELECT p.id, p.name, p.title, p.women_title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
-        WHERE p.id = $ids AND p.federation_id = f.id
+        WHERE p.id in ($ids) AND p.federation_id = f.id
        """.query(playerInfo)
 
   val playersByName: Query[(String, Int, Int), PlayerInfo] =
