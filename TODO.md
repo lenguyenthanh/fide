@@ -2,16 +2,19 @@
 
 ## Features
 
-- Support pagination
-- Support full text search
-- Support sorting
-- search ignore case
-- Store both open and women title
-- Better CrawlerJob
-- insert by chunk
-- support Map for getPlayersWithIds
-- [ ] Pagination config
-- Better type safetye with refined/iron
+- [x] insert by chunk
+- [x] Support pagination
+- [ ] Support full text search
+- [ ] Support sorting
+- [ ] Store both open and women title
+- [ ] Pagination config (default , max , min )
+- [ ] support Map for getPlayersWithIds
+
+### Better type safetye with refined/iron
+
+- [ ] pagination
+- [ ] smithy type
+- [ ] Config
 
 ### Smarter Crawler (maybe include in health api)
 
@@ -23,3 +26,4 @@
 ## Bugs
 
 - Crawler seems doesn't stop :sweat_smile:
+- [ ] search ignore case
