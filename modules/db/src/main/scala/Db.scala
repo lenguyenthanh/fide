@@ -14,6 +14,7 @@ trait Db:
   def allPlayers(page: Pagination): IO[List[PlayerInfo]]
   def allFederations: IO[List[FederationInfo]]
   def playersByName(name: String, page: Pagination): IO[List[PlayerInfo]]
+  def playersByIds(ids: List[PlayerId]): IO[List[PlayerInfo]]
   def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
 
 object Db:
@@ -70,6 +71,9 @@ object Db:
 
     def playersByName(name: String, page: Pagination): IO[List[PlayerInfo]] =
       postgres.use(_.execute(Sql.playersByName)(s"%$name%", page.limit, page.offset))
+
+    def playersByIds(ids: List[PlayerId]): IO[List[PlayerInfo]] =
+      postgres.use(_.execute(Sql.playersByIds(ids.size))(ids))
 
     def playersByFederationId(id: FederationId): IO[List[PlayerInfo]] =
       postgres.use(_.execute(Sql.playersByFederationId)(id))
@@ -164,7 +168,15 @@ private object Sql:
         SELECT p.id, p.name, p.title, p.women_title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
         WHERE p.federation_id = f.id
-        LIMIT ${int4} OFFSET ${int4}
+        LIMIT $int4 OFFSET $int4
+       """.query(playerInfo)
+
+  def playersByIds(n: Int): Query[List[Int], PlayerInfo] =
+    val ids = int4.values.list(n)
+    sql"""
+        SELECT p.id, p.name, p.title, p.women_title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
+        FROM players AS p, federations AS f
+        WHERE p.id in ($ids) AND p.federation_id = f.id
        """.query(playerInfo)
 
   val playersByName: Query[(String, Int, Int), PlayerInfo] =

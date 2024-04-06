@@ -32,8 +32,10 @@ class PlayerServiceImpl(db: Db) extends PlayerService[IO]:
         _.fold(IO.raiseError(PlayerNotFound(id))):
           _.transform.pure[IO]
 
-  override def getPlayerByIds(ids: List[PlayerId]): IO[GetPlayersOutput] =
-    IO.raiseError(NotImplementedYetError("Thanh is too lazy to implement this"))
+  override def getPlayerByIds(ids: List[PlayerId]): IO[GetPlayersByIdsOutput] =
+    db.playersByIds(ids.map(_.value))
+      .map(_.map(p => p.id.toString -> p.transform).toMap)
+      .map(GetPlayersByIdsOutput.apply)
 
   extension (playerInfo: fide.domain.PlayerInfo)
     def transform: Player =

@@ -56,6 +56,7 @@ object RepositorySuite extends SimpleIOSuite:
       yield expect(
         found.to[NewPlayer] == player2 && found.federation.get.to[NewFederation] == federation2
       )
+
   test("search playersByName success"):
     resource.use: db =>
       for
@@ -71,6 +72,16 @@ object RepositorySuite extends SimpleIOSuite:
       for
         _       <- db.upsert(newPlayer, newFederation.some)
         players <- db.playersByFederationId("fide")
+      yield expect(
+        players.length == 1 && players.head.to[NewPlayer] == newPlayer && players.head.federation.get
+          .to[NewFederation] == newFederation
+      )
+
+  test("search playersByIds success"):
+    resource.use: db =>
+      for
+        _       <- db.upsert(newPlayer, newFederation.some)
+        players <- db.playersByIds(List(1, 2))
       yield expect(
         players.length == 1 && players.head.to[NewPlayer] == newPlayer && players.head.federation.get
           .to[NewFederation] == newFederation

@@ -30,8 +30,8 @@ operation GetPlayerById {
 @readonly
 @http(method: "POST", uri: "/api/players", code: 200)
 operation GetPlayerByIds {
-  input: GetPlayerByIdsInput,
-  output: GetPlayersOutput
+  input: GetPlayerByIdsInput
+  output: GetPlayersByIdsOutput
 }
 
 structure GetPlayerByIdInput {
@@ -43,6 +43,16 @@ structure GetPlayerByIdInput {
 structure GetPlayerByIdsInput {
   @required
   ids: PlayerIds
+}
+
+map PlayerMap {
+  key: String
+  value: Player
+}
+
+structure GetPlayersByIdsOutput {
+  @required
+  players: PlayerMap
 }
 
 structure GetPlayersInput {
