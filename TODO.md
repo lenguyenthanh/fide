@@ -10,8 +10,10 @@
 - [ ] Support full text search
 - [ ] Support sorting
 - [ ] Add more queries (title, year, active, rating, etc)
-- [ ] Pagination config (default , max , min )
 - [ ] support Map for getPlayersWithIds
+- [ ] Pagination config (default , max , min )
+- [ ] Use [fragments](https://typelevel.org/skunk/reference/Fragments.html)
+- [ ] Add config to set max ids in getPlayersWithIds
 
 
 ### Better type safetye with refined/iron
