@@ -17,11 +17,9 @@ object Flyway:
   def instance(fly4s: Fly4s[IO])(using Logger[IO]): Flyway = new:
 
     def migrate =
-      for
-        _      <- info"Running Flyway migration"
-        result <- fly4s.migrate
-        _      <- info"Flyway migration result: $result"
-      yield ()
+      info"Running Flyway migration" *>
+        fly4s.migrate.flatMap: x =>
+          info"Flyway migration result: $x"
 
   def module(config: FlywayConfig)(using Logger[IO]): Resource[IO, Flyway] =
     Fly4s
