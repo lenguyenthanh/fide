@@ -18,7 +18,7 @@ case class PostgresConfig(
   def toFlywayConfig: FlywayConfig = FlywayConfig(
     url = s"jdbc:postgresql://$host:$port/$database",
     user = user.some,
-    password = password.toCharArray.nn.some,
+    password = password.toCharArray.some,
     migrationsTable = "flyway",
     migrationsLocations = List("/db"),
     schema = schema

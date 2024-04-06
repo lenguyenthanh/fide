@@ -8,6 +8,7 @@ import skunk.*
 
 trait Db:
   def upsert(player: NewPlayer, federation: Option[NewFederation]): IO[Unit]
+  def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit]
   def playerById(id: PlayerId): IO[Option[PlayerInfo]]
   def allPlayers: IO[List[PlayerInfo]]
   def allFederations: IO[List[FederationInfo]]
@@ -18,14 +19,26 @@ object Db:
   import io.github.arainko.ducktape.*
   def apply(postgres: Resource[IO, Session[IO]]): Db = new:
     def upsert(newPlayer: NewPlayer, federation: Option[NewFederation]): IO[Unit] =
-      val player = newPlayer.into[InsertPlayer].transform(Field.const(_.federation, federation.map(_.id)))
+      val player = newPlayer.toInsertPlayer(federation.map(_.id))
       postgres.use: s =>
         for
-          playerCmd     <- s.prepare(Sql.upsert)
+          playerCmd     <- s.prepare(Sql.upsertPlayer)
           federationCmd <- s.prepare(Sql.upsertFederation)
           _ <- s.transaction.use: _ =>
             federation.traverse(federationCmd.execute) *>
               playerCmd.execute(player)
+        yield ()
+
+    def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit] =
+      val players = xs.map((p, f) => p.toInsertPlayer(f.map(_.id)))
+      val feds    = xs.flatMap(_._2).distinct
+      postgres.use: s =>
+        for
+          playerCmd     <- s.prepare(Sql.upsertPlayers(players.size))
+          federationCmd <- s.prepare(Sql.upsertFederations(feds.size))
+          _ <- s.transaction.use: _ =>
+            federationCmd.execute(feds) *>
+              playerCmd.execute(players)
         yield ()
 
     def playerById(id: PlayerId): IO[Option[PlayerInfo]] =
@@ -42,6 +55,10 @@ object Db:
 
     def playersByFederationId(id: FederationId): IO[List[PlayerInfo]] =
       postgres.use(_.execute(Sql.playersByFederationId)(id))
+
+  extension (p: NewPlayer)
+    def toInsertPlayer(fedId: Option[FederationId]) =
+      p.into[InsertPlayer].transform(Field.const(_.federation, fedId))
 
 private object Codecs:
 
@@ -71,10 +88,20 @@ private object Sql:
   import Codecs.*
 
   // TODO use returning
-  val upsert: Command[InsertPlayer] =
+  val upsertPlayer: Command[InsertPlayer] =
     sql"""
         INSERT INTO players (id, name, title, standard, rapid, blitz, year, active, federation_id)
         VALUES ($insertPlayer)
+        ON CONFLICT (id) DO UPDATE SET (name, title, standard, rapid, blitz, year, active, federation_id) =
+        (EXCLUDED.name, EXCLUDED.title, EXCLUDED.standard, EXCLUDED.rapid, EXCLUDED.blitz, EXCLUDED.year, EXCLUDED.active, EXCLUDED.federation_id)
+       """.command
+
+  // TODO use returning
+  def upsertPlayers(n: Int): Command[List[InsertPlayer]] =
+    val players = insertPlayer.values.list(n)
+    sql"""
+        INSERT INTO players (id, name, title, standard, rapid, blitz, year, active, federation_id)
+        VALUES $players
         ON CONFLICT (id) DO UPDATE SET (name, title, standard, rapid, blitz, year, active, federation_id) =
         (EXCLUDED.name, EXCLUDED.title, EXCLUDED.standard, EXCLUDED.rapid, EXCLUDED.blitz, EXCLUDED.year, EXCLUDED.active, EXCLUDED.federation_id)
        """.command
@@ -97,6 +124,14 @@ private object Sql:
     sql"""
         INSERT INTO federations (id, name)
         VALUES ($newFederation)
+        ON CONFLICT DO NOTHING
+       """.command
+
+  def upsertFederations(n: Int): Command[List[NewFederation]] =
+    val feds = newFederation.values.list(n)
+    sql"""
+        INSERT INTO federations (id, name)
+        VALUES $feds
         ON CONFLICT DO NOTHING
        """.command
 
