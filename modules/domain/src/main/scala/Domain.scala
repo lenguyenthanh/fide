@@ -28,20 +28,11 @@ object Title:
   def apply(value: String): Option[Title] =
     Title.values.find(_.value == value)
 
-  private val titleRank: Map[Title, Int] =
-    List(GM, IM, WGM, FM, WIM, WFM, NM, CM, WCM, WNM).zipWithIndex.toMap
-
-  def mostValuable(t1: Option[Title], t2: Option[Title]): Option[Title] =
-    t1.flatMap(titleRank.get)
-      .fold(t2): v1 =>
-        t2.flatMap(titleRank.get)
-          .fold(t1): v2 =>
-            if v1 < v2 then t1 else t2
-
 case class PlayerInfo(
     id: PlayerId,
     name: String,
     title: Option[Title] = None,
+    womenTitle: Option[Title] = None,
     standard: Option[Rating] = None,
     rapid: Option[Rating] = None,
     blitz: Option[Rating] = None,
@@ -56,6 +47,7 @@ case class NewPlayer(
     id: PlayerId,
     name: String,
     title: Option[Title] = None,
+    womenTitle: Option[Title] = None,
     standard: Option[Rating] = None,
     rapid: Option[Rating] = None,
     blitz: Option[Rating] = None,
@@ -67,6 +59,7 @@ case class InsertPlayer(
     id: PlayerId,
     name: String,
     title: Option[Title] = None,
+    womenTitle: Option[Title] = None,
     standard: Option[Rating] = None,
     rapid: Option[Rating] = None,
     blitz: Option[Rating] = None,

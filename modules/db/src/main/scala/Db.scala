@@ -86,7 +86,7 @@ private object Codecs:
   val title: Codec[Title] = `enum`[Title](_.value, Title.apply, Type("title"))
 
   val insertPlayer: Codec[InsertPlayer] =
-    (int4 *: text *: title.opt *: int4.opt *: int4.opt *: int4.opt *: int4.opt *: bool *: text.opt)
+    (int4 *: text *: title.opt *: title.opt *: int4.opt *: int4.opt *: int4.opt *: int4.opt *: bool *: text.opt)
       .to[InsertPlayer]
 
   val newFederation: Codec[NewFederation] =
@@ -96,7 +96,7 @@ private object Codecs:
     (text *: text).to[FederationInfo]
 
   val playerInfo: Codec[PlayerInfo] =
-    (int4 *: text *: title.opt *: int4.opt *: int4.opt *: int4.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
+    (int4 *: text *: title.opt *: title.opt *: int4.opt *: int4.opt *: int4.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
       .to[PlayerInfo]
 
 private object Sql:
@@ -108,7 +108,7 @@ private object Sql:
   // TODO use returning
   val upsertPlayer: Command[InsertPlayer] =
     sql"""
-        INSERT INTO players (id, name, title, standard, rapid, blitz, year, active, federation_id)
+        INSERT INTO players (id, name, title, women_title, standard, rapid, blitz, year, active, federation_id)
         VALUES ($insertPlayer)
         ON CONFLICT (id) DO UPDATE SET (name, title, standard, rapid, blitz, year, active, federation_id) =
         (EXCLUDED.name, EXCLUDED.title, EXCLUDED.standard, EXCLUDED.rapid, EXCLUDED.blitz, EXCLUDED.year, EXCLUDED.active, EXCLUDED.federation_id)
@@ -118,7 +118,7 @@ private object Sql:
   def upsertPlayers(n: Int): Command[List[InsertPlayer]] =
     val players = insertPlayer.values.list(n)
     sql"""
-        INSERT INTO players (id, name, title, standard, rapid, blitz, year, active, federation_id)
+        INSERT INTO players (id, name, title, women_title, standard, rapid, blitz, year, active, federation_id)
         VALUES $players
         ON CONFLICT (id) DO UPDATE SET (name, title, standard, rapid, blitz, year, active, federation_id) =
         (EXCLUDED.name, EXCLUDED.title, EXCLUDED.standard, EXCLUDED.rapid, EXCLUDED.blitz, EXCLUDED.year, EXCLUDED.active, EXCLUDED.federation_id)
@@ -126,14 +126,14 @@ private object Sql:
 
   val playerById: Query[PlayerId, PlayerInfo] =
     sql"""
-        SELECT p.id, p.name, p.title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
+        SELECT p.id, p.name, p.title, p.women_title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
         WHERE p.id = $int4 AND p.federation_id = f.id
        """.query(playerInfo)
 
   val playersByFederationId: Query[FederationId, PlayerInfo] =
     sql"""
-        SELECT p.id, p.name, p.title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
+        SELECT p.id, p.name, p.title, p.women_title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
         WHERE p.federation_id = $text AND p.federation_id = f.id
        """.query(playerInfo)
@@ -161,7 +161,7 @@ private object Sql:
 
   val allPlayers: Query[(Int ~ Int), PlayerInfo] =
     sql"""
-        SELECT p.id, p.name, p.title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
+        SELECT p.id, p.name, p.title, p.women_title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
         WHERE p.federation_id = f.id
         LIMIT ${int4} OFFSET ${int4}
@@ -169,7 +169,7 @@ private object Sql:
 
   val playersByName: Query[(String, Int, Int), PlayerInfo] =
     sql"""
-        SELECT p.id, p.name, p.title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
+        SELECT p.id, p.name, p.title, p.women_title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
         WHERE p.federation_id = f.id AND p.name ILIKE $text
         LIMIT ${int4} OFFSET ${int4}
