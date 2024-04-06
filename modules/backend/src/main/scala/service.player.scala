@@ -18,10 +18,13 @@ class PlayerServiceImpl(db: Db) extends PlayerService[IO]:
       page: Option[String],
       size: Option[Int]
   ): IO[GetPlayersOutput] =
+    val _size   = size.getOrElse(Db.Pagination.defaultLimit)
+    val _offset = page.flatMap(_.toIntOption).getOrElse(Db.Pagination.defaultPage) * _size
+    val _page   = Db.Pagination(_size, _offset)
     query
-      .fold(db.allPlayers)(db.playersByName)
+      .fold(db.allPlayers(_page))(db.playersByName.apply(_, _page))
       .map(_.map(_.transform))
-      .map(GetPlayersOutput.apply(_, None))
+      .map(xs => GetPlayersOutput(xs, Option.when(xs.size == _size)(_page.nextPage.toString())))
 
   override def getPlayerById(id: PlayerId): IO[Player] =
     db.playerById(id.value)

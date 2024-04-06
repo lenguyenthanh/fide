@@ -3,6 +3,7 @@ package db
 
 import cats.effect.*
 import cats.syntax.all.*
+import fide.db.Db.Pagination
 import fide.domain.*
 import skunk.*
 
@@ -10,12 +11,28 @@ trait Db:
   def upsert(player: NewPlayer, federation: Option[NewFederation]): IO[Unit]
   def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit]
   def playerById(id: PlayerId): IO[Option[PlayerInfo]]
-  def allPlayers: IO[List[PlayerInfo]]
+  def allPlayers(page: Pagination): IO[List[PlayerInfo]]
   def allFederations: IO[List[FederationInfo]]
-  def playersByName(name: String): IO[List[PlayerInfo]]
+  def playersByName(name: String, page: Pagination): IO[List[PlayerInfo]]
   def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
 
 object Db:
+
+  case class Pagination(limit: Int, offset: Int):
+    def next     = copy(offset = offset + limit)
+    def nextPage = (offset / limit) + 1
+
+  object Pagination:
+    val defaultLimit  = 30
+    val defaultPage   = 1
+    val defaultOffset = 0
+    val default       = Pagination(defaultLimit, defaultOffset)
+
+    def apply(limit: Option[Int], page: Option[Int]): Pagination =
+      val _limit = limit.getOrElse(defaultLimit)
+      val _page  = (page.getOrElse(defaultPage) - 1) * _limit
+      Pagination(_limit, _page)
+
   import io.github.arainko.ducktape.*
   def apply(postgres: Resource[IO, Session[IO]]): Db = new:
     def upsert(newPlayer: NewPlayer, federation: Option[NewFederation]): IO[Unit] =
@@ -44,14 +61,14 @@ object Db:
     def playerById(id: PlayerId): IO[Option[PlayerInfo]] =
       postgres.use(_.option(Sql.playerById)(id))
 
-    def allPlayers: IO[List[PlayerInfo]] =
-      postgres.use(_.execute(Sql.allPlayers))
+    def allPlayers(page: Pagination): IO[List[PlayerInfo]] =
+      postgres.use(_.execute(Sql.allPlayers)(page.limit -> page.offset))
 
     def allFederations: IO[List[FederationInfo]] =
       postgres.use(_.execute(Sql.allFederations))
 
-    def playersByName(name: String): IO[List[PlayerInfo]] =
-      postgres.use(_.execute(Sql.searchPlayersByName)(s"%$name%"))
+    def playersByName(name: String, page: Pagination): IO[List[PlayerInfo]] =
+      postgres.use(_.execute(Sql.playersByName)(s"%$name%", page.limit, page.offset))
 
     def playersByFederationId(id: FederationId): IO[List[PlayerInfo]] =
       postgres.use(_.execute(Sql.playersByFederationId)(id))
@@ -141,16 +158,18 @@ private object Sql:
         FROM federations
        """.query(federationInfo)
 
-  val allPlayers: Query[Void, PlayerInfo] =
+  val allPlayers: Query[(Int ~ Int), PlayerInfo] =
     sql"""
         SELECT p.id, p.name, p.title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
         WHERE p.federation_id = f.id
+        LIMIT ${int4} OFFSET ${int4}
        """.query(playerInfo)
 
-  val searchPlayersByName: Query[String, PlayerInfo] =
+  val playersByName: Query[(String, Int, Int), PlayerInfo] =
     sql"""
         SELECT p.id, p.name, p.title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
         WHERE p.federation_id = f.id AND p.name LIKE $text
+        LIMIT ${int4} OFFSET ${int4}
        """.query(playerInfo)
