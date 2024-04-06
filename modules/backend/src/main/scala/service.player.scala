@@ -13,11 +13,15 @@ import Transformers.given
 
 class PlayerServiceImpl(db: Db) extends PlayerService[IO]:
 
-  override def getPlayers(query: Option[String]): IO[GetPlayersOutput] =
+  override def getPlayers(
+      query: Option[String],
+      page: Option[String],
+      size: Option[Int]
+  ): IO[GetPlayersOutput] =
     query
       .fold(db.allPlayers)(db.playersByName)
       .map(_.map(_.transform))
-      .map(GetPlayersOutput.apply)
+      .map(GetPlayersOutput.apply(_, None))
 
   override def getPlayerById(id: PlayerId): IO[Player] =
     db.playerById(id.value)
