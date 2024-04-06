@@ -59,7 +59,7 @@ object RepositorySuite extends SimpleIOSuite:
     resource.use: db =>
       for
         _       <- db.upsert(newPlayer, newFederation.some)
-        players <- db.playersByName("Jo")
+        players <- db.playersByName("Jo", Db.Pagination(10, 0))
       yield expect(
         players.length == 1 && players.head.to[NewPlayer] == newPlayer && players.head.federation.get
           .to[NewFederation] == newFederation

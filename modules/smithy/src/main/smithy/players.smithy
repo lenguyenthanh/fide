@@ -10,10 +10,8 @@ service PlayerService {
   operations: [GetPlayers, GetPlayerById, GetPlayerByIds],
 }
 
-// tood add search operations
-
-// todo add pagination
 @readonly
+@paginated(inputToken: "page", outputToken: "nextPage", pageSize: "size")
 @http(method: "GET", uri: "/api/players", code: 200)
 operation GetPlayers {
   input: GetPlayersInput,
@@ -50,11 +48,16 @@ structure GetPlayerByIdsInput {
 structure GetPlayersInput {
   @httpQuery("query")
   query: String
+  @httpQuery("page")
+  page: String
+  @httpQuery("size")
+  size: Integer
 }
 
 structure GetPlayersOutput {
   @required
   players: Players
+  nextPage: String
 }
 
 list PlayerIds {
