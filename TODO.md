@@ -4,11 +4,15 @@
 
 - [x] insert by chunk
 - [x] Support pagination
+- [x] search ignore case
+- [x] Store both open and women title
+- [ ] better errors handling
 - [ ] Support full text search
 - [ ] Support sorting
-- [ ] Store both open and women title
+- [ ] Add more queries (title, year, active, rating, etc)
 - [ ] Pagination config (default , max , min )
 - [ ] support Map for getPlayersWithIds
+
 
 ### Better type safetye with refined/iron
 
@@ -26,5 +30,4 @@
 ## Bugs
 
 - [ ] App doesn't terminate when flyway migration fails
-- Crawler seems doesn't stop :sweat_smile:
-- [x] search ignore case
+- [ ] Crawler seems doesn't stop :sweat_smile:
