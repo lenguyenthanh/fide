@@ -32,7 +32,7 @@ class PlayerServiceImpl(db: Db) extends PlayerService[IO]:
         _.fold(IO.raiseError(PlayerNotFound(id))):
           _.transform.pure[IO]
 
-  override def getPlayerByIds(ids: List[PlayerId]): IO[GetPlayersOutput] =
+  override def getPlayerByIds(ids: List[PlayerId]): IO[GetPlayersByIdsOutput] =
     IO.raiseError(NotImplementedYetError("Thanh is too lazy to implement this"))
 
   extension (playerInfo: fide.domain.PlayerInfo)
