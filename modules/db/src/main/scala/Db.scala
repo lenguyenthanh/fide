@@ -18,6 +18,7 @@ trait Db:
 
 object Db:
 
+  // start at 1
   case class Pagination(limit: Int, offset: Int):
     def next     = copy(offset = offset + limit)
     def nextPage = (offset / limit) + 1
