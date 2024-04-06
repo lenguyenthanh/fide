@@ -6,7 +6,6 @@ import cats.effect.*
 import cats.syntax.all.*
 import fly4s.*
 import fly4s.data.*
-import org.flywaydb.core.api.output.ValidateOutput
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
 
@@ -37,9 +36,3 @@ object Flyway:
         )
       )
       .map(instance)
-
-  def showError: NonEmptyList[fly4s.data.ValidateOutput] => String = _.map(_.showError).toList.mkString("\n")
-
-  extension (vo: ValidateOutput)
-    def showError: String =
-      s"Invalid migration: {version: ${vo.version}, description: ${vo.description}, script: ${vo.filepath}, details: ${vo.errorDetails.nn.errorMessage}"
