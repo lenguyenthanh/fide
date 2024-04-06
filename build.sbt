@@ -37,6 +37,9 @@ lazy val smithy = (project in file("modules/smithy"))
   .settings(
     name := "smithy",
     libraryDependencies ++= Seq(
+      catsCore,
+      catsEffect,
+      fs2,
       "com.disneystreaming.smithy4s" %% "smithy4s-core" % smithy4sVersion.value
     )
   )
@@ -86,7 +89,7 @@ lazy val backend = (project in file("modules/backend"))
       http4sEmberClient,
       cirisCore,
       cirisHtt4s,
-      logback,
+      logback
     ),
     Compile / run / fork         := true,
     Compile / run / connectInput := true,
