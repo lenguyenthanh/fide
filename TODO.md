@@ -18,9 +18,18 @@
 
 ### Better type safetye with refined/iron
 
-- [ ] pagination
 - [ ] smithy type
+- [ ] pagination (validate page, size and other params)
 - [ ] Config
+
+## Smithy
+
+- [ ] Use smithy trait pattern
+- [ ] Use resource
+- [ ] Validators
+- [ ] Error handling
+- [ ] description
+- [ ] mixing
 
 ### Smarter Crawler (maybe include in health api)
 

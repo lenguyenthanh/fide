@@ -66,7 +66,7 @@ structure GetPlayersInput {
 
 structure GetPlayersOutput {
   @required
-  players: Players
+  items: Players
   nextPage: String
 }
 
