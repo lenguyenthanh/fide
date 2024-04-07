@@ -55,7 +55,7 @@ structure GetPlayersByIdsOutput {
   players: PlayerMap
 }
 
-structure GetPlayersInput {
+structure GetPlayersInput with [SortingMixin] {
   @httpQuery("query")
   query: String
   @httpQuery("page")

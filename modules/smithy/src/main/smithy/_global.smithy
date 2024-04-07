@@ -33,6 +33,27 @@ enum Title {
   WNM = "WNM"
 }
 
+enum Order {
+  ASC = "asc"
+  DESC = "desc"
+}
+
+enum SortBy {
+  NAME = "name"
+  STANDARD = "standard"
+  RAPID = "rapid"
+  BLITZ = "blitz"
+  YEAR = "year"
+}
+
+@mixin
+structure SortingMixin {
+  @httpQuery("sort_by")
+  sortBy: SortBy
+  @httpQuery("order_by")
+  order: Order
+}
+
 
 structure Federation {
   @required

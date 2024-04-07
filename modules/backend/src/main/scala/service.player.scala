@@ -14,6 +14,8 @@ import Transformers.given
 class PlayerServiceImpl(db: Db) extends PlayerService[IO]:
 
   override def getPlayers(
+      sortBy: Option[SortBy],
+      order: Option[Order],
       query: Option[String],
       page: Option[String],
       size: Option[Int]

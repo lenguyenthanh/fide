@@ -28,6 +28,22 @@ object Title:
   def apply(value: String): Option[Title] =
     Title.values.find(_.value == value)
 
+enum Order(val value: String):
+  case Asc  extends Order("asc")
+  case Desc extends Order("desc")
+
+enum OrderBy(val value: String):
+  case Name     extends OrderBy("name")
+  case Standard extends OrderBy("standard")
+  case Rapid    extends OrderBy("rapid")
+  case Blitz    extends OrderBy("blitz")
+  case Year     extends OrderBy("year")
+
+case class Sort(
+    sortBy: String,
+    orderBy: Option[Order]
+)
+
 case class PlayerInfo(
     id: PlayerId,
     name: String,
