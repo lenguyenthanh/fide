@@ -32,7 +32,7 @@ class PlayerServiceImpl(db: Db) extends PlayerService[IO]:
         _.fold(IO.raiseError(PlayerNotFound(id))):
           _.transform.pure[IO]
 
-  override def getPlayerByIds(ids: List[PlayerId]): IO[GetPlayersByIdsOutput] =
+  override def getPlayerByIds(ids: Set[PlayerId]): IO[GetPlayersByIdsOutput] =
     db.playersByIds(ids.map(_.value))
       .map(_.map(p => p.id.toString -> p.transform).toMap)
       .map(GetPlayersByIdsOutput.apply)

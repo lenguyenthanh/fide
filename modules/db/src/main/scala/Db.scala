@@ -14,7 +14,7 @@ trait Db:
   def allPlayers(page: Pagination): IO[List[PlayerInfo]]
   def allFederations: IO[List[FederationInfo]]
   def playersByName(name: String, page: Pagination): IO[List[PlayerInfo]]
-  def playersByIds(ids: List[PlayerId]): IO[List[PlayerInfo]]
+  def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]]
   def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
 
 object Db:
@@ -72,8 +72,8 @@ object Db:
     def playersByName(name: String, page: Pagination): IO[List[PlayerInfo]] =
       postgres.use(_.execute(Sql.playersByName)(s"%$name%", page.limit, page.offset))
 
-    def playersByIds(ids: List[PlayerId]): IO[List[PlayerInfo]] =
-      postgres.use(_.execute(Sql.playersByIds(ids.size))(ids))
+    def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]] =
+      postgres.use(_.execute(Sql.playersByIds(ids.size))(ids.toList))
 
     def playersByFederationId(id: FederationId): IO[List[PlayerInfo]] =
       postgres.use(_.execute(Sql.playersByFederationId)(id))

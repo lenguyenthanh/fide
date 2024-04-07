@@ -14,6 +14,7 @@
 - [ ] Pagination config (default , max , min )
 - [ ] Use [fragments](https://typelevel.org/skunk/reference/Fragments.html)
 - [ ] Add config to set max ids in getPlayersWithIds
+- [ ] Support lucene query syntax
 
 
 ### Better type safetye with refined/iron
