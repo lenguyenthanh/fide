@@ -141,8 +141,8 @@ private object Sql:
 
   private lazy val onPlayerConflictDoUpdate =
     sql"""
-        ON CONFLICT (id) DO UPDATE SET (name, title, standard, rapid, blitz, year, active, federation_id) =
-        (EXCLUDED.name, EXCLUDED.title, EXCLUDED.standard, EXCLUDED.rapid, EXCLUDED.blitz, EXCLUDED.year, EXCLUDED.active, EXCLUDED.federation_id)
+        ON CONFLICT (id) DO UPDATE SET (name, title, women_title, standard, rapid, blitz, year, active, federation_id) =
+        (EXCLUDED.name, EXCLUDED.title, EXCLUDED.women_title, EXCLUDED.standard, EXCLUDED.rapid, EXCLUDED.blitz, EXCLUDED.year, EXCLUDED.active, EXCLUDED.federation_id)
       """
 
   // TODO use returning
