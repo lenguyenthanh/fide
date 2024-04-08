@@ -23,16 +23,16 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       size: Option[Int]
   ): IO[GetPlayersOutput] =
     val _size   = size.getOrElse(Db.Pagination.defaultLimit)
-    val _offset = page.flatMap(_.toIntOption).getOrElse(Db.Pagination.defaultPage) * _size
-    val _page   = Db.Pagination(_size, _offset)
+    val _page   = page.flatMap(_.toIntOption).getOrElse(Db.Pagination.defaultPage)
+    val paging  = Db.Pagination.fromPageAndSize(_page, _size)
     val _order  = order.map(_.to[domain.Order]).getOrElse(domain.Order.Desc)
     val _sortBy = sortBy.map(_.to[domain.SortBy]).getOrElse(domain.SortBy.Name)
     val sorting = domain.Sorting(_sortBy, _order)
     info"getPlayers: page=$_page, sorting=$sorting, query=$query" *>
       query
-        .fold(db.allPlayers(sorting, _page))(db.playersByName.apply(_, _page))
+        .fold(db.allPlayers(sorting, paging))(db.playersByName.apply(_, paging))
         .map(_.map(_.transform))
-        .map(xs => GetPlayersOutput(xs, Option.when(xs.size == _size)(_page.nextPage.toString())))
+        .map(xs => GetPlayersOutput(xs, Option.when(xs.size == _size)(paging.nextPage.toString())))
 
   override def getPlayerById(id: PlayerId): IO[Player] =
     db.playerById(id.value)

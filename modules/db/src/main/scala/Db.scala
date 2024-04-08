@@ -32,9 +32,13 @@ object Db:
     val default       = Pagination(defaultLimit, defaultOffset)
 
     def apply(limit: Option[Int], page: Option[Int]): Pagination =
-      val _limit = limit.getOrElse(defaultLimit)
-      val _page  = (page.getOrElse(defaultPage) - 1) * _limit
-      Pagination(_limit, _page)
+      val _limit  = limit.getOrElse(defaultLimit)
+      val _offset = (page.getOrElse(defaultPage) - 1) * _limit
+      Pagination(_limit, _offset)
+
+    def fromPageAndSize(page: Int, size: Int): Pagination =
+      val offset = (math.max(defaultPage, page) - 1) * size
+      Pagination(size, offset)
 
   import io.github.arainko.ducktape.*
   def apply(postgres: Resource[IO, Session[IO]])(using Logger[IO]): Db = new:
@@ -179,7 +183,7 @@ private object Sql:
     val column  = s"p.${sorting.sortBy.value}"
     val orderBy = sorting.orderBy.value
     sql"""
-        ORDER BY #$column #$orderBy
+        ORDER BY #$column #$orderBy NULLS LAST
        """.apply(Void)
 
   val allPlayers: Fragment[Void] =
