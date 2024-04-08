@@ -30,7 +30,7 @@
 - [ ] Validators
 - [ ] Error handling
 - [ ] description
-- [ ] mixing
+- [x] mixing
 
 ### Smarter Crawler (maybe include in health api)
 

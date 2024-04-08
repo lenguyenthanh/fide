@@ -34,6 +34,9 @@ CREATE TABLE IF NOT EXISTS players
 );
 
 CREATE INDEX players_name_idx ON players(name);
+CREATE INDEX players_standard_idx ON players(standard);
+CREATE INDEX players_rapid_idx ON players(rapid);
+CREATE INDEX players_blitz_idx ON players(blitz);
 
 CREATE TRIGGER set_players_updated_at
 BEFORE UPDATE ON players
