@@ -5,16 +5,17 @@ import cats.effect.*
 import cats.syntax.all.*
 import fide.db.Db.Pagination
 import fide.domain.*
+import org.typelevel.log4cats.Logger
 import skunk.*
 
 trait Db:
   def upsert(player: NewPlayer, federation: Option[NewFederation]): IO[Unit]
   def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit]
   def playerById(id: PlayerId): IO[Option[PlayerInfo]]
-  def allPlayers(page: Pagination): IO[List[PlayerInfo]]
+  def allPlayers(sorting: Sorting, paging: Pagination): IO[List[PlayerInfo]]
   def allFederations: IO[List[FederationInfo]]
-  def playersByName(name: String, page: Pagination): IO[List[PlayerInfo]]
-  def playersByIds(ids: List[PlayerId]): IO[List[PlayerInfo]]
+  def playersByName(name: String, sorting: Sorting, paging: Pagination): IO[List[PlayerInfo]]
+  def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]]
   def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
 
 object Db:
@@ -31,12 +32,16 @@ object Db:
     val default       = Pagination(defaultLimit, defaultOffset)
 
     def apply(limit: Option[Int], page: Option[Int]): Pagination =
-      val _limit = limit.getOrElse(defaultLimit)
-      val _page  = (page.getOrElse(defaultPage) - 1) * _limit
-      Pagination(_limit, _page)
+      val _limit  = limit.getOrElse(defaultLimit)
+      val _offset = (page.getOrElse(defaultPage) - 1) * _limit
+      Pagination(_limit, _offset)
+
+    def fromPageAndSize(page: Int, size: Int): Pagination =
+      val offset = (math.max(defaultPage, page) - 1) * size
+      Pagination(size, offset)
 
   import io.github.arainko.ducktape.*
-  def apply(postgres: Resource[IO, Session[IO]]): Db = new:
+  def apply(postgres: Resource[IO, Session[IO]])(using Logger[IO]): Db = new:
     def upsert(newPlayer: NewPlayer, federation: Option[NewFederation]): IO[Unit] =
       val player = newPlayer.toInsertPlayer(federation.map(_.id))
       postgres.use: s =>
@@ -63,17 +68,21 @@ object Db:
     def playerById(id: PlayerId): IO[Option[PlayerInfo]] =
       postgres.use(_.option(Sql.playerById)(id))
 
-    def allPlayers(page: Pagination): IO[List[PlayerInfo]] =
-      postgres.use(_.execute(Sql.allPlayers)(page.limit -> page.offset))
+    def allPlayers(sorting: Sorting, paging: Pagination): IO[List[PlayerInfo]] =
+      val f = Sql.allPlayers(sorting, paging)
+      val q = f.fragment.query(Codecs.playerInfo)
+      postgres.use(_.execute(q)(f.argument))
 
     def allFederations: IO[List[FederationInfo]] =
       postgres.use(_.execute(Sql.allFederations))
 
-    def playersByName(name: String, page: Pagination): IO[List[PlayerInfo]] =
-      postgres.use(_.execute(Sql.playersByName)(s"%$name%", page.limit, page.offset))
+    def playersByName(name: String, sorting: Sorting, paging: Pagination): IO[List[PlayerInfo]] =
+      val f = Sql.playersByName(s"%$name%", sorting, paging)
+      val q = f.fragment.query(Codecs.playerInfo)
+      postgres.use(_.execute(q)(f.argument))
 
-    def playersByIds(ids: List[PlayerId]): IO[List[PlayerInfo]] =
-      postgres.use(_.execute(Sql.playersByIds(ids.size))(ids))
+    def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]] =
+      postgres.use(_.execute(Sql.playersByIds(ids.size))(ids.toList))
 
     def playersByFederationId(id: FederationId): IO[List[PlayerInfo]] =
       postgres.use(_.execute(Sql.playersByFederationId)(id))
@@ -163,13 +172,31 @@ private object Sql:
         FROM federations
        """.query(federationInfo)
 
-  val allPlayers: Query[(Int ~ Int), PlayerInfo] =
+  def allPlayers(sorting: Sorting, page: Pagination): AppliedFragment =
+    allPlayers(Void) |+| sortingFragment(sorting) |+| pagingFragment(page)
+
+  def playersByName(name: String, sorting: Sorting, page: Pagination): AppliedFragment =
+    allPlayers(Void) |+| nameLikeFragment(name) |+| sortingFragment(sorting) |+| pagingFragment(page)
+
+  private def nameLikeFragment(name: String): AppliedFragment =
+    sql"""
+        AND p.name ILIKE $text""".apply(name)
+
+  private def pagingFragment(page: Pagination): AppliedFragment =
+    sql"""
+        LIMIT ${int4} OFFSET ${int4}""".apply(page.limit, page.offset)
+
+  private def sortingFragment(sorting: Sorting): AppliedFragment =
+    val column  = s"p.${sorting.sortBy.value}"
+    val orderBy = sorting.orderBy.value
+    sql"""
+        ORDER BY #$column #$orderBy NULLS LAST""".apply(Void)
+
+  private val allPlayers: Fragment[Void] =
     sql"""
         SELECT p.id, p.name, p.title, p.women_title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
-        WHERE p.federation_id = f.id
-        LIMIT $int4 OFFSET $int4
-       """.query(playerInfo)
+        WHERE p.federation_id = f.id"""
 
   def playersByIds(n: Int): Query[List[Int], PlayerInfo] =
     val ids = int4.values.list(n)

@@ -6,14 +6,15 @@
 - [x] Support pagination
 - [x] search ignore case
 - [x] Store both open and women title
+- [x] Use [AppliedFragment](https://typelevel.org/skunk/reference/Fragments.html)
 - [ ] better errors handling
 - [ ] Support full text search
 - [ ] Support sorting
 - [ ] Add more queries (title, year, active, rating, etc)
 - [ ] support Map for getPlayersWithIds
 - [ ] Pagination config (default , max , min )
-- [ ] Use [fragments](https://typelevel.org/skunk/reference/Fragments.html)
 - [ ] Add config to set max ids in getPlayersWithIds
+- [ ] Support lucene query syntax
 
 
 ### Better type safetye with refined/iron

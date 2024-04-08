@@ -42,7 +42,7 @@ structure GetPlayerByIdInput {
 
 structure GetPlayerByIdsInput {
   @required
-  ids: PlayerIds
+  ids: SetPlayerIds
 }
 
 map PlayerMap {
@@ -55,7 +55,7 @@ structure GetPlayersByIdsOutput {
   players: PlayerMap
 }
 
-structure GetPlayersInput {
+structure GetPlayersInput with [SortingMixin] {
   @httpQuery("query")
   query: String
   @httpQuery("page")
@@ -70,7 +70,8 @@ structure GetPlayersOutput {
   nextPage: String
 }
 
-list PlayerIds {
+@uniqueItems
+list SetPlayerIds {
   member: PlayerId
 }
 

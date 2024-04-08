@@ -57,15 +57,26 @@ object RepositorySuite extends SimpleIOSuite:
         found.to[NewPlayer] == player2 && found.federation.get.to[NewFederation] == federation2
       )
 
+  val defaultSorting = Sorting(SortBy.Name, Order.Asc)
+  val defaultPage    = Db.Pagination(10, 0)
   test("search playersByName success"):
     resource.use: db =>
       for
         _       <- db.upsert(newPlayer, newFederation.some)
-        players <- db.playersByName("jo", Db.Pagination(10, 0))
+        players <- db.playersByName("Jo", defaultSorting, defaultPage)
       yield expect(
         players.length == 1 && players.head.to[NewPlayer] == newPlayer && players.head.federation.get
           .to[NewFederation] == newFederation
       )
+
+  test("allPlayers sortBy name success"):
+    val player2 = newPlayer.copy(id = 2, name = "A")
+    resource.use: db =>
+      for
+        _       <- db.upsert(newPlayer, newFederation.some)
+        _       <- db.upsert(player2, newFederation.some)
+        players <- db.allPlayers(defaultSorting, defaultPage)
+      yield expect(players.length == 2 && players.head.name == "A")
 
   test("search playersByFederationId success"):
     resource.use: db =>
@@ -81,7 +92,7 @@ object RepositorySuite extends SimpleIOSuite:
     resource.use: db =>
       for
         _       <- db.upsert(newPlayer, newFederation.some)
-        players <- db.playersByIds(List(1, 2))
+        players <- db.playersByIds(Set(1, 2))
       yield expect(
         players.length == 1 && players.head.to[NewPlayer] == newPlayer && players.head.federation.get
           .to[NewFederation] == newFederation
