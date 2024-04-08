@@ -67,6 +67,15 @@ object RepositorySuite extends SimpleIOSuite:
           .to[NewFederation] == newFederation
       )
 
+  test("allPlayers sortBy name success"):
+    val player2 = newPlayer.copy(id = 2, name = "A")
+    resource.use: db =>
+      for
+        _       <- db.upsert(newPlayer, newFederation.some)
+        _       <- db.upsert(player2, newFederation.some)
+        players <- db.allPlayers(Db.Pagination(10, 0), Sorting(SortBy.Name, Order.Asc))
+      yield expect(players.length == 2 && players.head.name == "A")
+
   test("search playersByFederationId success"):
     resource.use: db =>
       for

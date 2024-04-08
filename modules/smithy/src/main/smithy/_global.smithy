@@ -34,16 +34,16 @@ enum Title {
 }
 
 enum Order {
-  ASC = "asc"
-  DESC = "desc"
+  Asc = "asc"
+  Desc = "desc"
 }
 
 enum SortBy {
-  NAME = "name"
-  STANDARD = "standard"
-  RAPID = "rapid"
-  BLITZ = "blitz"
-  YEAR = "year"
+  Name = "name"
+  Standard = "standard"
+  Rapid = "rapid"
+  Blitz = "blitz"
+  Year = "year"
 }
 
 @mixin

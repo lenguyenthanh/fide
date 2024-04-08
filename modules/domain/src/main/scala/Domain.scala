@@ -29,20 +29,23 @@ object Title:
     Title.values.find(_.value == value)
 
 enum Order(val value: String):
-  case Asc  extends Order("asc")
-  case Desc extends Order("desc")
+  case Asc  extends Order("ASC")
+  case Desc extends Order("DESC")
 
-enum OrderBy(val value: String):
-  case Name     extends OrderBy("name")
-  case Standard extends OrderBy("standard")
-  case Rapid    extends OrderBy("rapid")
-  case Blitz    extends OrderBy("blitz")
-  case Year     extends OrderBy("year")
+enum SortBy(val value: String):
+  case Name     extends SortBy("name")
+  case Standard extends SortBy("standard")
+  case Rapid    extends SortBy("rapid")
+  case Blitz    extends SortBy("blitz")
+  case Year     extends SortBy("year")
 
-case class Sort(
-    sortBy: String,
-    orderBy: Option[Order]
+case class Sorting(
+    sortBy: SortBy,
+    orderBy: Order
 )
+
+object Sorting:
+  def default = Sorting(SortBy.Name, Order.Desc)
 
 case class PlayerInfo(
     id: PlayerId,
@@ -84,6 +87,15 @@ case class InsertPlayer(
     federation: Option[FederationId] = None
 )
 
+case class NewFederation(
+    id: FederationId,
+    name: String
+)
+
+case class FederationInfo(
+    id: FederationId,
+    name: String
+)
 case class Federation(
     id: FederationId,
     name: String,
@@ -300,13 +312,3 @@ object Federation:
     FederationId("TLS") -> "Timor-Leste",
     FederationId("VAN") -> "Vanuatu"
   )
-
-case class NewFederation(
-    id: FederationId,
-    name: String
-)
-
-case class FederationInfo(
-    id: FederationId,
-    name: String
-)

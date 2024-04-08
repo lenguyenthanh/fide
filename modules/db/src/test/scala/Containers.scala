@@ -23,7 +23,7 @@ object Containers:
         cont.databaseName,
         10,
         "fide",
-        false
+        true
       )
 
   private def postgresContainer: Resource[IO, PostgreSQLContainer] =
