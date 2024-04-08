@@ -132,7 +132,7 @@ private object Sql:
     val players = insertPlayer.values.list(n)
     sql"""
         $insertIntoPlayer
-        VALUES ($players)
+        VALUES $players
         $onPlayerConflictDoUpdate
        """.command
 

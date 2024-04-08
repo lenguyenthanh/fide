@@ -34,6 +34,13 @@ object RepositorySuite extends SimpleIOSuite:
     resource
       .use(_.upsert(newPlayer, newFederation.some).map(_ => expect(true)))
 
+  test("create players success"):
+    val player2 = newPlayer.copy(name = "Jane", id = 2)
+    resource
+      .use(
+        _.upsert(List(newPlayer -> newFederation.some, player2 -> newFederation.some)).map(_ => expect(true))
+      )
+
   test("create and query player success"):
     resource.use: db =>
       for
