@@ -14,7 +14,7 @@ trait Db:
   def playerById(id: PlayerId): IO[Option[PlayerInfo]]
   def allPlayers(sorting: Sorting, paging: Pagination, filter: Filter): IO[List[PlayerInfo]]
   def allFederations: IO[List[FederationInfo]]
-  def playersByName(name: String, sorting: Sorting, paging: Pagination): IO[List[PlayerInfo]]
+  def playersByName(name: String, sorting: Sorting, paging: Pagination, filter: Filter): IO[List[PlayerInfo]]
   def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]]
   def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
 
@@ -56,8 +56,13 @@ object Db:
     def allFederations: IO[List[FederationInfo]] =
       postgres.use(_.execute(Sql.allFederations))
 
-    def playersByName(name: String, sorting: Sorting, paging: Pagination): IO[List[PlayerInfo]] =
-      val f = Sql.playersByName(s"%$name%", sorting, paging)
+    def playersByName(
+        name: String,
+        sorting: Sorting,
+        paging: Pagination,
+        filter: Filter
+    ): IO[List[PlayerInfo]] =
+      val f = Sql.playersByName(s"%$name%", sorting, paging, filter)
       val q = f.fragment.query(Codecs.playerInfo)
       postgres.use(_.execute(q)(f.argument))
 
@@ -140,8 +145,9 @@ private object Sql:
     allPlayersFragment(Void) |+| filterFragment(filter) |+|
       sortingFragment(sorting) |+| pagingFragment(page)
 
-  def playersByName(name: String, sorting: Sorting, page: Pagination): AppliedFragment =
-    allPlayersFragment(Void) |+| nameLikeFragment(name) |+| sortingFragment(sorting) |+| pagingFragment(page)
+  def playersByName(name: String, sorting: Sorting, page: Pagination, filter: Filter): AppliedFragment =
+    allPlayersFragment(Void) |+| nameLikeFragment(name) |+| filterFragment(filter) |+|
+      sortingFragment(sorting) |+| pagingFragment(page)
 
   def playersByIds(n: Int): Fragment[List[Int]] =
     val ids = int4.values.list(n)

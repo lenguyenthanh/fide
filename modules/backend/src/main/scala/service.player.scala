@@ -42,7 +42,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
     )
     info"getPlayers: page=$_page, sorting=$sorting, query=$query" *>
       query
-        .fold(db.allPlayers(sorting, paging, filter))(db.playersByName(_, sorting, paging))
+        .fold(db.allPlayers(sorting, paging, filter))(db.playersByName(_, sorting, paging, filter))
         .map(_.map(_.transform))
         .map(xs => GetPlayersOutput(xs, Option.when(xs.size == _size)(paging.nextPage.toString())))
 
