@@ -58,7 +58,7 @@ structure Player {
 
   year: Integer
   @required
-  inactive: Boolean
+  active: Boolean
   @required
   updatedAt: Timestamp
 

@@ -59,11 +59,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       .map(_.map(p => p.id.toString -> p.transform).toMap)
       .map(GetPlayersByIdsOutput.apply)
 
-  extension (playerInfo: fide.domain.PlayerInfo)
-    def transform: Player =
-      playerInfo
-        .into[Player]
-        .transform(Field.const(_.inactive, !playerInfo.active))
+  extension (playerInfo: fide.domain.PlayerInfo) inline def transform: Player = playerInfo.to[Player]
 
 object Transformers:
   given Transformer.Derived[Int, Rating]          = Transformer.Derived.FromFunction(Rating.apply)
