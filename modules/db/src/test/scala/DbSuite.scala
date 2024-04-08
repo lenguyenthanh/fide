@@ -83,7 +83,7 @@ object RepositorySuite extends SimpleIOSuite:
       for
         _       <- db.upsert(newPlayer, newFederation.some)
         _       <- db.upsert(player2, newFederation.some)
-        players <- db.allPlayers(defaultSorting, defaultPage)
+        players <- db.allPlayers(defaultSorting, defaultPage, Filter.default)
       yield expect(players.length == 2 && players.head.name == "A")
 
   test("search playersByFederationId success"):

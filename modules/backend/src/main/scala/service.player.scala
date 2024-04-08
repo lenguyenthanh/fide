@@ -35,9 +35,14 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
     val _order  = order.map(_.to[Models.Order]).getOrElse(Models.Order.Desc)
     val _sortBy = sortBy.map(_.to[Models.SortBy]).getOrElse(Models.SortBy.Name)
     val sorting = Models.Sorting(_sortBy, _order)
+    val filter = Models.Filter(
+      Models.RatingRange(standardMin.map(_.value), standardMax.map(_.value)),
+      Models.RatingRange(rapidMin.map(_.value), rapidMax.map(_.value)),
+      Models.RatingRange(blitzMin.map(_.value), blitzMax.map(_.value))
+    )
     info"getPlayers: page=$_page, sorting=$sorting, query=$query" *>
       query
-        .fold(db.allPlayers(sorting, paging))(db.playersByName(_, sorting, paging))
+        .fold(db.allPlayers(sorting, paging, filter))(db.playersByName(_, sorting, paging))
         .map(_.map(_.transform))
         .map(xs => GetPlayersOutput(xs, Option.when(xs.size == _size)(paging.nextPage.toString())))
 
