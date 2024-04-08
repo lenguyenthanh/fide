@@ -43,10 +43,11 @@ object Models:
 
   case class RatingRange(min: Option[Rating], max: Option[Rating])
   case class Filter(
+      isActive: Boolean = true,
       standard: RatingRange,
       rapid: RatingRange,
       blitz: RatingRange
   )
 
   object Filter:
-    val default = Filter(RatingRange(None, None), RatingRange(None, None), RatingRange(None, None))
+    val default = Filter(true, RatingRange(None, None), RatingRange(None, None), RatingRange(None, None))

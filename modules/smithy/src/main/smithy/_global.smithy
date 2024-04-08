@@ -99,6 +99,8 @@ structure StandardFilterRange {
 
 @mixin
 structure FilterMixin {
+  @httpQuery("isActive")
+  isActive: Boolean
   @httpQuery("std[gte]")
   standardMin: Rating
   @httpQuery("std[lte]")

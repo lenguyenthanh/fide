@@ -19,6 +19,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
   override def getPlayers(
       sortBy: Option[SortBy],
       order: Option[Order],
+      isActive: Option[Boolean],
       standardMin: Option[Rating],
       standardMax: Option[Rating],
       rapidMin: Option[Rating],
@@ -36,6 +37,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
     val _sortBy = sortBy.map(_.to[Models.SortBy]).getOrElse(Models.SortBy.Name)
     val sorting = Models.Sorting(_sortBy, _order)
     val filter = Models.Filter(
+      isActive.getOrElse(true),
       Models.RatingRange(standardMin.map(_.value), standardMax.map(_.value)),
       Models.RatingRange(rapidMin.map(_.value), rapidMax.map(_.value)),
       Models.RatingRange(blitzMin.map(_.value), blitzMax.map(_.value))

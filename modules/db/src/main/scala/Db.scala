@@ -161,9 +161,14 @@ private object Sql:
         AND #$_column BETWEEN ${int4} AND ${int4}""".apply(_min, _max)
 
   private def filterFragment(filter: Filter): AppliedFragment =
-    between("standard", filter.standard.min, filter.standard.max) |+|
+    filterActive.apply(filter.isActive) |+|
+      between("standard", filter.standard.min, filter.standard.max) |+|
       between("rapid", filter.rapid.min, filter.rapid.max) |+|
       between("blitz", filter.blitz.min, filter.blitz.max)
+
+  private lazy val filterActive: Fragment[Boolean] =
+    sql"""
+        AND p.active = $bool"""
 
   private lazy val insertIntoPlayer =
     sql"INSERT INTO players (id, name, title, women_title, standard, rapid, blitz, year, active, federation_id)"
