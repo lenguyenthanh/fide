@@ -19,6 +19,12 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
   override def getPlayers(
       sortBy: Option[SortBy],
       order: Option[Order],
+      standardMin: Option[Rating],
+      standardMax: Option[Rating],
+      rapidMin: Option[Rating],
+      rapidMax: Option[Rating],
+      blitzMin: Option[Rating],
+      blitzMax: Option[Rating],
       query: Option[String],
       page: Option[String],
       size: Option[Int]

@@ -33,28 +33,6 @@ enum Title {
   WNM = "WNM"
 }
 
-enum Order {
-  Asc = "asc"
-  Desc = "desc"
-}
-
-enum SortBy {
-  Name = "name"
-  Standard = "standard"
-  Rapid = "rapid"
-  Blitz = "blitz"
-  Year = "year"
-}
-
-@mixin
-structure SortingMixin {
-  @httpQuery("sort_by")
-  sortBy: SortBy
-  @httpQuery("order_by")
-  order: Order
-}
-
-
 structure Federation {
   @required
   id: FederationId,
@@ -91,3 +69,46 @@ list Players {
   member: Player
 }
 
+enum Order {
+  Asc = "asc"
+  Desc = "desc"
+}
+
+enum SortBy {
+  Name = "name"
+  Standard = "standard"
+  Rapid = "rapid"
+  Blitz = "blitz"
+  Year = "year"
+}
+
+@mixin
+structure SortingMixin {
+  @httpQuery("sort_by")
+  sortBy: SortBy
+  @httpQuery("order_by")
+  order: Order
+}
+
+structure StandardFilterRange {
+  @httpQuery("std[gte]")
+  min: Rating
+  @httpQuery("std[lte]")
+  max: Rating
+}
+
+@mixin
+structure FilterMixin {
+  @httpQuery("std[gte]")
+  standardMin: Rating
+  @httpQuery("std[lte]")
+  standardMax: Rating
+  @httpQuery("rapid[gte]")
+  rapidMin: Rating
+  @httpQuery("rapid[lte]")
+  rapidMax: Rating
+  @httpQuery("blitz[gte]")
+  blitzMin: Rating
+  @httpQuery("blitz[lte]")
+  blitzMax: Rating
+}
