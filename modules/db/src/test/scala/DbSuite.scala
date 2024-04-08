@@ -6,6 +6,7 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.syntax.all.*
 import fide.domain.*
+import fide.domain.Models.*
 import io.github.arainko.ducktape.*
 import weaver.*
 
@@ -65,7 +66,7 @@ object RepositorySuite extends SimpleIOSuite:
       )
 
   val defaultSorting = Sorting(SortBy.Name, Order.Asc)
-  val defaultPage    = Db.Pagination(10, 0)
+  val defaultPage    = Pagination(10, 0)
   test("search playersByName success"):
     resource.use: db =>
       for

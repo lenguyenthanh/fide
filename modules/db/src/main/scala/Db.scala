@@ -3,8 +3,8 @@ package db
 
 import cats.effect.*
 import cats.syntax.all.*
-import fide.db.Db.Pagination
 import fide.domain.*
+import fide.domain.Models.*
 import org.typelevel.log4cats.Logger
 import skunk.*
 
@@ -19,26 +19,6 @@ trait Db:
   def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
 
 object Db:
-
-  // start at 1
-  case class Pagination(limit: Int, offset: Int):
-    def next     = copy(offset = offset + limit)
-    def nextPage = (offset / limit) + 1
-
-  object Pagination:
-    val defaultLimit  = 30
-    val defaultPage   = 1
-    val defaultOffset = 0
-    val default       = Pagination(defaultLimit, defaultOffset)
-
-    def apply(limit: Option[Int], page: Option[Int]): Pagination =
-      val _limit  = limit.getOrElse(defaultLimit)
-      val _offset = (page.getOrElse(defaultPage) - 1) * _limit
-      Pagination(_limit, _offset)
-
-    def fromPageAndSize(page: Int, size: Int): Pagination =
-      val offset = (math.max(defaultPage, page) - 1) * size
-      Pagination(size, offset)
 
   import io.github.arainko.ducktape.*
   def apply(postgres: Resource[IO, Session[IO]])(using Logger[IO]): Db = new:

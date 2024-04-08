@@ -3,6 +3,7 @@ package fide
 import cats.effect.*
 import cats.syntax.all.*
 import fide.db.Db
+import fide.domain.Models
 import fide.spec.*
 import io.github.arainko.ducktape.*
 import org.typelevel.log4cats.Logger
@@ -22,12 +23,12 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       page: Option[String],
       size: Option[Int]
   ): IO[GetPlayersOutput] =
-    val _size   = size.getOrElse(Db.Pagination.defaultLimit)
-    val _page   = page.flatMap(_.toIntOption).getOrElse(Db.Pagination.defaultPage)
-    val paging  = Db.Pagination.fromPageAndSize(_page, _size)
-    val _order  = order.map(_.to[domain.Order]).getOrElse(domain.Order.Desc)
-    val _sortBy = sortBy.map(_.to[domain.SortBy]).getOrElse(domain.SortBy.Name)
-    val sorting = domain.Sorting(_sortBy, _order)
+    val _size   = size.getOrElse(Models.Pagination.defaultLimit)
+    val _page   = page.flatMap(_.toIntOption).getOrElse(Models.Pagination.defaultPage)
+    val paging  = Models.Pagination.fromPageAndSize(_page, _size)
+    val _order  = order.map(_.to[Models.Order]).getOrElse(Models.Order.Desc)
+    val _sortBy = sortBy.map(_.to[Models.SortBy]).getOrElse(Models.SortBy.Name)
+    val sorting = Models.Sorting(_sortBy, _order)
     info"getPlayers: page=$_page, sorting=$sorting, query=$query" *>
       query
         .fold(db.allPlayers(sorting, paging))(db.playersByName(_, sorting, paging))
