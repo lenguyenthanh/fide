@@ -12,7 +12,7 @@ trait Db:
   def upsert(player: NewPlayer, federation: Option[NewFederation]): IO[Unit]
   def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit]
   def playerById(id: PlayerId): IO[Option[PlayerInfo]]
-  def allPlayers(page: Pagination, sorting: Sorting): IO[List[PlayerInfo]]
+  def allPlayers(sorting: Sorting, page: Pagination): IO[List[PlayerInfo]]
   def allFederations: IO[List[FederationInfo]]
   def playersByName(name: String, page: Pagination): IO[List[PlayerInfo]]
   def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]]
@@ -64,7 +64,7 @@ object Db:
     def playerById(id: PlayerId): IO[Option[PlayerInfo]] =
       postgres.use(_.option(Sql.playerById)(id))
 
-    def allPlayers(page: Pagination, sorting: Sorting): IO[List[PlayerInfo]] =
+    def allPlayers(sorting: Sorting, page: Pagination): IO[List[PlayerInfo]] =
       val f = Sql.allPlayers(sorting, page)
       val q = f.fragment.query(Codecs.playerInfo)
       postgres.use:
@@ -168,30 +168,26 @@ private object Sql:
        """.query(federationInfo)
 
   def allPlayers(sorting: Sorting, page: Pagination): AppliedFragment =
-    val base: Fragment[Void] =
-      sql"""
-          SELECT p.id, p.name, p.title, p.women_title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
-          FROM players AS p, federations AS f
-          WHERE p.federation_id = f.id
-          """
+    allPlayers(Void) |+| sortingFragment(sorting) |+| pagingFragment(page)
 
-    val column = s"p.${sorting.sortBy.value}"
-    val paging: Fragment[(Int, Int)] =
-      sql"""
-          LIMIT ${int4} OFFSET ${int4}
-        """
-    val ordering = sql"ORDER BY #$column #${sorting.orderBy.value}"
+  private def pagingFragment(page: Pagination): AppliedFragment =
+    sql"""
+        LIMIT ${int4} OFFSET ${int4}
+       """.apply(page.limit, page.offset)
 
-    base(Void) |+| ordering(Void) |+| paging(page.limit, page.offset)
+  private def sortingFragment(sorting: Sorting): AppliedFragment =
+    val column  = s"p.${sorting.sortBy.value}"
+    val orderBy = sorting.orderBy.value
+    sql"""
+        ORDER BY #$column #$orderBy
+       """.apply(Void)
 
-  val allPlayers: Query[(Int, Int), PlayerInfo] =
+  val allPlayers: Fragment[Void] =
     sql"""
         SELECT p.id, p.name, p.title, p.women_title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
         WHERE p.federation_id = f.id
-        ORDER BY p.name ASC
-        LIMIT $int4 OFFSET $int4
-       """.query(playerInfo)
+        """
 
   def playersByIds(n: Int): Query[List[Int], PlayerInfo] =
     val ids = int4.values.list(n)

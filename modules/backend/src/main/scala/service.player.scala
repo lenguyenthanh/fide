@@ -30,7 +30,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
     val sorting = domain.Sorting(_sortBy, _order)
     info"getPlayers: page=$_page, sorting=$sorting, query=$query" *>
       query
-        .fold(db.allPlayers(_page, sorting))(db.playersByName.apply(_, _page))
+        .fold(db.allPlayers(sorting, _page))(db.playersByName.apply(_, _page))
         .map(_.map(_.transform))
         .map(xs => GetPlayersOutput(xs, Option.when(xs.size == _size)(_page.nextPage.toString())))
 
