@@ -7,10 +7,10 @@
 - [x] search ignore case
 - [x] Store both open and women title
 - [x] Use [AppliedFragment](https://typelevel.org/skunk/reference/Fragments.html)
+- [x] Add more queries (title, active, rating, etc)
+- [x] Support sorting
 - [ ] better errors handling
 - [ ] Support full text search
-- [ ] Support sorting
-- [ ] Add more queries (title, year, active, rating, etc)
 - [ ] support Map for getPlayersWithIds
 - [ ] Pagination config (default , max , min )
 - [ ] Add config to set max ids in getPlayersWithIds

@@ -12,9 +12,9 @@ trait Db:
   def upsert(player: NewPlayer, federation: Option[NewFederation]): IO[Unit]
   def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit]
   def playerById(id: PlayerId): IO[Option[PlayerInfo]]
-  def allPlayers(sorting: Sorting, paging: Pagination): IO[List[PlayerInfo]]
+  def allPlayers(sorting: Sorting, paging: Pagination, filter: Filter): IO[List[PlayerInfo]]
   def allFederations: IO[List[FederationInfo]]
-  def playersByName(name: String, sorting: Sorting, paging: Pagination): IO[List[PlayerInfo]]
+  def playersByName(name: String, sorting: Sorting, paging: Pagination, filter: Filter): IO[List[PlayerInfo]]
   def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]]
   def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
 
@@ -48,16 +48,21 @@ object Db:
     def playerById(id: PlayerId): IO[Option[PlayerInfo]] =
       postgres.use(_.option(Sql.playerById)(id))
 
-    def allPlayers(sorting: Sorting, paging: Pagination): IO[List[PlayerInfo]] =
-      val f = Sql.allPlayers(sorting, paging)
+    def allPlayers(sorting: Sorting, paging: Pagination, filter: Filter): IO[List[PlayerInfo]] =
+      val f = Sql.allPlayers(sorting, paging, filter)
       val q = f.fragment.query(Codecs.playerInfo)
       postgres.use(_.execute(q)(f.argument))
 
     def allFederations: IO[List[FederationInfo]] =
       postgres.use(_.execute(Sql.allFederations))
 
-    def playersByName(name: String, sorting: Sorting, paging: Pagination): IO[List[PlayerInfo]] =
-      val f = Sql.playersByName(s"%$name%", sorting, paging)
+    def playersByName(
+        name: String,
+        sorting: Sorting,
+        paging: Pagination,
+        filter: Filter
+    ): IO[List[PlayerInfo]] =
+      val f = Sql.playersByName(s"%$name%", sorting, paging, filter)
       val q = f.fragment.query(Codecs.playerInfo)
       postgres.use(_.execute(q)(f.argument))
 
@@ -116,15 +121,6 @@ private object Sql:
         $onPlayerConflictDoUpdate
        """.command
 
-  private lazy val insertIntoPlayer =
-    sql"INSERT INTO players (id, name, title, women_title, standard, rapid, blitz, year, active, federation_id)"
-
-  private lazy val onPlayerConflictDoUpdate =
-    sql"""
-        ON CONFLICT (id) DO UPDATE SET (name, title, women_title, standard, rapid, blitz, year, active, federation_id) =
-        (EXCLUDED.name, EXCLUDED.title, EXCLUDED.women_title, EXCLUDED.standard, EXCLUDED.rapid, EXCLUDED.blitz, EXCLUDED.year, EXCLUDED.active, EXCLUDED.federation_id)
-      """
-
   // TODO use returning
   lazy val playerById: Query[PlayerId, PlayerInfo] =
     sql"$allPlayersFragment AND p.id = $int4".query(playerInfo)
@@ -139,20 +135,52 @@ private object Sql:
     val feds = newFederation.values.list(n)
     sql"$insertIntoFederation VALUES $feds $onConflictDoNothing".command
 
-  private val onConflictDoNothing  = sql"ON CONFLICT DO NOTHING"
-  private val insertIntoFederation = sql"INSERT INTO federations (id, name)"
-
   lazy val allFederations: Query[Void, FederationInfo] =
     sql"""
         SELECT id, name
         FROM federations
        """.query(federationInfo)
 
-  def allPlayers(sorting: Sorting, page: Pagination): AppliedFragment =
-    allPlayersFragment(Void) |+| sortingFragment(sorting) |+| pagingFragment(page)
+  def allPlayers(sorting: Sorting, page: Pagination, filter: Filter): AppliedFragment =
+    allPlayersFragment(Void) |+| filterFragment(filter) |+|
+      sortingFragment(sorting) |+| pagingFragment(page)
 
-  def playersByName(name: String, sorting: Sorting, page: Pagination): AppliedFragment =
-    allPlayersFragment(Void) |+| nameLikeFragment(name) |+| sortingFragment(sorting) |+| pagingFragment(page)
+  def playersByName(name: String, sorting: Sorting, page: Pagination, filter: Filter): AppliedFragment =
+    allPlayersFragment(Void) |+| nameLikeFragment(name) |+| filterFragment(filter) |+|
+      sortingFragment(sorting) |+| pagingFragment(page)
+
+  def playersByIds(n: Int): Fragment[List[Int]] =
+    val ids = int4.values.list(n)
+    sql"$allPlayersFragment AND p.id IN ($ids)"
+
+  private def between(column: String, min: Option[Rating], max: Option[Rating]): AppliedFragment =
+    val _column = s"p.$column"
+    val _min    = min.getOrElse(0)
+    val _max    = max.getOrElse(Int.MaxValue)
+    sql"""
+        AND #$_column BETWEEN ${int4} AND ${int4}""".apply(_min, _max)
+
+  private def filterFragment(filter: Filter): AppliedFragment =
+    filterActive.apply(filter.isActive) |+|
+      between("standard", filter.standard.min, filter.standard.max) |+|
+      between("rapid", filter.rapid.min, filter.rapid.max) |+|
+      between("blitz", filter.blitz.min, filter.blitz.max)
+
+  private lazy val filterActive: Fragment[Boolean] =
+    sql"""
+        AND p.active = $bool"""
+
+  private lazy val insertIntoPlayer =
+    sql"INSERT INTO players (id, name, title, women_title, standard, rapid, blitz, year, active, federation_id)"
+
+  private lazy val onPlayerConflictDoUpdate =
+    sql"""
+        ON CONFLICT (id) DO UPDATE SET (name, title, women_title, standard, rapid, blitz, year, active, federation_id) =
+        (EXCLUDED.name, EXCLUDED.title, EXCLUDED.women_title, EXCLUDED.standard, EXCLUDED.rapid, EXCLUDED.blitz, EXCLUDED.year, EXCLUDED.active, EXCLUDED.federation_id)
+      """
+
+  private val onConflictDoNothing  = sql"ON CONFLICT DO NOTHING"
+  private val insertIntoFederation = sql"INSERT INTO federations (id, name)"
 
   private def nameLikeFragment(name: String): AppliedFragment =
     sql"""
@@ -173,8 +201,3 @@ private object Sql:
         SELECT p.id, p.name, p.title, p.women_title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
         WHERE p.federation_id = f.id"""
-
-  def playersByIds(n: Int): Fragment[List[Int]] =
-    val ids        = int4.values.list(n)
-    val queryByIds = sql"""p.id IN ($ids)"""
-    sql"$allPlayersFragment AND $queryByIds"

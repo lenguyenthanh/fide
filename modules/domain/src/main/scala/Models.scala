@@ -40,3 +40,14 @@ object Models:
     def fromPageAndSize(page: Int, size: Int): Pagination =
       val offset = (math.max(defaultPage, page) - 1) * size
       Pagination(size, offset)
+
+  case class RatingRange(min: Option[Rating], max: Option[Rating])
+  case class Filter(
+      isActive: Boolean = true,
+      standard: RatingRange,
+      rapid: RatingRange,
+      blitz: RatingRange
+  )
+
+  object Filter:
+    val default = Filter(true, RatingRange(None, None), RatingRange(None, None), RatingRange(None, None))
