@@ -82,7 +82,9 @@ object Db:
       postgres.use(_.execute(q)(f.argument))
 
     def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]] =
-      postgres.use(_.execute(Sql.playersByIds(ids.size))(ids.toList))
+      val f = Sql.playersByIds(ids.size)
+      val q = f.query(Codecs.playerInfo)
+      postgres.use(_.execute(q)(ids.toList))
 
     def playersByFederationId(id: FederationId): IO[List[PlayerInfo]] =
       postgres.use(_.execute(Sql.playersByFederationId)(id))
@@ -118,65 +120,59 @@ private object Sql:
   import skunk.implicits.*
   import Codecs.*
 
-  // TODO use returning
   val upsertPlayer: Command[InsertPlayer] =
     sql"""
-        INSERT INTO players (id, name, title, women_title, standard, rapid, blitz, year, active, federation_id)
+        $insertIntoPlayer
         VALUES ($insertPlayer)
-        ON CONFLICT (id) DO UPDATE SET (name, title, standard, rapid, blitz, year, active, federation_id) =
-        (EXCLUDED.name, EXCLUDED.title, EXCLUDED.standard, EXCLUDED.rapid, EXCLUDED.blitz, EXCLUDED.year, EXCLUDED.active, EXCLUDED.federation_id)
+        $onPlayerConflictDoUpdate
        """.command
 
   // TODO use returning
   def upsertPlayers(n: Int): Command[List[InsertPlayer]] =
     val players = insertPlayer.values.list(n)
     sql"""
-        INSERT INTO players (id, name, title, women_title, standard, rapid, blitz, year, active, federation_id)
-        VALUES $players
+        $insertIntoPlayer
+        VALUES ($players)
+        $onPlayerConflictDoUpdate
+       """.command
+
+  private lazy val insertIntoPlayer =
+    sql"INSERT INTO players (id, name, title, women_title, standard, rapid, blitz, year, active, federation_id)"
+
+  private lazy val onPlayerConflictDoUpdate =
+    sql"""
         ON CONFLICT (id) DO UPDATE SET (name, title, standard, rapid, blitz, year, active, federation_id) =
         (EXCLUDED.name, EXCLUDED.title, EXCLUDED.standard, EXCLUDED.rapid, EXCLUDED.blitz, EXCLUDED.year, EXCLUDED.active, EXCLUDED.federation_id)
-       """.command
+      """
 
-  val playerById: Query[PlayerId, PlayerInfo] =
-    sql"""
-        SELECT p.id, p.name, p.title, p.women_title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
-        FROM players AS p, federations AS f
-        WHERE p.id = $int4 AND p.federation_id = f.id
-       """.query(playerInfo)
+  // TODO use returning
+  lazy val playerById: Query[PlayerId, PlayerInfo] =
+    sql"$allPlayersFragment AND p.id = $int4".query(playerInfo)
 
-  val playersByFederationId: Query[FederationId, PlayerInfo] =
-    sql"""
-        SELECT p.id, p.name, p.title, p.women_title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
-        FROM players AS p, federations AS f
-        WHERE p.federation_id = $text AND p.federation_id = f.id
-       """.query(playerInfo)
+  lazy val playersByFederationId: Query[FederationId, PlayerInfo] =
+    sql"$allPlayersFragment AND p.federation_id = $text".query(playerInfo)
 
-  val upsertFederation: Command[NewFederation] =
-    sql"""
-        INSERT INTO federations (id, name)
-        VALUES ($newFederation)
-        ON CONFLICT DO NOTHING
-       """.command
+  lazy val upsertFederation: Command[NewFederation] =
+    sql"$insertIntoFederation VALUES ($newFederation) $onConflictDoNothing".command
 
   def upsertFederations(n: Int): Command[List[NewFederation]] =
     val feds = newFederation.values.list(n)
-    sql"""
-        INSERT INTO federations (id, name)
-        VALUES $feds
-        ON CONFLICT DO NOTHING
-       """.command
+    sql"$insertIntoFederation VALUES $feds $onConflictDoNothing".command
 
-  val allFederations: Query[Void, FederationInfo] =
+  private val onConflictDoNothing  = sql"ON CONFLICT DO NOTHING"
+  private val insertIntoFederation = sql"INSERT INTO federations (id, name)"
+
+  lazy val allFederations: Query[Void, FederationInfo] =
     sql"""
         SELECT id, name
         FROM federations
        """.query(federationInfo)
 
   def allPlayers(sorting: Sorting, page: Pagination): AppliedFragment =
-    allPlayers(Void) |+| sortingFragment(sorting) |+| pagingFragment(page)
+    allPlayersFragment(Void) |+| sortingFragment(sorting) |+| pagingFragment(page)
 
   def playersByName(name: String, sorting: Sorting, page: Pagination): AppliedFragment =
-    allPlayers(Void) |+| nameLikeFragment(name) |+| sortingFragment(sorting) |+| pagingFragment(page)
+    allPlayersFragment(Void) |+| nameLikeFragment(name) |+| sortingFragment(sorting) |+| pagingFragment(page)
 
   private def nameLikeFragment(name: String): AppliedFragment =
     sql"""
@@ -192,24 +188,13 @@ private object Sql:
     sql"""
         ORDER BY #$column #$orderBy NULLS LAST""".apply(Void)
 
-  private val allPlayers: Fragment[Void] =
+  private lazy val allPlayersFragment: Fragment[Void] =
     sql"""
         SELECT p.id, p.name, p.title, p.women_title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
         WHERE p.federation_id = f.id"""
 
-  def playersByIds(n: Int): Query[List[Int], PlayerInfo] =
-    val ids = int4.values.list(n)
-    sql"""
-        SELECT p.id, p.name, p.title, p.women_title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
-        FROM players AS p, federations AS f
-        WHERE p.id in ($ids) AND p.federation_id = f.id
-       """.query(playerInfo)
-
-  val playersByName: Query[(String, Int, Int), PlayerInfo] =
-    sql"""
-        SELECT p.id, p.name, p.title, p.women_title, p.standard, p.rapid, p.blitz, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
-        FROM players AS p, federations AS f
-        WHERE p.federation_id = f.id AND p.name ILIKE $text
-        LIMIT ${int4} OFFSET ${int4}
-       """.query(playerInfo)
+  def playersByIds(n: Int): Fragment[List[Int]] =
+    val ids        = int4.values.list(n)
+    val queryByIds = sql"""p.id IN ($ids)"""
+    sql"$allPlayersFragment AND $queryByIds"
