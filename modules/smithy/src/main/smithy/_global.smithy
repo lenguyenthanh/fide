@@ -16,6 +16,13 @@ structure NotImplementedYetError {
   message: String
 }
 
+@error("server")
+@httpError(500)
+structure InternalServerError {
+  @required
+  message: String
+}
+
 integer PlayerId
 string FederationId
 integer Rating

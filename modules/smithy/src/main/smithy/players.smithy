@@ -16,6 +16,7 @@ service PlayerService {
 operation GetPlayers {
   input: GetPlayersInput,
   output: GetPlayersOutput
+  errors: [InternalServerError]
 }
 
 @readonly
@@ -23,7 +24,7 @@ operation GetPlayers {
 operation GetPlayerById {
   input: GetPlayerByIdInput,
   output: Player
-  errors: [PlayerNotFound]
+  errors: [PlayerNotFound, InternalServerError]
 }
 
 // todo limit the number of ids
@@ -32,6 +33,7 @@ operation GetPlayerById {
 operation GetPlayerByIds {
   input: GetPlayerByIdsInput
   output: GetPlayersByIdsOutput
+  errors: [InternalServerError]
 }
 
 structure GetPlayerByIdInput {

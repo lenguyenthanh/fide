@@ -42,20 +42,28 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       Models.RatingRange(rapidMin.map(_.value), rapidMax.map(_.value)),
       Models.RatingRange(blitzMin.map(_.value), blitzMax.map(_.value))
     )
-    info"getPlayers: page=$_page, sorting=$sorting, query=$query" *>
-      query
-        .fold(db.allPlayers(sorting, paging, filter))(db.playersByName(_, sorting, paging, filter))
-        .map(_.map(_.transform))
-        .map(xs => GetPlayersOutput(xs, Option.when(xs.size == _size)(paging.nextPage.toString())))
+    query
+      .fold(db.allPlayers(sorting, paging, filter))(db.playersByName(_, sorting, paging, filter))
+      .handleErrorWith: e =>
+        error"Error in getPlayers: $sortBy $order $isActive $standardMin $standardMax $rapidMin $rapidMax $blitzMin $blitzMax $query $page $size $e" *>
+          IO.raiseError(InternalServerError("Internal server error"))
+      .map(_.map(_.transform))
+      .map(xs => GetPlayersOutput(xs, Option.when(xs.size == _size)(paging.nextPage.toString())))
 
   override def getPlayerById(id: PlayerId): IO[Player] =
     db.playerById(id.value)
+      .handleErrorWith: e =>
+        error"Error in getPlayerById: $id, $e" *>
+          IO.raiseError(InternalServerError("Internal server error"))
       .flatMap:
         _.fold(IO.raiseError(PlayerNotFound(id))):
           _.transform.pure[IO]
 
   override def getPlayerByIds(ids: Set[PlayerId]): IO[GetPlayersByIdsOutput] =
     db.playersByIds(ids.map(_.value))
+      .handleErrorWith: e =>
+        error"Error in getPlayersByIds: $ids, $e" *>
+          IO.raiseError(InternalServerError("Internal server error"))
       .map(_.map(p => p.id.toString -> p.transform).toMap)
       .map(GetPlayersByIdsOutput.apply)
 
