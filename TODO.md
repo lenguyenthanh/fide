@@ -9,11 +9,11 @@
 - [x] Use [AppliedFragment](https://typelevel.org/skunk/reference/Fragments.html)
 - [x] Add more queries (title, active, rating, etc)
 - [x] Support sorting
-- [ ] better errors handling
-- [ ] Support full text search
-- [ ] support Map for getPlayersWithIds
+- [x] better errors handling
+- [x] support Map for getPlayersWithIds
 - [ ] Pagination config (default , max , min )
 - [ ] Add config to set max ids in getPlayersWithIds
+- [ ] Support full text search
 - [ ] Support lucene query syntax
 
 
