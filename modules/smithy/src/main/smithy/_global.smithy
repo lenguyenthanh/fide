@@ -97,13 +97,6 @@ structure SortingMixin {
   order: Order
 }
 
-structure StandardFilterRange {
-  @httpQuery("std[gte]")
-  min: Rating
-  @httpQuery("std[lte]")
-  max: Rating
-}
-
 @mixin
 structure FilterMixin {
   @httpQuery("isActive")
