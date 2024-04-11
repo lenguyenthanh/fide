@@ -3,11 +3,12 @@ import sbt.*
 object Dependencies {
 
   object V {
-    val http4s     = "0.23.26"
-    val ciris      = "3.5.0"
-    val iron       = "2.5.0"
     val catsEffect = "3.5.4"
+    val ciris      = "3.5.0"
+    val flyway     = "10.10.0"
     val fs2        = "3.10.2"
+    val http4s     = "0.23.26"
+    val iron       = "2.5.0"
   }
 
   def http4s(artifact: String) = "org.http4s" %% s"http4s-$artifact" % V.http4s
@@ -30,8 +31,8 @@ object Dependencies {
 
   val skunk          = "org.tpolecat"       %% "skunk-core"                 % "0.6.3"
   val flyway4s       = "com.github.geirolz" %% "fly4s"                      % "1.0.1"
-  val flyway         = "org.flywaydb"        % "flyway-core"                % "10.11.0"
-  val flywayPostgres = "org.flywaydb"        % "flyway-database-postgresql" % "10.11.0"
+  val flyway         = "org.flywaydb"        % "flyway-core"                % V.flyway
+  val flywayPostgres = "org.flywaydb"        % "flyway-database-postgresql" % V.flyway
   val postgres       = "org.postgresql"      % "postgresql"                 % "42.7.3"
 
   val otel     = "org.typelevel" %% "otel4s-oteljava" % "0.5.0"
