@@ -22,7 +22,7 @@ object Crawler:
     uri = uri
   )
 
-  def apply(db: Db, client: Client[IO])(using Logger[IO]): Crawler = new:
+  def apply(db: Db, client: Client[IO], config: CrawlerConfig)(using Logger[IO]): Crawler = new:
     def crawl: IO[Unit] =
       IO.realTimeInstant.flatMap(now => info"Start crawling at $now")
         *> fetchAndSave.handleErrorWith(e => error"Error while crawling: $e")
@@ -41,9 +41,9 @@ object Crawler:
         .evalMap(parseLine)
         .collect:
           case Some(x) => x
-        .chunkN(100, true)
+        .chunkN(config.chunkSize, true)
         .map(_.toList)
-        .parEvalMapUnordered(10)(db.upsert)
+        .parEvalMapUnordered(config.concurrentUpsert)(db.upsert)
         .compile
         .drain
 

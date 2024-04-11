@@ -20,7 +20,7 @@ object App extends IOApp.Simple:
     yield ()
 
 class FideApp(res: AppResources, config: AppConfig)(using Logger[IO]):
-  val crawler = Crawler(res.db, res.client)
+  val crawler = Crawler(res.db, res.client, config.crawler)
   def run(): Resource[IO, Unit] =
     for
       httpApp <- Routes(res)

@@ -12,21 +12,30 @@ object AppConfig:
 
   def appConfig = (
     HttpServerConfig.config,
+    CrawlerConfig.config,
     PostgresConfig.config
   ).parMapN(AppConfig.apply)
 
 case class AppConfig(
     server: HttpServerConfig,
+    crawler: fide.crawler.CrawlerConfig,
     postgres: db.PostgresConfig
 )
 
 case class HttpServerConfig(host: Host, port: Port, shutdownTimeout: Int)
 
 object HttpServerConfig:
-  def host            = env("HTTP_HOST").or(prop("http.host")).as[Host].default(ip"0.0.0.0")
-  def port            = env("HTTP_PORT").or(prop("http.port")).as[Port].default(port"9669")
-  def shutdownTimeout = env("HTTP_SHUTDOWN_TIMEOUT").or(prop("http.shutdown.timeout")).as[Int].default(30)
-  def config          = (host, port, shutdownTimeout).parMapN(HttpServerConfig.apply)
+  private def host = env("HTTP_HOST").or(prop("http.host")).as[Host].default(ip"0.0.0.0")
+  private def port = env("HTTP_PORT").or(prop("http.port")).as[Port].default(port"9669")
+  private def shutdownTimeout =
+    env("HTTP_SHUTDOWN_TIMEOUT").or(prop("http.shutdown.timeout")).as[Int].default(30)
+  def config = (host, port, shutdownTimeout).parMapN(HttpServerConfig.apply)
+
+object CrawlerConfig:
+  private def chunkSize = env("CRAWLER_CHUNK_SIZE").or(prop("crawler.chunk.size")).as[Int].default(100)
+  private def concurrentUpsert =
+    env("CRAWLER_CONCURRENT_UPSERT").or(prop("crawler.concurrent.upsert")).as[Int].default(40)
+  def config = (chunkSize, concurrentUpsert).parMapN(crawler.CrawlerConfig.apply)
 
 object PostgresConfig:
   // max concurrent sessions
