@@ -11,10 +11,13 @@
 - [x] Support sorting
 - [x] better errors handling
 - [x] support Map for getPlayersWithIds
+- [x] Deploy to heroku
 - [ ] Pagination config (default , max , min )
 - [ ] Add config to set max ids in getPlayersWithIds
 - [ ] Support full text search
 - [ ] Support lucene query syntax
+- [ ] Store history of rating
+- [ ] Federation API
 
 
 ### Better type safetye with refined/iron
@@ -25,12 +28,12 @@
 
 ## Smithy
 
+- [x] mixing
 - [ ] Use smithy trait pattern
 - [ ] Use resource
 - [ ] Validators
 - [ ] Error handling
 - [ ] description
-- [x] mixing
 
 ### Smarter Crawler (maybe include in health api)
 
