@@ -43,7 +43,7 @@ object Crawler:
           case Some(x) => x
         .chunkN(100, true)
         .map(_.toList)
-        .parEvalMapUnordered(50)(db.upsert)
+        .parEvalMapUnordered(10)(db.upsert)
         .compile
         .drain
 
