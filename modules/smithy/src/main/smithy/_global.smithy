@@ -99,7 +99,7 @@ structure SortingMixin {
 
 @mixin
 structure FilterMixin {
-  @httpQuery("isActive")
+  @httpQuery("is_active")
   isActive: Boolean
   @httpQuery("std[gte]")
   standardMin: Rating

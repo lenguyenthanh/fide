@@ -21,7 +21,7 @@ curl 'fide.thanh.se/api/players?sort_by=standard&order=desc&size=10'
 Get all players sort by blizt rating and is active on page 5
 
 ```bash
-curl 'fide.thanh.se/api/players?sort_by=blitz&order=desc&page=5'
+curl 'fide.thanh.se/api/players?sort_by=blitz&order=desc&page=5&is_active=true'
 ```
 
 ## Development
