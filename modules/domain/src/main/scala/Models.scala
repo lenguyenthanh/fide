@@ -42,12 +42,15 @@ object Models:
       Pagination(size, offset)
 
   case class RatingRange(min: Option[Rating], max: Option[Rating])
+  object RatingRange:
+    def empty = RatingRange(None, None)
+
   case class Filter(
-      isActive: Boolean = true,
+      isActive: Option[Boolean],
       standard: RatingRange,
       rapid: RatingRange,
       blitz: RatingRange
   )
 
   object Filter:
-    val default = Filter(true, RatingRange(None, None), RatingRange(None, None), RatingRange(None, None))
+    val default = Filter(None, RatingRange.empty, RatingRange.empty, RatingRange.empty)

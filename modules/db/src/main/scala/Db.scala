@@ -161,10 +161,10 @@ private object Sql:
         AND #$_column BETWEEN ${int4} AND ${int4}""".apply(_min, _max)
 
   private def filterFragment(filter: Filter): AppliedFragment =
-    filterActive.apply(filter.isActive) |+|
-      between("standard", filter.standard.min, filter.standard.max) |+|
+    val bw = between("standard", filter.standard.min, filter.standard.max) |+|
       between("rapid", filter.rapid.min, filter.rapid.max) |+|
       between("blitz", filter.blitz.min, filter.blitz.max)
+    filter.isActive.fold(bw)(x => bw |+| filterActive(x))
 
   private lazy val filterActive: Fragment[Boolean] =
     sql"""
