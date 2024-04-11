@@ -58,8 +58,6 @@ structure GetPlayersByIdsOutput {
 }
 
 structure GetPlayersInput with [SortingMixin, FilterMixin] {
-  @httpQuery("query")
-  query: String
   @httpQuery("page")
   page: String
   @httpQuery("size")

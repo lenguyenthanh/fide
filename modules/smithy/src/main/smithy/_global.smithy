@@ -120,4 +120,6 @@ structure FilterMixin {
   blitzMin: Rating
   @httpQuery("blitz[lte]")
   blitzMax: Rating
+  @httpQuery("name")
+  name: String
 }

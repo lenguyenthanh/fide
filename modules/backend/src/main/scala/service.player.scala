@@ -26,7 +26,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       rapidMax: Option[Rating],
       blitzMin: Option[Rating],
       blitzMax: Option[Rating],
-      query: Option[String],
+      name: Option[String],
       page: Option[String],
       size: Option[Int]
   ): IO[GetPlayersOutput] =
@@ -42,10 +42,10 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       Models.RatingRange(rapidMin.map(_.value), rapidMax.map(_.value)),
       Models.RatingRange(blitzMin.map(_.value), blitzMax.map(_.value))
     )
-    query
+    name
       .fold(db.allPlayers(sorting, paging, filter))(db.playersByName(_, sorting, paging, filter))
       .handleErrorWith: e =>
-        error"Error in getPlayers: $sortBy $order $isActive $standardMin $standardMax $rapidMin $rapidMax $blitzMin $blitzMax $query $page $size $e" *>
+        error"Error in getPlayers: $sortBy $order $isActive $standardMin $standardMax $rapidMin $rapidMax $blitzMin $blitzMax $name $page $size $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
       .map(_.map(_.transform))
       .map(xs => GetPlayersOutput(xs, Option.when(xs.size == _size)(paging.nextPage.toString())))
