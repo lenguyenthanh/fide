@@ -34,6 +34,7 @@ object DbResource:
           password = c.password.some,
           database = c.database,
           max = c.max,
+          ssl = if c.ssl then SSL.Trusted else SSL.None,
           strategy = Strategy.SearchPath,
           parameters = Map("search_path" -> c.schema) ++ Session.DefaultConnectionParameters
         )
@@ -43,6 +44,3 @@ object DbResource:
       .module(postgresConf.toFlywayConfig)
       .evalTap(_.migrate)
       .flatMap(_ => mkPostgresResource(postgresConf).map(DbResource(_)))
-
-    // (mkPostgresResource(postgresConf), Flyway.module(postgresConf.toFlywayConfig))
-    //   .parMapN(DbResource(_, _))
