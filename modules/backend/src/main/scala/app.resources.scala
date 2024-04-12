@@ -19,7 +19,7 @@ object AppResources:
       AppResources(
         db,
         store,
-        Crawler(db, client, conf.crawler)
+        Crawler.instance(db, store, client, conf.crawler)
       )
 
   def makeClient: Resource[IO, Client[IO]] =

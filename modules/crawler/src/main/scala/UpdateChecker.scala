@@ -23,11 +23,12 @@ object UpdateChecker:
   def apply(store: Store, scraper: FideScraper)(using Logger[IO]): UpdateChecker = new:
     def shouldUpdate: IO[Boolean] =
       (lastLocalUpdate, scraper.lastUpdate).parFlatMapN: (local, remote) =>
-        (local, remote) match
-          case (Some(l), Some(r)) if l == r => IO(false)
-          case (Some(l), Some(r))           => updateLastUpdate(r).as(true)
-          case (None, Some(r))              => updateLastUpdate(r).as(true)
-          case (_, None)                    => error"Failed to get remote update time".as(true)
+        info"last local update: $local, last remote update: $remote" *>
+          (local, remote).match
+            case (Some(l), Some(r)) if l == r => IO(false)
+            case (Some(l), Some(r))           => updateLastUpdate(r).as(true)
+            case (None, Some(r))              => updateLastUpdate(r).as(true)
+            case (_, None)                    => error"Failed to get remote update time".as(true)
 
     private def lastLocalUpdate: IO[Option[String]] =
       store.get(fideLastUpdateKey)
