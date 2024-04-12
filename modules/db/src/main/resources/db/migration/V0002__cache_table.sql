@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS cache
 (
     id                 SERIAL PRIMARY KEY,
-    key                text NOT NULL,
+    key                text UNIQUE NOT NULL,
     value              text NOT NULL
 );
 

@@ -27,7 +27,7 @@ private object StoreSql:
     sql"""
         INSERT INTO cache (key, value)
         VALUES ($text, $text)
-        ON CONFLICT (key) DO UPDATE SET (value)= (EXCLUDED.value)
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
        """.command
 
   val get: Query[String, String] =
