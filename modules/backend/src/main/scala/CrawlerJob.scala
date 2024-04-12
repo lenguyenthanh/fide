@@ -23,4 +23,4 @@ object CrawlerJob:
     def crawlWithSleep =
       IO.sleep(1.seconds) *>
         crawler.crawl *>
-        IO.sleep(3.seconds)
+        IO.sleep(1.days)
