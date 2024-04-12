@@ -15,11 +15,10 @@ trait Crawler:
   def crawl: IO[Unit]
 
 object Crawler:
-
-  val uri = uri"http://ratings.fide.com/download/players_list.zip"
+  val downloadUrl = uri"http://ratings.fide.com/download/players_list.zip"
   lazy val request = Request[IO](
     method = Method.GET,
-    uri = uri
+    uri = downloadUrl
   )
 
   def apply(db: Db, client: Client[IO], config: CrawlerConfig)(using Logger[IO]): Crawler = new:
