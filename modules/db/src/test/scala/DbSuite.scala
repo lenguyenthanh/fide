@@ -10,7 +10,7 @@ import fide.domain.Models.*
 import io.github.arainko.ducktape.*
 import weaver.*
 
-object RepositorySuite extends SimpleIOSuite:
+object DbSuite extends SimpleIOSuite:
 
   private def resource: Resource[IO, Db] = Containers.createDb
 
