@@ -8,11 +8,15 @@ import cats.syntax.all.*
 import fide.domain.*
 import fide.domain.Models.*
 import io.github.arainko.ducktape.*
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.noop.NoOpLogger
 import weaver.*
 
-object RepositorySuite extends SimpleIOSuite:
+object DbSuite extends SimpleIOSuite:
 
-  private def resource: Resource[IO, Db] = Containers.createDb
+  given Logger[IO] = NoOpLogger[IO]
+
+  private def resource: Resource[IO, Db] = Containers.createResource.map(x => Db.apply(x.postgres))
 
   val newPlayer = NewPlayer(
     1,

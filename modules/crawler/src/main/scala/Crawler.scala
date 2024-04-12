@@ -3,7 +3,7 @@ package crawler
 
 import cats.effect.IO
 import cats.syntax.all.*
-import fide.db.Db
+import fide.db.{ Db, Store }
 import fide.domain.*
 import org.http4s.*
 import org.http4s.client.Client
@@ -15,20 +15,30 @@ trait Crawler:
   def crawl: IO[Unit]
 
 object Crawler:
-
-  val uri = uri"http://ratings.fide.com/download/players_list.zip"
+  val downloadUrl = uri"http://ratings.fide.com/download/players_list.zip"
   lazy val request = Request[IO](
     method = Method.GET,
-    uri = uri
+    uri = downloadUrl
   )
 
-  def apply(db: Db, client: Client[IO], config: CrawlerConfig)(using Logger[IO]): Crawler = new:
+  def instance(db: Db, store: Store, client: Client[IO], config: CrawlerConfig)(using
+      Logger[IO]
+  ) = apply(db, client, UpdateChecker.instance(store, client), config)
+
+  def apply(db: Db, client: Client[IO], checker: UpdateChecker, config: CrawlerConfig)(using
+      Logger[IO]
+  ): Crawler = new:
     def crawl: IO[Unit] =
+      checker.shouldUpdate.flatMap:
+        case true  => fetchWithLogs
+        case false => info"Skipping crawling as the data is up to date"
+
+    def fetchWithLogs: IO[Unit] =
       IO.realTimeInstant.flatMap(now => info"Start crawling at $now")
-        *> fetchAndSave.handleErrorWith(e => error"Error while crawling: $e")
+        *> fetch.handleErrorWith(e => error"Error while crawling: $e")
         *> IO.realTimeInstant.flatMap(now => info"Finished crawling at $now")
 
-    private def fetchAndSave =
+    private def fetch =
       client
         .stream(request)
         .switchMap(_.body)

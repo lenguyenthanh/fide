@@ -12,6 +12,7 @@ import org.typelevel.log4cats.noop.NoOpLogger
 
 object Containers:
 
+  given Logger[IO] = NoOpLogger[IO]
   private def parseConfig(cont: PostgreSQLContainer): IO[PostgresConfig] =
     IO:
       val jdbcUrl = java.net.URI.create(cont.jdbcUrl.substring(5))
@@ -33,13 +34,7 @@ object Containers:
 
     Resource.make(start)(cont => IO(cont.stop()))
 
-  def createDb: Resource[IO, Db] =
-
-    given Logger[IO] = NoOpLogger[IO]
-
+  def createResource: Resource[IO, DbResource] =
     postgresContainer
       .evalMap(parseConfig)
-      .flatMap: config =>
-        DbResource
-          .instance(config)
-          .map(x => Db(x.postgres))
+      .flatMap(config => DbResource.instance(config))

@@ -1,21 +1,26 @@
 package fide
 
 import cats.effect.*
-import fide.crawler.{ Crawler, CrawlerConfig }
-import fide.db.{ Db, DbResource, PostgresConfig }
+import cats.syntax.all.*
+import fide.crawler.Crawler
+import fide.db.{ Db, DbResource, Store }
+import org.http4s.client.Client
 import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.log4cats.Logger
 
-class AppResources private (val db: Db, val crawler: Crawler)
+class AppResources private (val db: Db, val store: Store, val crawler: Crawler)
 
 object AppResources:
 
   def instance(conf: AppConfig)(using Logger[IO]): Resource[IO, AppResources] =
-    makeDb(conf.postgres).flatMap: db =>
-      makeCralwer(db, conf.crawler).map(crawler => AppResources(db, crawler))
+    (DbResource.instance(conf.postgres), makeClient).mapN: (res, client) =>
+      val db    = Db(res.postgres)
+      val store = Store(res.postgres)
+      AppResources(
+        db,
+        store,
+        Crawler.instance(db, store, client, conf.crawler)
+      )
 
-  def makeDb(conf: PostgresConfig)(using Logger[IO]): Resource[IO, Db] =
-    DbResource.instance(conf).map(res => Db(res.postgres))
-
-  def makeCralwer(db: Db, conf: CrawlerConfig)(using Logger[IO]): Resource[IO, Crawler] =
-    EmberClientBuilder.default[IO].build.map(Crawler(db, _, conf))
+  def makeClient: Resource[IO, Client[IO]] =
+    EmberClientBuilder.default[IO].build
