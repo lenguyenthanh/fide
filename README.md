@@ -59,7 +59,7 @@ curl http://localhost:9669/api/players
 sbt test
 ```
 
-### Before summiting PR
+### Before submitting PR
 
 ```bash
 sbt prepare
