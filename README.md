@@ -18,7 +18,7 @@ Get top 10 players by standard rating with descending order
 curl 'fide.thanh.se/api/players?sort_by=standard&order=desc&size=10'
 ```
 
-Get all players sort by blizt rating and is active on page 5
+Get all players sort by blitz rating and is active on page 5
 
 ```bash
 curl 'fide.thanh.se/api/players?sort_by=blitz&order=desc&page=5&is_active=true'
@@ -29,15 +29,28 @@ curl 'fide.thanh.se/api/players?sort_by=blitz&order=desc&page=5&is_active=true'
 ### Prerequisites:
 
 - Docker
-- JDK 21 with [sbt](https://www.scala-sbt.org/1.x/docs/Setup.html)
 
-### Run
+### Run (with sbt locally)
+
+Also requires JDK 21 with [sbt](https://www.scala-sbt.org/1.x/docs/Setup.html)
 
 ```bash
 cp .env.example .env
-docker-compose up -d
+docker compose up -d
 sbt backend/run
-open curl "http://localhost:9669/docs" // maybe you need to wait a bit for syncing
+```
+
+### Run (with sbt in Docker)
+
+```bash
+COMPOSE_PROFILES=sbt docker compose up -d
+```
+
+### Usage
+
+```bash
+open http://localhost:9669/docs // you may need to wait a bit for syncing
+curl http://localhost:9669/api/players
 ```
 
 ### Test
