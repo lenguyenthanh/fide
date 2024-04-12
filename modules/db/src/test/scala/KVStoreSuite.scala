@@ -9,11 +9,11 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.noop.NoOpLogger
 import weaver.*
 
-object StoreSuite extends SimpleIOSuite:
+object KVStoreSuite extends SimpleIOSuite:
 
   given Logger[IO] = NoOpLogger[IO]
 
-  private def resource: Resource[IO, Store] = Containers.createResource.map(x => Store.apply(x.postgres))
+  private def resource: Resource[IO, KVStore] = Containers.createResource.map(x => KVStore.apply(x.postgres))
 
   test("put success"):
     resource

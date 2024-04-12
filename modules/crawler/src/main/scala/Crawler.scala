@@ -3,7 +3,7 @@ package crawler
 
 import cats.effect.IO
 import cats.syntax.all.*
-import fide.db.{ Db, Store }
+import fide.db.{ Db, KVStore }
 import fide.domain.*
 import org.http4s.*
 import org.http4s.client.Client
@@ -11,29 +11,33 @@ import org.http4s.implicits.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
 
+import Syncer.Status.*
+
 trait Crawler:
   def crawl: IO[Unit]
 
 object Crawler:
+
+  def instance(db: Db, store: KVStore, client: Client[IO], config: CrawlerConfig)(using Logger[IO]) =
+    val syncer  = Syncer.instance(store, client)
+    val crawler = Downloader(db, client, config)
+    new Crawler:
+      def crawl: IO[Unit] =
+        syncer.fetchStatus.flatMap:
+          case OutDated(timestamp) => crawler.fetchAndSave *> timestamp.traverse_(syncer.saveLastUpdate)
+          case _                   => info"Skipping crawling as the data is up to date"
+
+trait Downloader:
+  def fetchAndSave: IO[Unit]
+
+object Downloader:
   val downloadUrl = uri"http://ratings.fide.com/download/players_list.zip"
   lazy val request = Request[IO](
     method = Method.GET,
     uri = downloadUrl
   )
-
-  def instance(db: Db, store: Store, client: Client[IO], config: CrawlerConfig)(using
-      Logger[IO]
-  ) = apply(db, client, UpdateChecker.instance(store, client), config)
-
-  def apply(db: Db, client: Client[IO], checker: UpdateChecker, config: CrawlerConfig)(using
-      Logger[IO]
-  ): Crawler = new:
-    def crawl: IO[Unit] =
-      checker.shouldUpdate.flatMap:
-        case true  => fetchWithLogs
-        case false => info"Skipping crawling as the data is up to date"
-
-    def fetchWithLogs: IO[Unit] =
+  def apply(db: Db, client: Client[IO], config: CrawlerConfig)(using Logger[IO]): Downloader = new:
+    def fetchAndSave: IO[Unit] =
       IO.realTimeInstant.flatMap(now => info"Start crawling at $now")
         *> fetch.handleErrorWith(e => error"Error while crawling: $e")
         *> IO.realTimeInstant.flatMap(now => info"Finished crawling at $now")
@@ -82,8 +86,7 @@ object Crawler:
           year = year,
           active = !flags.contains("i")
         ) -> federationId.map(id => NewFederation(id, Federation.nameById(id)))
-      parse(line)
-        .pure[IO]
+      IO(parse(line))
         .handleErrorWith(e => error"Error while parsing line: $line, error: $e".as(none))
 
 object Decompressor:

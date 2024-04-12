@@ -6,12 +6,12 @@ import cats.syntax.all.*
 import org.typelevel.log4cats.Logger
 import skunk.*
 
-trait Store:
+trait KVStore:
   def put(key: String, value: String): IO[Unit]
   def get(key: String): IO[Option[String]]
 
-object Store:
-  def apply(postgres: Resource[IO, Session[IO]])(using Logger[IO]): Store = new:
+object KVStore:
+  def apply(postgres: Resource[IO, Session[IO]])(using Logger[IO]): KVStore = new:
     def put(key: String, value: String): IO[Unit] =
       postgres.use(_.execute(StoreSql.upsert)((key, value)).void)
 
