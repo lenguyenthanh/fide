@@ -13,12 +13,14 @@ object AppConfig:
   def appConfig = (
     HttpServerConfig.config,
     CrawlerConfig.config,
+    CrawlerJobConfig.config,
     PostgresConfig.config
   ).parMapN(AppConfig.apply)
 
 case class AppConfig(
     server: HttpServerConfig,
     crawler: fide.crawler.CrawlerConfig,
+    crawlerJob: CrawlerJobConfig,
     postgres: db.PostgresConfig
 )
 
@@ -30,6 +32,13 @@ object HttpServerConfig:
   private def shutdownTimeout =
     env("HTTP_SHUTDOWN_TIMEOUT").or(prop("http.shutdown.timeout")).as[Int].default(30)
   def config = (host, port, shutdownTimeout).parMapN(HttpServerConfig.apply)
+
+case class CrawlerJobConfig(delayInSeconds: Int, intervalInMinutes: Int)
+object CrawlerJobConfig:
+  private def delayInSeconds = env("CRAWLER_JOB_DELAY").or(prop("crawler.job.delay")).as[Int].default(3)
+  private def intervalInMinutes =
+    env("CRAWLER_JOB_INTERVAL").or(prop("crawler.job.interval")).as[Int].default(60)
+  def config = (delayInSeconds, intervalInMinutes).parMapN(CrawlerJobConfig.apply)
 
 object CrawlerConfig:
   private def chunkSize = env("CRAWLER_CHUNK_SIZE").or(prop("crawler.chunk.size")).as[Int].default(100)
