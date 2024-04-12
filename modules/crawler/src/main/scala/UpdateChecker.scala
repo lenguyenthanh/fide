@@ -60,12 +60,11 @@ object FideScraper:
     uri = uri"https://ratings.fide.com/download_lists.phtml"
   )
 
-  private def extract(res: Response[IO]): IO[Option[String]] =
-    res.bodyText
+  private val extract: Response[IO] => IO[Option[String]] =
+    _.bodyText
       .map(_.linesIterator.filter(_.contains(downloadUrl)))
       .filter(_.nonEmpty)
-      .map(_.nextOption)
-      .map(_.map(_.drop(preDateString.length).takeWhile(_ != ',')))
+      .map(_.next) // WARNING: This is fine only because this is placed after filter(_.nonEmpty)
+      .map(_.drop(preDateString.length).takeWhile(_ != ','))
       .compile
       .last
-      .map(_.flatten)
