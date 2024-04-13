@@ -2,6 +2,13 @@
 
 ## Features
 
+- [ ] Pagination config (default , max , min )
+- [ ] Add config to set max ids in getPlayersWithIds
+- [ ] Store more information for players as legends say: https://ratings.fide.com/download_lists.phtml
+- [ ] Federation API
+- [ ] Support full text search
+- [ ] Store history of rating
+- [ ] Support lucene query syntax
 - [x] insert by chunk
 - [x] Support pagination
 - [x] search ignore case
@@ -12,13 +19,6 @@
 - [x] better errors handling
 - [x] support Map for getPlayersWithIds
 - [x] Deploy to heroku
-- [ ] Pagination config (default , max , min )
-- [ ] Add config to set max ids in getPlayersWithIds
-- [ ] Support full text search
-- [ ] Support lucene query syntax
-- [ ] Store history of rating
-- [ ] Federation API
-
 
 ### Better type safetye with refined/iron
 
@@ -29,20 +29,20 @@
 ## Smithy
 
 - [x] mixing
+- [x] Error handling
+- [ ] description
 - [ ] Use smithy trait pattern
 - [ ] Use resource
 - [ ] Validators
-- [ ] Error handling
-- [ ] description
 
 ### Smarter Crawler (maybe include in health api)
 
-- [ ] Cralwer info, last run, status: {running, stopped, error}
 - [ ] trigger crawler by cli
-- [ ] if last run is too close to now, don't run
-- [ ] Crawler config
+- [x] Cralwer info, last run, status: {running, stopped, error}
+- [x] if last run is too close to now, don't run
+- [x] Crawler config
 
 ## Bugs
 
 - [ ] App doesn't terminate when flyway migration fails
-- [ ] Crawler seems doesn't stop :sweat_smile:
+- [x] Crawler seems doesn't stop :sweat_smile:
