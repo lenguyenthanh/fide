@@ -53,16 +53,11 @@ open http://localhost:9669/docs // you may need to wait a bit for syncing
 curl http://localhost:9669/api/players
 ```
 
-### Test
-
-```bash
-sbt test
-```
-
 ### Before submitting PR
 
 ```bash
-sbt prepare
+sbt test
+sbt lint
 ```
 
 ## TODO

@@ -101,5 +101,5 @@ lazy val root = project
   .settings(publish := {}, publish / skip := true)
   .aggregate(smithy, domain, db, crawler, backend)
 
-addCommandAlias("prepare", "scalafixAll; scalafmtAll")
-addCommandAlias("check", "; scalafixAll --check ; scalafmtCheckAll")
+addCommandAlias("lint", "scalafixAll; scalafmtAll")
+addCommandAlias("lintCheck", "; scalafixAll --check ; scalafmtCheckAll")
