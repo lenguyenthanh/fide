@@ -39,7 +39,6 @@ object Models:
 
     def fromPageAndSize(page: Int, size: Int): Pagination =
       val offset = (math.max(firstPage, page) - 1) * size
-      println(offset)
       Pagination(size, offset)
 
   case class RatingRange(min: Option[Rating], max: Option[Rating])
