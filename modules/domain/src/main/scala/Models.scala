@@ -24,21 +24,22 @@ object Models:
   // start at 1
   case class Pagination(limit: Int, offset: Int):
     def next     = copy(offset = offset + limit)
-    def nextPage = (offset / limit) + 1
+    def nextPage = (offset / limit) + 2
 
   object Pagination:
     val defaultLimit  = 30
-    val defaultPage   = 1
+    val firstPage     = 1
     val defaultOffset = 0
     val default       = Pagination(defaultLimit, defaultOffset)
 
     def apply(limit: Option[Int], page: Option[Int]): Pagination =
       val _limit  = limit.getOrElse(defaultLimit)
-      val _offset = (page.getOrElse(defaultPage) - 1) * _limit
+      val _offset = (page.getOrElse(firstPage) - 1) * _limit
       Pagination(_limit, _offset)
 
     def fromPageAndSize(page: Int, size: Int): Pagination =
-      val offset = (math.max(defaultPage, page) - 1) * size
+      val offset = (math.max(firstPage, page) - 1) * size
+      println(offset)
       Pagination(size, offset)
 
   case class RatingRange(min: Option[Rating], max: Option[Rating])
