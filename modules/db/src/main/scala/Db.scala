@@ -62,7 +62,7 @@ object Db:
         paging: Pagination,
         filter: Filter
     ): IO[List[PlayerInfo]] =
-      val f = Sql.playersByName(s"%$name%", sorting, paging, filter)
+      val f = Sql.playersByName(name, sorting, paging, filter)
       val q = f.fragment.query(Codecs.playerInfo)
       postgres.use(_.execute(q)(f.argument))
 
@@ -193,7 +193,7 @@ private object Sql:
 
   private def nameLikeFragment(name: String): AppliedFragment =
     sql"""
-        AND p.name ILIKE $text""".apply(name)
+        AND p.name % $text""".apply(name)
 
   private def pagingFragment(page: Pagination): AppliedFragment =
     sql"""
