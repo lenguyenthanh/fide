@@ -31,7 +31,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       size: Option[Int]
   ): IO[GetPlayersOutput] =
     val _size   = size.getOrElse(Models.Pagination.defaultLimit)
-    val _page   = page.flatMap(_.toIntOption).getOrElse(Models.Pagination.defaultPage)
+    val _page   = page.flatMap(_.toIntOption).getOrElse(Models.Pagination.firstPage)
     val paging  = Models.Pagination.fromPageAndSize(_page, _size)
     val _order  = order.map(_.to[Models.Order]).getOrElse(Models.Order.Desc)
     val _sortBy = sortBy.map(_.to[Models.SortBy]).getOrElse(Models.SortBy.Name)

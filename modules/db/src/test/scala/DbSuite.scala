@@ -21,8 +21,8 @@ object DbSuite extends SimpleIOSuite:
   val newPlayer = NewPlayer(
     1,
     "John",
-    Option(Title.GM),
-    Option(Title.GM),
+    Title.GM.some,
+    Title.WGM.some,
     2700.some,
     2700.some,
     2700.some,

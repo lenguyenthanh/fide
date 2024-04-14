@@ -153,12 +153,21 @@ private object Sql:
     val ids = int4.values.list(n)
     sql"$allPlayersFragment AND p.id IN ($ids)"
 
+  private val void: AppliedFragment = sql"".apply(Void)
+
   private def between(column: String, min: Option[Rating], max: Option[Rating]): AppliedFragment =
     val _column = s"p.$column"
-    val _min    = min.getOrElse(0)
-    val _max    = max.getOrElse(Int.MaxValue)
-    sql"""
-        AND #$_column BETWEEN ${int4} AND ${int4}""".apply(_min, _max)
+    (min, max) match
+      case (Some(min), Some(max)) =>
+        sql"""
+            AND #$_column BETWEEN ${int4} AND ${int4}""".apply(min, max)
+      case (Some(min), None) =>
+        sql"""
+            AND #$_column >= ${int4}""".apply(min)
+      case (None, Some(max)) =>
+        sql"""
+            AND #$_column <= ${int4}""".apply(max)
+      case (None, None) => void
 
   private def filterFragment(filter: Filter): AppliedFragment =
     val bw = between("standard", filter.standard.min, filter.standard.max) |+|

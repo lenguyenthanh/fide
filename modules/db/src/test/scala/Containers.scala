@@ -31,10 +31,9 @@ object Containers:
     val start = IO(
       PostgreSQLContainer(dockerImageNameOverride = DockerImageName.parse("postgres:16.2-alpine3.19"))
     ).flatTap(cont => IO(cont.start()))
-
     Resource.make(start)(cont => IO(cont.stop()))
 
   def createResource: Resource[IO, DbResource] =
     postgresContainer
       .evalMap(parseConfig)
-      .flatMap(config => DbResource.instance(config))
+      .flatMap(DbResource.instance)
