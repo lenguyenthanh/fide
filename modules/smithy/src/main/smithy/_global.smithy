@@ -40,6 +40,24 @@ enum Title {
   WNM = "WNM"
 }
 
+enum OtherTitle {
+  IA = "IA"
+  FA = "FA"
+  NA = "NA"
+  IO = "IO"
+  FT = "FT"
+  FI = "FI"
+  FST = "FST"
+  DI = "DI"
+  NI = "NI"
+  SI = "SI"
+}
+
+enum Sex {
+  Female = "F"
+  Male = "M"
+}
+
 structure Federation {
   @required
   id: FederationId,
@@ -58,11 +76,13 @@ structure Player {
 
   title: Title
   womenTitle: Title
+  otherTitles: OtherTitles
 
   standard: Rating
   rapid: Rating
   blitz: Rating
 
+  sex: Sex
   year: Integer
   @required
   active: Boolean
@@ -74,6 +94,10 @@ structure Player {
 
 list Players {
   member: Player
+}
+
+list OtherTitles {
+  member: OtherTitle
 }
 
 enum Order {

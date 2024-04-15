@@ -72,7 +72,7 @@ object Downloader:
           if name.sizeIs > 2
           title        = string(84, 89) >>= Title.apply
           wTitle       = string(89, 94) >>= Title.apply
-          otherTitle   = string(94, 97) >>= OtherTitle.apply
+          otherTitles  = string(94, 97).fold(Nil)(OtherTitle.applyToList)
           sex          = string(79, 82) >>= Sex.apply
           year         = number(152, 156).filter(_ > 1000)
           flags        = string(158, 159)
@@ -82,7 +82,7 @@ object Downloader:
           name = name,
           title = title,
           womenTitle = wTitle,
-          otherTitle = otherTitle,
+          otherTitles = otherTitles,
           standard = number(113, 117),
           rapid = number(126, 132),
           blitz = number(139, 145),

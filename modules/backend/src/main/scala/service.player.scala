@@ -45,7 +45,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
     name
       .fold(db.allPlayers(sorting, paging, filter))(db.playersByName(_, sorting, paging, filter))
       .handleErrorWith: e =>
-        error"Error in getPlayers: $sortBy $order $isActive $standardMin $standardMax $rapidMin $rapidMax $blitzMin $blitzMax $name $page $size $e" *>
+        error"Error in getPlayers with $filter, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
       .map(_.map(_.transform))
       .map(xs => GetPlayersOutput(xs, Option.when(xs.size == _size)(paging.nextPage.toString())))
