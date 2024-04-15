@@ -51,6 +51,7 @@ enum OtherTitle {
   DI = "DI"
   NI = "NI"
   SI = "SI"
+  LSI = "LSI"
 }
 
 enum Sex {

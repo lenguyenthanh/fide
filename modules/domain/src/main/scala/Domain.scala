@@ -28,7 +28,6 @@ object Title:
   def apply(value: String): Option[Title] =
     Title.values.find(_.value == value)
 
-// IA - International Arbiter, FA - FIDE Arbiter, NA - National Arbiter, IO - International Organizer, FT - FIDE Trainer, FST - FIDE Senior Trainer, DI - Developmental Instructor, NI - National Instructor
 enum OtherTitle(val value: String):
   case IA  extends OtherTitle("IA")  // International Arbiter
   case FA  extends OtherTitle("FA")  // FIDE Arbiter
@@ -40,6 +39,7 @@ enum OtherTitle(val value: String):
   case DI  extends OtherTitle("DI")  // Developmental Instructor
   case NI  extends OtherTitle("NI")  // National Instructor
   case SI  extends OtherTitle("SI")  // School Instructor
+  case LSI extends OtherTitle("LSI") // Lead School Instructor
 
 object OtherTitle:
   def apply(value: String): Option[OtherTitle] =
