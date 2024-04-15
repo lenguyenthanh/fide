@@ -28,14 +28,42 @@ object Title:
   def apply(value: String): Option[Title] =
     Title.values.find(_.value == value)
 
+// IA - International Arbiter, FA - FIDE Arbiter, NA - National Arbiter, IO - International Organizer, FT - FIDE Trainer, FST - FIDE Senior Trainer, DI - Developmental Instructor, NI - National Instructor
+enum OtherTitle(val value: String):
+  case IA  extends OtherTitle("IA")
+  case FA  extends OtherTitle("FA")
+  case NA  extends OtherTitle("NA")
+  case IO  extends OtherTitle("IO")
+  case FT  extends OtherTitle("FT")
+  case FST extends OtherTitle("FST")
+  case DI  extends OtherTitle("DI")
+  case NI  extends OtherTitle("NI")
+
+object OtherTitle:
+  def apply(value: String): Option[OtherTitle] =
+    OtherTitle.values.find(_.value == value)
+
+enum Sex(val value: String):
+  case Female extends Sex("F")
+  case Male   extends Sex("M")
+
+object Sex:
+  def apply(value: String): Option[Sex] =
+    value match
+      case "F" => Some(Female)
+      case "M" => Some(Male)
+      case _   => None
+
 case class PlayerInfo(
     id: PlayerId,
     name: String,
     title: Option[Title] = None,
     womenTitle: Option[Title] = None,
+    otherTitle: Option[OtherTitle] = None,
     standard: Option[Rating] = None,
     rapid: Option[Rating] = None,
     blitz: Option[Rating] = None,
+    sex: Option[Sex] = None,
     year: Option[Int] = None,
     active: Boolean,
     updatedAt: OffsetDateTime,
@@ -48,9 +76,11 @@ case class NewPlayer(
     name: String,
     title: Option[Title] = None,
     womenTitle: Option[Title] = None,
+    otherTitle: Option[OtherTitle] = None,
     standard: Option[Rating] = None,
     rapid: Option[Rating] = None,
     blitz: Option[Rating] = None,
+    sex: Option[Sex] = None,
     year: Option[Int] = None,
     active: Boolean
 )
@@ -60,9 +90,11 @@ case class InsertPlayer(
     name: String,
     title: Option[Title] = None,
     womenTitle: Option[Title] = None,
+    otherTitle: Option[OtherTitle] = None,
     standard: Option[Rating] = None,
     rapid: Option[Rating] = None,
     blitz: Option[Rating] = None,
+    sex: Option[Sex] = None,
     year: Option[Int] = None,
     active: Boolean,
     federation: Option[FederationId] = None

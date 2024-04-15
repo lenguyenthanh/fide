@@ -23,9 +23,11 @@ object DbSuite extends SimpleIOSuite:
     "John",
     Title.GM.some,
     Title.WGM.some,
+    none,
     2700.some,
     2700.some,
     2700.some,
+    Sex.Female.some,
     1990.some,
     true
   )

@@ -70,8 +70,10 @@ object Downloader:
           id   <- number(0, 15)
           name <- string(15, 76).map(_.filterNot(_.isDigit).trim)
           if name.sizeIs > 2
-          title        = string(84, 89).flatMap(Title.apply)
-          wTitle       = string(89, 105).flatMap(Title.apply)
+          title        = string(84, 89) >>= Title.apply
+          wTitle       = string(89, 94) >>= Title.apply
+          otherTitle   = string(94, 97) >>= OtherTitle.apply
+          sex          = string(79, 82) >>= Sex.apply
           year         = number(152, 156).filter(_ > 1000)
           flags        = string(158, 159)
           federationId = string(76, 79)
@@ -80,9 +82,11 @@ object Downloader:
           name = name,
           title = title,
           womenTitle = wTitle,
+          otherTitle = otherTitle,
           standard = number(113, 117),
           rapid = number(126, 132),
           blitz = number(139, 145),
+          sex = sex,
           year = year,
           active = !flags.contains("i")
         ) -> federationId.map(id => NewFederation(id, Federation.nameById(id)))
