@@ -31,6 +31,16 @@ services:
       - fide
     restart: unless-stopped
 
+  adminer:
+    image: adminer
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    ports:
+      - 8180:8080
+    networks:
+      - fide
+    restart: unless-stopped
+
 volumes:
   .containers-data: {}
 
