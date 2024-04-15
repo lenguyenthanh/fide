@@ -53,6 +53,10 @@ open http://localhost:9669/docs // you may need to wait a bit for syncing
 curl http://localhost:9669/api/players
 ```
 
+### Database viewer
+
+http://localhost:8180/?pgsql=db&username=admin&db=fide&ns=fide (password: dummy)
+
 ### Before submitting PR
 
 ```bash
