@@ -23,7 +23,7 @@ object DbSuite extends SimpleIOSuite:
     "John",
     Title.GM.some,
     Title.WGM.some,
-    none,
+    List(OtherTitle.FST),
     2700.some,
     2700.some,
     2700.some,

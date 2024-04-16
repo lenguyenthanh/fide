@@ -28,20 +28,25 @@ object Title:
   def apply(value: String): Option[Title] =
     Title.values.find(_.value == value)
 
-// IA - International Arbiter, FA - FIDE Arbiter, NA - National Arbiter, IO - International Organizer, FT - FIDE Trainer, FST - FIDE Senior Trainer, DI - Developmental Instructor, NI - National Instructor
 enum OtherTitle(val value: String):
-  case IA  extends OtherTitle("IA")
-  case FA  extends OtherTitle("FA")
-  case NA  extends OtherTitle("NA")
-  case IO  extends OtherTitle("IO")
-  case FT  extends OtherTitle("FT")
-  case FST extends OtherTitle("FST")
-  case DI  extends OtherTitle("DI")
-  case NI  extends OtherTitle("NI")
+  case IA  extends OtherTitle("IA")  // International Arbiter
+  case FA  extends OtherTitle("FA")  // FIDE Arbiter
+  case NA  extends OtherTitle("NA")  // National Arbiter
+  case IO  extends OtherTitle("IO")  // International Organizer
+  case FST extends OtherTitle("FST") // FIDE Senior Trainer
+  case FT  extends OtherTitle("FT")  // FIDE Trainer
+  case FI  extends OtherTitle("FI")  // FIDE Instructor
+  case DI  extends OtherTitle("DI")  // Developmental Instructor
+  case NI  extends OtherTitle("NI")  // National Instructor
+  case SI  extends OtherTitle("SI")  // School Instructor
+  case LSI extends OtherTitle("LSI") // Lead School Instructor
 
 object OtherTitle:
   def apply(value: String): Option[OtherTitle] =
     OtherTitle.values.find(_.value == value)
+
+  def applyToList(value: String): List[OtherTitle] =
+    value.split(",").toList.flatMap(apply)
 
 enum Sex(val value: String):
   case Female extends Sex("F")
@@ -59,7 +64,7 @@ case class PlayerInfo(
     name: String,
     title: Option[Title] = None,
     womenTitle: Option[Title] = None,
-    otherTitle: Option[OtherTitle] = None,
+    otherTitles: List[OtherTitle] = Nil,
     standard: Option[Rating] = None,
     rapid: Option[Rating] = None,
     blitz: Option[Rating] = None,
@@ -76,7 +81,7 @@ case class NewPlayer(
     name: String,
     title: Option[Title] = None,
     womenTitle: Option[Title] = None,
-    otherTitle: Option[OtherTitle] = None,
+    otherTitles: List[OtherTitle] = Nil,
     standard: Option[Rating] = None,
     rapid: Option[Rating] = None,
     blitz: Option[Rating] = None,
@@ -90,7 +95,7 @@ case class InsertPlayer(
     name: String,
     title: Option[Title] = None,
     womenTitle: Option[Title] = None,
-    otherTitle: Option[OtherTitle] = None,
+    otherTitles: List[OtherTitle] = Nil,
     standard: Option[Rating] = None,
     rapid: Option[Rating] = None,
     blitz: Option[Rating] = None,

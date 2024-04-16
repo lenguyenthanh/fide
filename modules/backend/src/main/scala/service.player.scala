@@ -12,9 +12,9 @@ import smithy4s.Timestamp
 
 import java.time.OffsetDateTime
 
-import Transformers.given
-
 class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
+
+  import Transformers.*
 
   override def getPlayers(
       sortBy: Option[SortBy],
@@ -45,7 +45,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
     name
       .fold(db.allPlayers(sorting, paging, filter))(db.playersByName(_, sorting, paging, filter))
       .handleErrorWith: e =>
-        error"Error in getPlayers: $sortBy $order $isActive $standardMin $standardMax $rapidMin $rapidMax $blitzMin $blitzMax $name $page $size $e" *>
+        error"Error in getPlayers with $filter, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
       .map(_.map(_.transform))
       .map(xs => GetPlayersOutput(xs, Option.when(xs.size == _size)(paging.nextPage.toString())))
@@ -67,11 +67,19 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       .map(_.map(p => p.id.toString -> p.transform).toMap)
       .map(GetPlayersByIdsOutput.apply)
 
-  extension (playerInfo: fide.domain.PlayerInfo) inline def transform: Player = playerInfo.to[Player]
-
 object Transformers:
   given Transformer.Derived[Int, Rating]          = Transformer.Derived.FromFunction(Rating.apply)
   given Transformer.Derived[String, FederationId] = Transformer.Derived.FromFunction(FederationId.apply)
   given Transformer.Derived[Int, PlayerId]        = Transformer.Derived.FromFunction(PlayerId.apply)
   given Transformer.Derived[OffsetDateTime, Timestamp] =
     Transformer.Derived.FromFunction(Timestamp.fromOffsetDateTime)
+
+  extension (p: fide.domain.PlayerInfo)
+    def transform: Player =
+      p.into[Player]
+        .transform(
+          Field.const(
+            _.otherTitles,
+            if p.otherTitles.isEmpty then none else p.otherTitles.map(_.to[OtherTitle]).some
+          )
+        )

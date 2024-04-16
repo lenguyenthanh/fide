@@ -33,6 +33,7 @@ services:
 
   adminer:
     image: adminer
+    container_name: fide_adminer
     environment:
       ADMINER_DEFAULT_SERVER: db
     ports:
