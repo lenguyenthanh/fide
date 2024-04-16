@@ -38,9 +38,9 @@ object Downloader:
   )
   def apply(db: Db, client: Client[IO], config: CrawlerConfig)(using Logger[IO]): Downloader = new:
     def fetchAndSave: IO[Unit] =
-      IO.realTimeInstant.flatMap(now => info"Start crawling at $now")
+      info"Start crawling"
         *> fetch.handleErrorWith(e => error"Error while crawling: $e")
-        *> IO.realTimeInstant.flatMap(now => info"Finished crawling at $now")
+        *> info"Finished crawling"
 
     private def fetch =
       client
