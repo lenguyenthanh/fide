@@ -63,7 +63,3 @@ http://localhost:8180/?pgsql=db&username=admin&db=fide&ns=fide (password: dummy)
 sbt test
 sbt lint
 ```
-
-## TODO
-
-[TODO](/TODO.md)
