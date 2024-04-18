@@ -59,15 +59,16 @@ structure GetPlayersByIdsOutput {
 
 structure GetPlayersInput with [SortingMixin, FilterMixin] {
   @httpQuery("page")
-  page: String
+  page: PageNumber
   @httpQuery("size")
+  @range(min: 1, max: 100)
   size: Integer
 }
 
 structure GetPlayersOutput {
   @required
   items: Players
-  nextPage: String
+  nextPage: PageNumber
 }
 
 @uniqueItems
