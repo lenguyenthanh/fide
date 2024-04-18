@@ -2,6 +2,8 @@
 
 ## Features
 
+- [ ] Add docs for API https://smithy.io/2.0/spec/idl.html#comments
+- [ ] Sanitize player's names
 - [ ] Pagination config (default , max , min )
 - [ ] Add config to set max ids in getPlayersWithIds
 - [ ] Store more information for players as legends say: https://ratings.fide.com/download_lists.phtml
@@ -20,7 +22,7 @@
 - [x] support Map for getPlayersWithIds
 - [x] Deploy to heroku
 
-### Better type safetye with refined/iron
+### Better type safe with refined/iron
 
 - [ ] smithy type
 - [ ] pagination (validate page, size and other params)
