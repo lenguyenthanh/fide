@@ -13,7 +13,7 @@ object KVStoreSuite extends SimpleIOSuite:
 
   given Logger[IO] = NoOpLogger[IO]
 
-  private def resource: Resource[IO, KVStore] = Containers.createResource.map(x => KVStore.apply(x.postgres))
+  private def resource: Resource[IO, KVStore] = Containers.createResource.map(x => KVStore(x.postgres))
 
   test("put success"):
     resource

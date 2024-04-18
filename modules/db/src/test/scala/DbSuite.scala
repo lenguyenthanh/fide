@@ -16,7 +16,7 @@ object DbSuite extends SimpleIOSuite:
 
   given Logger[IO] = NoOpLogger[IO]
 
-  private def resource: Resource[IO, Db] = Containers.createResource.map(x => Db.apply(x.postgres))
+  private def resource: Resource[IO, Db] = Containers.createResource.map(x => Db(x.postgres))
 
   val newPlayer = NewPlayer(
     1,
