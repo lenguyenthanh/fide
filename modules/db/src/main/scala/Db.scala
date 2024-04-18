@@ -81,12 +81,19 @@ object Db:
 private object Codecs:
 
   import skunk.codec.all.*
-  import skunk.data.Type
+  import skunk.data.{ Arr, Type }
 
   val title: Codec[Title] = `enum`[Title](_.value, Title.apply, Type("title"))
   val sex: Codec[Sex]     = `enum`[Sex](_.value, Sex.apply, Type("sex"))
-  val otherTitles: Codec[List[OtherTitle]] =
-    text.opt.imap(_.fold(Nil)(OtherTitle.applyToList))(_.map(_.value).mkString(",").some)
+
+  val otherTitleArr: Codec[Arr[OtherTitle]] =
+    Codec.array(
+      _.value,
+      OtherTitle(_).toRight("invalid title"),
+      Type("_other_title", List(Type("other_title")))
+    )
+
+  val otherTitles: Codec[List[OtherTitle]] = otherTitleArr.opt.imap(_.fold(Nil)(_.toList))(Arr(_*).some)
 
   val insertPlayer: Codec[InsertPlayer] =
     (int4 *: text *: title.opt *: title.opt *: otherTitles *: int4.opt *: int4.opt *: int4.opt *: sex.opt *: int4.opt *: bool *: text.opt)
