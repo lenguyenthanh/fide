@@ -25,7 +25,11 @@ structure InternalServerError {
 
 integer PlayerId
 string FederationId
+@range(min: 0, max: 4000)
 integer Rating
+
+@pattern("^[1-9][0-9]*$")
+string PageNumber
 
 enum Title {
   GM = "GM"

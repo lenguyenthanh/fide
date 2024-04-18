@@ -21,11 +21,11 @@
 - [x] better errors handling
 - [x] support Map for getPlayersWithIds
 - [x] Deploy to heroku
+- [x] pagination (validate page, size and other params)
 
 ### Better type safe with refined/iron
 
-- [ ] smithy type
-- [ ] pagination (validate page, size and other params)
+- [ ] [smithy4s refinements](https://disneystreaming.github.io/smithy4s/docs/codegen/customisation/refinements)
 - [ ] Config
 
 ## Smithy
