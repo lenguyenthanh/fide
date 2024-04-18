@@ -11,7 +11,7 @@ service PlayerService {
 }
 
 @readonly
-@paginated(inputToken: "page", outputToken: "nextPage", pageSize: "size")
+@paginated(inputToken: "page", outputToken: "nextPage", pageSize: "pageSize")
 @http(method: "GET", uri: "/api/players", code: 200)
 operation GetPlayers {
   input: GetPlayersInput,
@@ -60,9 +60,9 @@ structure GetPlayersByIdsOutput {
 structure GetPlayersInput with [SortingMixin, FilterMixin] {
   @httpQuery("page")
   page: PageNumber
-  @httpQuery("size")
+  @httpQuery("page_size")
   @range(min: 1, max: 100)
-  size: Integer
+  pageSize: Integer
 }
 
 structure GetPlayersOutput {

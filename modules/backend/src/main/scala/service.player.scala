@@ -28,14 +28,14 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       blitzMax: Option[Rating],
       name: Option[String],
       page: Option[PageNumber],
-      size: Option[Int]
+      pageSize: Option[Int]
   ): IO[GetPlayersOutput] =
-    val _size   = size.getOrElse(Models.Pagination.defaultLimit)
-    val _page   = page.flatMap(_.value.toIntOption).getOrElse(Models.Pagination.firstPage)
-    val paging  = Models.Pagination.fromPageAndSize(_page, _size)
-    val _order  = order.map(_.to[Models.Order]).getOrElse(Models.Order.Desc)
-    val _sortBy = sortBy.map(_.to[Models.SortBy]).getOrElse(Models.SortBy.Name)
-    val sorting = Models.Sorting(_sortBy, _order)
+    val _pageSize = pageSize.getOrElse(Models.Pagination.defaultLimit)
+    val _page     = page.flatMap(_.value.toIntOption).getOrElse(Models.Pagination.firstPage)
+    val paging    = Models.Pagination.fromPageAndSize(_page, _pageSize)
+    val _order    = order.map(_.to[Models.Order]).getOrElse(Models.Order.Desc)
+    val _sortBy   = sortBy.map(_.to[Models.SortBy]).getOrElse(Models.SortBy.Name)
+    val sorting   = Models.Sorting(_sortBy, _order)
     val filter = Models.Filter(
       isActive,
       Models.RatingRange(standardMin.map(_.value), standardMax.map(_.value)),
@@ -48,7 +48,8 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
         error"Error in getPlayers with $filter, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
       .map(_.map(_.transform))
-      .map(xs => GetPlayersOutput(xs, Option.when(xs.size == _size)(PageNumber(paging.nextPage.toString()))))
+      .map: xs =>
+        GetPlayersOutput(xs, Option.when(xs.size == _pageSize)(PageNumber(paging.nextPage.toString())))
 
   override def getPlayerById(id: PlayerId): IO[Player] =
     db.playerById(id.value)
