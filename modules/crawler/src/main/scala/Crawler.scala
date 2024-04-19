@@ -91,7 +91,7 @@ object Downloader:
       blitz = number(139, 145),
       sex = sex,
       year = year,
-      active = !flags.exists(_.contains("i"))
+      active = flags.isEmpty
     ) -> federationId.map(id => NewFederation(id, Federation.nameById(id)))
 
 object Decompressor:
