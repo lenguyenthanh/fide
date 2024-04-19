@@ -78,7 +78,7 @@ object Downloader:
       otherTitles  = string(94, 109).fold(Nil)(OtherTitle.applyToList)
       sex          = string(79, 82) >>= Sex.apply
       year         = number(152, 156).filter(_ > 1000)
-      flags        = string(158, 160)
+      inactiveFlag = string(158, 160)
       federationId = string(76, 79)
     yield NewPlayer(
       id = id,
@@ -91,7 +91,7 @@ object Downloader:
       blitz = number(139, 145),
       sex = sex,
       year = year,
-      active = flags.isEmpty
+      active = inactiveFlag.isEmpty
     ) -> federationId.map(id => NewFederation(id, Federation.nameById(id)))
 
 object Decompressor:
