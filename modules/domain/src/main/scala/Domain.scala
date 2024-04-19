@@ -69,7 +69,7 @@ case class PlayerInfo(
     rapid: Option[Rating] = None,
     blitz: Option[Rating] = None,
     sex: Option[Sex] = None,
-    year: Option[Int] = None,
+    birthYear: Option[Int] = None,
     active: Boolean,
     updatedAt: OffsetDateTime,
     createdAt: OffsetDateTime,
@@ -86,7 +86,7 @@ case class NewPlayer(
     rapid: Option[Rating] = None,
     blitz: Option[Rating] = None,
     sex: Option[Sex] = None,
-    year: Option[Int] = None,
+    birthYear: Option[Int] = None,
     active: Boolean
 )
 
@@ -100,7 +100,7 @@ case class InsertPlayer(
     rapid: Option[Rating] = None,
     blitz: Option[Rating] = None,
     sex: Option[Sex] = None,
-    year: Option[Int] = None,
+    birthYear: Option[Int] = None,
     active: Boolean,
     federation: Option[FederationId] = None
 )

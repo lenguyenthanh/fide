@@ -90,7 +90,7 @@ object Downloader:
       rapid = number(126, 132),
       blitz = number(139, 145),
       sex = sex,
-      year = year,
+      birthYear = year,
       active = inactiveFlag.isEmpty
     ) -> federationId.map(id => NewFederation(id, Federation.nameById(id)))
 
