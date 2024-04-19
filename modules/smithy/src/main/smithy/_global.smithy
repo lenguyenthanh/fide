@@ -88,7 +88,7 @@ structure Player {
   blitz: Rating
 
   sex: Sex
-  year: Integer
+  birthYear: Integer
   @required
   active: Boolean
   @required

@@ -190,12 +190,12 @@ private object Sql:
         AND p.active = $bool"""
 
   private lazy val insertIntoPlayer =
-    sql"INSERT INTO players (id, name, title, women_title, other_titles, standard, rapid, blitz, sex, year, active, federation_id)"
+    sql"INSERT INTO players (id, name, title, women_title, other_titles, standard, rapid, blitz, sex, birth_year, active, federation_id)"
 
   private lazy val onPlayerConflictDoUpdate =
     sql"""
-        ON CONFLICT (id) DO UPDATE SET (name, title, women_title, other_titles, standard, rapid, blitz, sex, year, active, federation_id) =
-        (EXCLUDED.name, EXCLUDED.title, EXCLUDED.women_title, EXCLUDED.other_titles, EXCLUDED.standard, EXCLUDED.rapid, EXCLUDED.blitz, EXCLUDED.sex, EXCLUDED.year, EXCLUDED.active, EXCLUDED.federation_id)
+        ON CONFLICT (id) DO UPDATE SET (name, title, women_title, other_titles, standard, rapid, blitz, sex, birth_year, active, federation_id) =
+        (EXCLUDED.name, EXCLUDED.title, EXCLUDED.women_title, EXCLUDED.other_titles, EXCLUDED.standard, EXCLUDED.rapid, EXCLUDED.blitz, EXCLUDED.sex, EXCLUDED.birth_year, EXCLUDED.active, EXCLUDED.federation_id)
       """
 
   private val onConflictDoNothing  = sql"ON CONFLICT DO NOTHING"
@@ -217,6 +217,6 @@ private object Sql:
 
   private lazy val allPlayersFragment: Fragment[Void] =
     sql"""
-        SELECT p.id, p.name, p.title, p.women_title, p.other_titles, p.standard, p.rapid, p.blitz, p.sex, p.year, p.active, p.updated_at, p.created_at, f.id, f.name
+        SELECT p.id, p.name, p.title, p.women_title, p.other_titles, p.standard, p.rapid, p.blitz, p.sex, p.birth_year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
         WHERE p.federation_id = f.id"""
