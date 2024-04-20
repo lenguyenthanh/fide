@@ -97,8 +97,7 @@ object Downloader:
 object Decompressor:
 
   import de.lhns.fs2.compress.*
-  import fs2.Pipe
   val defaultChunkSize = 1024 * 4
 
-  def decompress: Pipe[IO, Byte, Byte] =
+  def decompress: fs2.Pipe[IO, Byte, Byte] =
     _.through(ArchiveSingleFileDecompressor(ZipUnarchiver.make[IO](defaultChunkSize)).decompress)
