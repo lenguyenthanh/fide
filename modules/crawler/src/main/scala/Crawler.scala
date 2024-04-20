@@ -24,8 +24,10 @@ object Crawler:
     new Crawler:
       def crawl: IO[Unit] =
         syncer.fetchStatus.flatMap:
-          case OutDated(timestamp) => crawler.fetchAndSave *> timestamp.traverse_(syncer.saveLastUpdate)
-          case _                   => info"Skipping crawling as the data is up to date"
+          case OutDated(timestamp) =>
+            (crawler.fetchAndSave *> timestamp.traverse_(syncer.saveLastUpdate))
+              .handleErrorWith(e => error"Error while crawling: $e")
+          case _ => info"Skipping crawling as the data is up to date"
 
 trait Downloader:
   def fetchAndSave: IO[Unit]
@@ -39,7 +41,7 @@ object Downloader:
   def apply(db: Db, client: Client[IO], config: CrawlerConfig)(using Logger[IO]): Downloader = new:
     def fetchAndSave: IO[Unit] =
       info"Start crawling"
-        *> fetch.handleErrorWith(e => error"Error while crawling: $e")
+        *> fetch
         *> info"Finished crawling"
 
     private def fetch =
