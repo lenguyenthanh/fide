@@ -5,7 +5,7 @@ services:
   api:
     image: ghcr.io/lenguyenthanh/fide:main
     volumes: 
-      - .env.docker:/app/.env
+      - .env:/app/.env
     ports:
       - 9669:9669
     networks:
