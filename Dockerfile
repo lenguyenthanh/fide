@@ -4,5 +4,8 @@ FROM sbtscala/scala-sbt:${VERSION}
 COPY . /app
 
 WORKDIR /app
+
 ENV SHELL /bin/sh
+CMD ["sbt", "backend/compile"]
+
 ENTRYPOINT ["sbt", "backend/run"]
