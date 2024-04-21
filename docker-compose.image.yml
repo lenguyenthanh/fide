@@ -3,7 +3,7 @@ name: fide
 services:
 
   api:
-    image: ghcr.io/sergioglorias/fide:main
+    image: ghcr.io/lenguyenthanh/fide:main
     volumes: 
       - .env.docker:/app/.env
     ports:
