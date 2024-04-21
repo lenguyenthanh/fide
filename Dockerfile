@@ -6,6 +6,6 @@ COPY . /app
 WORKDIR /app
 
 ENV SHELL /bin/sh
-CMD ["sbt", "backend/compile"]
+RUN ["sbt", "backend/compile"]
 
 ENTRYPOINT ["sbt", "backend/run"]
