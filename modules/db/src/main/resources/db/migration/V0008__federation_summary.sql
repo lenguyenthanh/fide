@@ -18,7 +18,7 @@ BEGIN
 END
 $FUNCTION$ LANGUAGE PLPGSQL;
 
-CREATE OR REPLACE VIEW fed_sum_1 as SELECT federations.id, COUNT(players.id) as players, ROUND(avg(players.standard)) as avg_standard, ROUND(avg(players.rapid)) as avg_rapid, ROUND(avg(players.blitz)) as avg_blitz, COUNT(COALESCE(players.standard, NULL)) as standard_players, COUNT(COALESCE(players.rapid, NULL)) as rapid_players, COUNT(COALESCE(players.blitz, NULL)) as blitz_players
+CREATE OR REPLACE VIEW fed_sum_1 as SELECT federations.id, federations.name, COUNT(players.id) as players, ROUND(avg(players.standard)) as avg_standard, ROUND(avg(players.rapid)) as avg_rapid, ROUND(avg(players.blitz)) as avg_blitz, COUNT(COALESCE(players.standard, NULL)) as standard_players, COUNT(COALESCE(players.rapid, NULL)) as rapid_players, COUNT(COALESCE(players.blitz, NULL)) as blitz_players
 FROM players, federations
 WHERE players.federation_id = federations.id AND players.active = true
 GROUP BY federations.id;
@@ -77,7 +77,39 @@ rank() OVER (
         ) as avg_top_blitz_rank
 FROM fed_with_avg_top_10;
 
-create or replace view fed_sum as
+CREATE MATERIALIZED VIEW  IF NOT EXISTS federation_summary as
 select f1.*, f2.avg_top_standard, f2.avg_top_rapid, f2.avg_top_blitz, f2.avg_top_standard_rank, f2.avg_top_rapid_rank, f2.avg_top_blitz_rank
 from fed_sum_2 as f1, fed_with_avg_top_10_ranking as f2
 where f1.id = f2.id;
+
+create unique index on federation_summary (id);
+CREATE INDEX fed_sum_avg_rating_idx ON federation_summary(avg_rating);
+CREATE INDEX fed_sum_avg_standard_idx ON federation_summary(avg_standard);
+CREATE INDEX fed_sum_avg_rapid_idx ON federation_summary(avg_rapid);
+CREATE INDEX fed_sum_avg_blitz_idx ON federation_summary(avg_blitz);
+CREATE INDEX fed_sum_avg_top_standard_idx ON federation_summary(avg_top_standard);
+CREATE INDEX fed_sum_avg_top_rapid_idx ON federation_summary(avg_top_rapid);
+CREATE INDEX fed_sum_avg_top_blitz_idx ON federation_summary(avg_top_blitz);
+CREATE INDEX fed_sum_avg_top_standard_rank_idx ON federation_summary(avg_top_standard_rank);
+CREATE INDEX fed_sum_avg_top_rapid_rank_idx ON federation_summary(avg_top_rapid_rank);
+CREATE INDEX fed_sum_avg_top_blitz_rank_idx ON federation_summary(avg_top_blitz_rank);
+CREATE INDEX fed_sum_standard_players_idx ON federation_summary(standard_players);
+CREATE INDEX fed_sum_rapid_players_idx ON federation_summary(rapid_players);
+CREATE INDEX fed_sum_blitz_players_idx ON federation_summary(blitz_players);
+CREATE INDEX fed_sum_players_idx ON federation_summary(players);
+
+-- AFTER INSERT/UPDATE on 'last_updated_key' column of `cache` table
+CREATE OR REPLACE FUNCTION refresh_federation_summary()
+RETURNS TRIGGER LANGUAGE plpgsql
+AS $$
+BEGIN
+REFRESH MATERIALIZED VIEW CONCURRENTLY federation_summary;
+RETURN NULL;
+END $$;
+
+CREATE TRIGGER refresh_federation_summary_trigger
+AFTER UPDATE OR INSERT
+ON cache
+FOR EACH ROW
+WHEN (NEW.key = 'fide_last_update_key')
+EXECUTE PROCEDURE refresh_federation_summary();
