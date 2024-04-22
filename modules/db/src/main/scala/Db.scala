@@ -17,6 +17,7 @@ trait Db:
   def playersByName(name: String, sorting: Sorting, paging: Pagination, filter: Filter): IO[List[PlayerInfo]]
   def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]]
   def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
+  def allFederationsSummary(paging: Pagination): IO[List[FederationSummary]]
 
 object Db:
 
@@ -73,6 +74,9 @@ object Db:
 
     def playersByFederationId(id: FederationId): IO[List[PlayerInfo]] =
       postgres.use(_.execute(Sql.playersByFederationId)(id))
+
+    def allFederationsSummary(paging: Pagination): IO[List[FederationSummary]] =
+      ???
 
   extension (p: NewPlayer)
     def toInsertPlayer(fedId: Option[FederationId]) =
