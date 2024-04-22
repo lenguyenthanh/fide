@@ -1,3 +1,4 @@
+-- function to calculate average of 3 values (use for calculating average of standard, rapid, blitz rating)
 CREATE OR REPLACE FUNCTION AVERAGE (
 V1 NUMERIC,
 V2 NUMERIC,
@@ -18,14 +19,24 @@ BEGIN
 END
 $FUNCTION$ LANGUAGE PLPGSQL;
 
-CREATE OR REPLACE VIEW fed_sum_1 as SELECT federations.id, federations.name, COUNT(players.id) as players, ROUND(avg(players.standard)) as avg_standard, ROUND(avg(players.rapid)) as avg_rapid, ROUND(avg(players.blitz)) as avg_blitz, COUNT(COALESCE(players.standard, NULL)) as standard_players, COUNT(COALESCE(players.rapid, NULL)) as rapid_players, COUNT(COALESCE(players.blitz, NULL)) as blitz_players
-FROM players, federations
-WHERE players.federation_id = federations.id AND players.active = true
-GROUP BY federations.id;
+-- view federation summary with total players and average rating of each time control
+CREATE OR REPLACE VIEW federations_with_players_count_and_avg_rating AS
+(
+  WITH f1 AS (
+    SELECT federations.id, federations.name, COUNT(players.id) as players, ROUND(avg(players.standard)) as avg_standard, ROUND(avg(players.rapid)) as avg_rapid, ROUND(avg(players.blitz)) as avg_blitz, COUNT(COALESCE(players.standard, NULL)) as standard_players, COUNT(COALESCE(players.rapid, NULL)) as rapid_players, COUNT(COALESCE(players.blitz, NULL)) as blitz_players
+    FROM players, federations
+    WHERE players.federation_id = federations.id AND players.active = true
+    GROUP BY federations.id)
+  SELECT *, ROUND(average(f1.avg_standard, f1.avg_rapid, f1.avg_blitz)) as avg_rating
+  FROM f1
+);
 
-CREATE OR REPLACE VIEW fed_sum_2 AS SELECT *, ROUND(average(fs.avg_standard, fs.avg_rapid, fs.avg_blitz)) as avg_rating from fed_sum_1 as fs;
+-- average top 10 rating with ranking
+CREATE OR REPLACE VIEW federations_avg_top_10_ranking AS (
 
-CREATE OR REPLACE VIEW fed_with_ranking AS SELECT federations.id, players.standard, players.rapid, players.blitz,
+-- ranking players for each time control
+with fed_with_ranking AS
+(SELECT federations.id, players.standard, players.rapid, players.blitz,
 rank() OVER (
     PARTITION BY federations.id
     ORDER BY players.standard DESC NULLS LAST
@@ -34,17 +45,16 @@ rank() OVER (
     PARTITION BY federations.id
     ORDER BY players.rapid DESC NULLS LAST
         ) as rapid_rank,
-
 rank() OVER (
     PARTITION BY federations.id
     ORDER BY players.blitz DESC NULLS LAST
         ) as blitz_rank
 FROM players, federations
-WHERE players.federation_id = federations.id AND players.active = true;
+WHERE players.federation_id = federations.id AND players.active = true),
 
 -- average top 10 rating
-create or replace view fed_with_avg_top_10 as
-select t1.id, t1.avg_top_standard, t2.avg_top_rapid, t3.avg_top_blitz
+fed_with_avg_top_10 as
+(select t1.id, t1.avg_top_standard, t2.avg_top_rapid, t3.avg_top_blitz
 FROM
 (SELECT fed_with_ranking.id, ROUND(avg(standard)) as avg_top_standard
     FROM fed_with_ranking
@@ -61,28 +71,30 @@ LEFT JOIN
     FROM fed_with_ranking
     WHERE fed_with_ranking.blitz_rank <= 10
     GROUP BY fed_with_ranking.id) as t3
-ON t1.id = t3.id;
+ON t1.id = t3.id),
 
 -- average top 10 rating with ranking
-CREATE OR REPLACE VIEW fed_with_avg_top_10_ranking AS SELECT fed_with_avg_top_10.id, fed_with_avg_top_10.avg_top_standard, fed_with_avg_top_10.avg_top_rapid, fed_with_avg_top_10.avg_top_blitz,
+fed_with_avg_top_10_ranking AS (
+SELECT fed_with_avg_top_10.id, fed_with_avg_top_10.avg_top_standard, fed_with_avg_top_10.avg_top_rapid, fed_with_avg_top_10.avg_top_blitz,
 rank() OVER (
     ORDER BY fed_with_avg_top_10.avg_top_standard DESC NULLS LAST
         ) as avg_top_standard_rank,
 rank() OVER (
     ORDER BY fed_with_avg_top_10.avg_top_rapid DESC NULLS LAST
         ) as avg_top_rapid_rank,
-
 rank() OVER (
     ORDER BY fed_with_avg_top_10.avg_top_blitz DESC NULLS LAST
         ) as avg_top_blitz_rank
-FROM fed_with_avg_top_10;
+FROM fed_with_avg_top_10)
+select * from fed_with_avg_top_10_ranking
+);
 
 CREATE MATERIALIZED VIEW  IF NOT EXISTS federation_summary as
 select f1.*, f2.avg_top_standard, f2.avg_top_rapid, f2.avg_top_blitz, f2.avg_top_standard_rank, f2.avg_top_rapid_rank, f2.avg_top_blitz_rank
-from fed_sum_2 as f1, fed_with_avg_top_10_ranking as f2
+from federations_with_players_count_and_avg_rating as f1, federations_avg_top_10_ranking as f2
 where f1.id = f2.id;
 
-create unique index on federation_summary (id);
+create unique index on federations_summary (id);
 CREATE INDEX fed_sum_avg_rating_idx ON federation_summary(avg_rating);
 CREATE INDEX fed_sum_avg_standard_idx ON federation_summary(avg_standard);
 CREATE INDEX fed_sum_avg_rapid_idx ON federation_summary(avg_rapid);
