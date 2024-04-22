@@ -5,11 +5,11 @@ import cats.syntax.all.*
 import fide.db.Db
 import fide.domain.Models
 import fide.spec.*
+import fide.types.*
 import io.github.arainko.ducktape.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
 import smithy4s.Timestamp
-import fide.types.PageNumber.*
 
 import java.time.OffsetDateTime
 
@@ -18,7 +18,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
   import Transformers.*
 
   override def getPlayers(
-      page: PageNumber,
+      page: NumericString,
       pageSize: Int,
       sortBy: Option[SortBy],
       order: Option[Order],
@@ -31,8 +31,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       blitzMax: Option[Rating],
       name: Option[String]
   ): IO[GetPlayersOutput] =
-    val _page   = page.value.int
-    val paging  = Models.Pagination.fromPageAndSize(_page, pageSize)
+    val paging  = Models.Pagination.fromPageAndSize(page.intValue, pageSize)
     val _order  = order.map(_.to[Models.Order]).getOrElse(Models.Order.Asc)
     val _sortBy = sortBy.map(_.to[Models.SortBy]).getOrElse(Models.SortBy.Name)
     val sorting = Models.Sorting(_sortBy, _order)
@@ -51,7 +50,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       .map: xs =>
         GetPlayersOutput(
           xs,
-          Option.when(xs.size == pageSize)(PageNumber(fide.types.PageNumber(paging.nextPage)))
+          Option.when(xs.size == pageSize)(NumericString(paging.nextPage))
         )
 
   override def getPlayerById(id: PlayerId): IO[Player] =

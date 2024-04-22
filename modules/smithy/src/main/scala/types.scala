@@ -5,20 +5,20 @@ import io.github.iltotore.iron.*
 import io.github.iltotore.iron.constraint.all.*
 import smithy4s.*
 
-type Numeric = ForAll[Digit] DescribedAs "Should be numeric"
+type Numeric = Match["^[1-9][0-9]*$"] DescribedAs "Should be natural number"
 
-type PageNumber = String :| Numeric
-object PageNumber:
-  def apply(value: String): Either[String, PageNumber] =
+type NumericString = String :| Numeric
+object NumericString:
+  def apply(value: String): Either[String, NumericString] =
     value.refineEither[Numeric]
 
-  def apply(value: Int): PageNumber =
+  def apply(value: Int): NumericString =
     value.toString.refineUnsafe
 
-  given RefinementProvider[fide.spec.NumericString, String, PageNumber] =
-    Refinement.drivenBy[fide.spec.NumericString](
-      PageNumber.apply,
+  given RefinementProvider[fide.spec.PageFormat, String, NumericString] =
+    Refinement.drivenBy[fide.spec.PageFormat](
+      NumericString.apply,
       identity
     )
 
-  extension (value: PageNumber) def int: Int = value.toInt
+extension (value: NumericString) inline def intValue: Int = value.toInt

@@ -32,14 +32,15 @@ string FederationId
 integer Rating
 
 @trait(selector: "string")
-structure NumericString {}
+structure PageFormat {}
 
-apply fide.spec#NumericString @refinement(
-   targetType: "fide.types.PageNumber",
-   providerImport: "fide.types.PageNumber.given"
+apply fide.spec#PageFormat @refinement(
+   targetType: "fide.types.NumericString",
+   providerImport: "fide.types.NumericString.given"
 )
 
-@NumericString
+@PageFormat
+@unwrap
 string PageNumber
 
 enum Title {
