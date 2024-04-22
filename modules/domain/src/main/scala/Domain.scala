@@ -10,7 +10,7 @@ type Rating       = Int
 type FederationId = String
 
 object FederationId:
-  def apply(value: String): FederationId = value
+  def apply(value: String): FederationId = value.toUpperCase
 
 enum Title(val value: String):
   case GM  extends Title("GM")
