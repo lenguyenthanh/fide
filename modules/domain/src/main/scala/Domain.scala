@@ -123,7 +123,7 @@ case class Federation(
 
 object Federation:
 
-  def nameById(id: FederationId): String = names.getOrElse(id, id)
+  def nameById(id: FederationId): Option[String] = names.get(id)
 
   val names: Map[FederationId, String] = Map(
     FederationId("FID") -> "FIDE",

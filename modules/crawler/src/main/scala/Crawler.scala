@@ -81,7 +81,7 @@ object Downloader:
       sex          = string(79, 82) >>= Sex.apply
       year         = number(152, 156).filter(_ > 1000)
       inactiveFlag = string(158, 160)
-      federationId = string(76, 79)
+      federationId = string(76, 79).map(FederationId.apply)
     yield NewPlayer(
       id = id,
       name = name,
@@ -94,7 +94,7 @@ object Downloader:
       sex = sex,
       birthYear = year,
       active = inactiveFlag.isEmpty
-    ) -> federationId.map(id => NewFederation(id, Federation.nameById(id)))
+    ) -> federationId.flatMap(id => Federation.nameById(id).map(NewFederation(id, _)))
 
 object Decompressor:
 
