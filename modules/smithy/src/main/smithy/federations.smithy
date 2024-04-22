@@ -7,21 +7,29 @@ use alloy#simpleRestJson
 @simpleRestJson
 service FederationService {
   version: "0.0.1",
-  operations: [GetFederations, GetFederationById],
+  operations: [GetFederationsSummary, GetFederationSummaryWithTop10, GetFederationPlayers],
 }
+
+//@readonly
+// @http(method: "GET", uri: "/api/federations", code: 200)
+// operation GetFederations {
+  // input: GetFederationsInput,
+  // output: GetFederationsOutput
+// }
 
 @readonly
 @http(method: "GET", uri: "/api/federations", code: 200)
-operation GetFederations {
+operation GetFederationsSummary {
   input: GetFederationsInput,
-  output: GetFederationsOutput
+  output: GetFederationsSummaryOutput
 }
 
 @readonly
-@http(method: "GET", uri: "/api/federations/{id}", code: 200)
-operation GetFederationById {
+@http(method: "GET", uri: "/api/federations/{id}/summary/top10", code: 200)
+/// Get a federation summary by its id
+operation GetFederationSummaryWithTop10 {
   input: GetFederationByIdInput,
-  output: GetFederationByIdOutput,
+  output: GetFederationSummaryTop10Output,
   errors: [FederationNotFound]
 }
 
@@ -40,7 +48,32 @@ structure GetFederationPlayersInput {
 }
 
 structure GetFederationPlayersOutput {
-  players: Players
+  items: Players
+}
+
+structure GetFederationsSummaryOutput {
+  items: FederationsSummary
+}
+
+list FederationsSummary {
+  member: FederationSummary
+}
+
+structure FederationSummary {
+  @required
+  id: FederationId,
+
+  @required
+  name: String,
+
+  @required
+  nbPlayers: Integer,
+
+  avg_top10_standard: Integer,
+
+  avg_top10_rapid: Integer,
+
+  avg_top10_blitz: Integer
 }
 
 structure GetFederationByIdInput {
@@ -53,13 +86,34 @@ structure GetFederationByIdOutput {
   federation: Federation
 }
 
+structure GetFederationSummaryTop10Output {
+  @required
+  id: FederationId,
+
+  @required
+  name: String,
+
+  @required
+  nbPlayers: Integer,
+
+  @required
+  standard: Stats,
+
+  @required
+  rapid: Stats,
+
+  @required
+  blitz: Stats
+}
+
+
 structure GetFederationsInput {
   @httpQuery("query")
   query: String
 }
 
 structure GetFederationsOutput {
-  federations: Federations
+  items: Federations
 }
 
 list Federations {
