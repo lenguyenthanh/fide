@@ -7,37 +7,32 @@ use alloy#simpleRestJson
 @simpleRestJson
 service FederationService {
   version: "0.0.1",
-  operations: [GetFederationsSummary, GetFederationSummaryWithTop10, GetFederationPlayers],
+  operations: [GetFederationsSummary, GetFederationSummaryById, GetFederationPlayersById],
 }
 
-//@readonly
-// @http(method: "GET", uri: "/api/federations", code: 200)
-// operation GetFederations {
-  // input: GetFederationsInput,
-  // output: GetFederationsOutput
-// }
-
 @readonly
-@http(method: "GET", uri: "/api/federations", code: 200)
+@paginated(inputToken: "page", outputToken: "nextPage", pageSize: "pageSize")
+@http(method: "GET", uri: "/api/federations/summary", code: 200)
 operation GetFederationsSummary {
-  input: GetFederationsInput,
+  input: GetFederationsSummaryInput,
   output: GetFederationsSummaryOutput
 }
 
-@readonly
-@http(method: "GET", uri: "/api/federations/{id}/summary/top10", code: 200)
 /// Get a federation summary by its id
-operation GetFederationSummaryWithTop10 {
+@readonly
+@http(method: "GET", uri: "/api/federations/summary/{id}", code: 200)
+operation GetFederationSummaryById {
   input: GetFederationByIdInput,
-  output: GetFederationSummaryTop10Output,
+  output: FederationSummary,
   errors: [FederationNotFound]
 }
 
 @readonly
-@http(method: "GET", uri: "/api/federations/{id}/players", code: 200)
-operation GetFederationPlayers {
+@paginated(inputToken: "page", outputToken: "nextPage", pageSize: "pageSize")
+@http(method: "GET", uri: "/api/federations/summary/{id}/players", code: 200)
+operation GetFederationPlayersById {
   input: GetFederationPlayersInput,
-  output: GetFederationPlayersOutput,
+  output: GetFederationPlayersByIdOutput,
   errors: [FederationNotFound]
 }
 
@@ -45,35 +40,35 @@ structure GetFederationPlayersInput {
   @httpLabel
   @required
   id: FederationId
+  @httpQuery("page")
+  page: PageNumber
+  @httpQuery("page_size")
+  @range(min: 1, max: 100)
+  pageSize: Integer
 }
 
-structure GetFederationPlayersOutput {
+structure GetFederationPlayersByIdOutput {
+  @required
   items: Players
+  nextPage: PageNumber
+}
+
+structure GetFederationsSummaryInput {
+  @httpQuery("page")
+  page: PageNumber
+  @httpQuery("page_size")
+  @range(min: 1, max: 100)
+  pageSize: Integer
 }
 
 structure GetFederationsSummaryOutput {
+  @required
   items: FederationsSummary
+  nextPage: PageNumber
 }
 
 list FederationsSummary {
   member: FederationSummary
-}
-
-structure FederationSummary {
-  @required
-  id: FederationId,
-
-  @required
-  name: String,
-
-  @required
-  nbPlayers: Integer,
-
-  avg_top10_standard: Integer,
-
-  avg_top10_rapid: Integer,
-
-  avg_top10_blitz: Integer
 }
 
 structure GetFederationByIdInput {
@@ -86,7 +81,7 @@ structure GetFederationByIdOutput {
   federation: Federation
 }
 
-structure GetFederationSummaryTop10Output {
+structure FederationSummary {
   @required
   id: FederationId,
 
@@ -106,11 +101,6 @@ structure GetFederationSummaryTop10Output {
   blitz: Stats
 }
 
-
-structure GetFederationsInput {
-  @httpQuery("query")
-  query: String
-}
 
 structure GetFederationsOutput {
   items: Federations
