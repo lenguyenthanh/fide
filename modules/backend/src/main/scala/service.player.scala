@@ -9,6 +9,7 @@ import io.github.arainko.ducktape.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
 import smithy4s.Timestamp
+import fide.types.PageNumber.*
 
 import java.time.OffsetDateTime
 
@@ -30,7 +31,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       blitzMax: Option[Rating],
       name: Option[String]
   ): IO[GetPlayersOutput] =
-    val _page   = page.value.toIntOption.getOrElse(Models.Pagination.firstPage)
+    val _page   = page.value.int
     val paging  = Models.Pagination.fromPageAndSize(_page, pageSize)
     val _order  = order.map(_.to[Models.Order]).getOrElse(Models.Order.Asc)
     val _sortBy = sortBy.map(_.to[Models.SortBy]).getOrElse(Models.SortBy.Name)
@@ -48,7 +49,10 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
           IO.raiseError(InternalServerError("Internal server error"))
       .map(_.map(_.transform))
       .map: xs =>
-        GetPlayersOutput(xs, Option.when(xs.size == pageSize)(PageNumber(paging.nextPage.toString())))
+        GetPlayersOutput(
+          xs,
+          Option.when(xs.size == pageSize)(PageNumber(fide.types.PageNumber(paging.nextPage)))
+        )
 
   override def getPlayerById(id: PlayerId): IO[Player] =
     db.playerById(id.value)

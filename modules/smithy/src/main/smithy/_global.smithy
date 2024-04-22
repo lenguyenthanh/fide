@@ -2,6 +2,9 @@ $version: "2.0"
 
 namespace fide.spec
 
+use smithy4s.meta#unwrap
+use smithy4s.meta#refinement
+
 @error("client")
 @httpError(400)
 structure ValidationError {
@@ -28,7 +31,15 @@ string FederationId
 @range(min: 0, max: 4000)
 integer Rating
 
-@pattern("^[1-9][0-9]*$")
+@trait(selector: "string")
+structure NumericString {}
+
+apply fide.spec#NumericString @refinement(
+   targetType: "fide.types.PageNumber",
+   providerImport: "fide.types.PageNumber.given"
+)
+
+@NumericString
 string PageNumber
 
 enum Title {
