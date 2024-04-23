@@ -12,9 +12,14 @@ trait Db:
   def upsert(player: NewPlayer, federation: Option[NewFederation]): IO[Unit]
   def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit]
   def playerById(id: PlayerId): IO[Option[PlayerInfo]]
-  def allPlayers(sorting: Sorting, paging: Pagination, filter: Filter): IO[List[PlayerInfo]]
+  def allPlayers(sorting: Sorting, paging: Pagination, filter: PlayerFilter): IO[List[PlayerInfo]]
   def allFederations: IO[List[FederationInfo]]
-  def playersByName(name: String, sorting: Sorting, paging: Pagination, filter: Filter): IO[List[PlayerInfo]]
+  def playersByName(
+      name: String,
+      sorting: Sorting,
+      paging: Pagination,
+      filter: PlayerFilter
+  ): IO[List[PlayerInfo]]
   def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]]
   def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
   def allFederationsSummary(paging: Pagination): IO[List[FederationSummary]]
@@ -50,7 +55,7 @@ object Db:
     def playerById(id: PlayerId): IO[Option[PlayerInfo]] =
       postgres.use(_.option(Sql.playerById)(id))
 
-    def allPlayers(sorting: Sorting, paging: Pagination, filter: Filter): IO[List[PlayerInfo]] =
+    def allPlayers(sorting: Sorting, paging: Pagination, filter: PlayerFilter): IO[List[PlayerInfo]] =
       val f = Sql.allPlayers(sorting, paging, filter)
       val q = f.fragment.query(Codecs.playerInfo)
       postgres.use(_.execute(q)(f.argument))
@@ -62,7 +67,7 @@ object Db:
         name: String,
         sorting: Sorting,
         paging: Pagination,
-        filter: Filter
+        filter: PlayerFilter
     ): IO[List[PlayerInfo]] =
       val f = Sql.playersByName(name, sorting, paging, filter)
       val q = f.fragment.query(Codecs.playerInfo)
@@ -166,11 +171,11 @@ private object Sql:
         FROM federations
        """.query(federationInfo)
 
-  def allPlayers(sorting: Sorting, page: Pagination, filter: Filter): AppliedFragment =
+  def allPlayers(sorting: Sorting, page: Pagination, filter: PlayerFilter): AppliedFragment =
     allPlayersFragment(Void) |+| filterFragment(filter) |+|
       sortingFragment(sorting) |+| pagingFragment(page)
 
-  def playersByName(name: String, sorting: Sorting, page: Pagination, filter: Filter): AppliedFragment =
+  def playersByName(name: String, sorting: Sorting, page: Pagination, filter: PlayerFilter): AppliedFragment =
     allPlayersFragment(Void) |+| nameLikeFragment(name) |+| filterFragment(filter) |+|
       sortingFragment(sorting) |+| pagingFragment(page)
 
@@ -201,7 +206,7 @@ private object Sql:
             AND #$_column <= ${int4}""".apply(max)
       case (None, None) => void
 
-  private def filterFragment(filter: Filter): AppliedFragment =
+  private def filterFragment(filter: PlayerFilter): AppliedFragment =
     val bw = between("standard", filter.standard.min, filter.standard.max) |+|
       between("rapid", filter.rapid.min, filter.rapid.max) |+|
       between("blitz", filter.blitz.min, filter.blitz.max)

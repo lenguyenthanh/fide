@@ -78,7 +78,7 @@ object DbSuite extends SimpleIOSuite:
     resource.use: db =>
       for
         _       <- db.upsert(newPlayer, newFederation.some)
-        players <- db.playersByName("Jo", defaultSorting, defaultPage, Filter.default)
+        players <- db.playersByName("Jo", defaultSorting, defaultPage, PlayerFilter.default)
       yield expect(
         players.length == 1 && players.head.to[NewPlayer] == newPlayer && players.head.federation.get
           .to[NewFederation] == newFederation
@@ -90,7 +90,7 @@ object DbSuite extends SimpleIOSuite:
       for
         _       <- db.upsert(newPlayer, newFederation.some)
         _       <- db.upsert(player2, newFederation.some)
-        players <- db.allPlayers(defaultSorting, defaultPage, Filter.default)
+        players <- db.allPlayers(defaultSorting, defaultPage, PlayerFilter.default)
       yield expect(players.length == 2 && players.head.name == "A")
 
   test("search playersByFederationId success"):
