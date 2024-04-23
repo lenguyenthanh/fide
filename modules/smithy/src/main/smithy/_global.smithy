@@ -35,8 +35,8 @@ integer Rating
 structure PageFormat {}
 
 apply fide.spec#PageFormat @refinement(
-   targetType: "fide.types.NumericString",
-   providerImport: "fide.types.NumericString.given"
+   targetType: "fide.types.Natural",
+   providerImport: "fide.types.Natural.given"
 )
 
 @PageFormat

@@ -18,7 +18,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
   import Transformers.*
 
   override def getPlayers(
-      page: NumericString,
+      page: Natural,
       pageSize: Int,
       sortBy: Option[SortBy],
       order: Option[Order],
@@ -31,7 +31,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       blitzMax: Option[Rating],
       name: Option[String]
   ): IO[GetPlayersOutput] =
-    val paging  = Models.Pagination.fromPageAndSize(page.intValue, pageSize)
+    val paging  = Models.Pagination.fromPageAndSize(page, pageSize)
     val _order  = order.map(_.to[Models.Order]).getOrElse(Models.Order.Asc)
     val _sortBy = sortBy.map(_.to[Models.SortBy]).getOrElse(Models.SortBy.Name)
     val sorting = Models.Sorting(_sortBy, _order)
@@ -50,7 +50,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       .map: xs =>
         GetPlayersOutput(
           xs,
-          Option.when(xs.size == pageSize)(NumericString(paging.nextPage))
+          Option.when(xs.size == pageSize)(Natural.applyUnsafe(paging.nextPage))
         )
 
   override def getPlayerById(id: PlayerId): IO[Player] =
