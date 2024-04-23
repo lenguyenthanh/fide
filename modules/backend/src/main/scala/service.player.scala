@@ -19,7 +19,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
 
   override def getPlayers(
       page: Natural,
-      pageSize: Int,
+      pageSize: Natural,
       sortBy: Option[SortBy],
       order: Option[Order],
       isActive: Option[Boolean],

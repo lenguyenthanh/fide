@@ -13,5 +13,10 @@ object Natural extends RefinedTypeOps[Int, Positive, Natural]:
   def apply(value: String): Either[String, Natural] =
     value.toIntOption.toRight(s"$value is not an int") >>= Natural.either
 
+object providers:
+
   given RefinementProvider[PageFormat, String, Natural] =
-    Refinement.drivenBy[PageFormat](Natural.apply, _.toString)
+    Refinement.drivenBy(Natural.apply, _.toString)
+
+  given RefinementProvider[PageSizeFormat, Int, Natural] =
+    Refinement.drivenBy(Natural.either, identity)

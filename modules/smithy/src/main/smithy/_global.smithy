@@ -34,14 +34,26 @@ integer Rating
 @trait(selector: "string")
 structure PageFormat {}
 
+@trait(selector: "integer")
+structure PageSizeFormat {}
+
 apply fide.spec#PageFormat @refinement(
    targetType: "fide.types.Natural",
-   providerImport: "fide.types.Natural.given"
+   providerImport: "fide.types.providers.given"
+)
+
+apply fide.spec#PageSizeFormat @refinement(
+   targetType: "fide.types.Natural",
+   providerImport: "fide.types.providers.given"
 )
 
 @PageFormat
 @unwrap
 string PageNumber
+
+@PageSizeFormat
+@unwrap
+integer PageSize
 
 enum Title {
   GM = "GM"
