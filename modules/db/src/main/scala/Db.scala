@@ -18,6 +18,7 @@ trait Db:
   def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]]
   def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
   def allFederationsSummary(paging: Pagination): IO[List[FederationSummary]]
+  def federationSummaryById(id: FederationId): IO[Option[FederationSummary]]
 
 object Db:
 
@@ -79,6 +80,9 @@ object Db:
       val f = Sql.allFederationsSummary(paging)
       val q = f.fragment.query(Codecs.federationSummary)
       postgres.use(_.execute(q)(f.argument))
+
+    def federationSummaryById(id: FederationId): IO[Option[FederationSummary]] =
+      postgres.use(_.option(Sql.federationSummaryById)(id))
 
   extension (p: NewPlayer)
     def toInsertPlayer(fedId: Option[FederationId]) =
@@ -143,7 +147,6 @@ private object Sql:
         $onPlayerConflictDoUpdate
        """.command
 
-  // TODO use returning
   lazy val playerById: Query[PlayerId, PlayerInfo] =
     sql"$allPlayersFragment AND p.id = $int4".query(playerInfo)
 
@@ -177,6 +180,10 @@ private object Sql:
 
   def allFederationsSummary(paging: Pagination): AppliedFragment =
     allFederationsSummaryFragment(Void) |+| pagingFragment(paging)
+
+  lazy val federationSummaryById: Query[FederationId, FederationSummary] =
+    sql"""$allFederationsSummaryFragment
+        WHERE id = $text""".query(federationSummary)
 
   private val void: AppliedFragment = sql"".apply(Void)
 

@@ -125,4 +125,7 @@ structure Stats {
 
 @error("client")
 @httpError(404)
-structure FederationNotFound {}
+structure FederationNotFound {
+  @required
+  id: FederationId
+}

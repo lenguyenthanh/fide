@@ -1,6 +1,7 @@
 package fide
 
 import cats.effect.*
+import cats.syntax.all.*
 import fide.db.Db
 import fide.domain.Models.Pagination
 import fide.spec.*
@@ -13,7 +14,12 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
 
   import FederationTransformers.*
   override def getFederationSummaryById(id: FederationId): IO[FederationSummary] =
-    IO.raiseError(InternalServerError("Not implemented yet"))
+    db.federationSummaryById(id.value)
+      .handleErrorWith: e =>
+        error"Error in getFederationSummaryById: $id, $e" *>
+          IO.raiseError(InternalServerError("Internal server error"))
+      .flatMap:
+        _.fold(IO.raiseError(FederationNotFound(id)))(_.transform.pure)
 
   override def getFederationPlayersById(
       id: FederationId,

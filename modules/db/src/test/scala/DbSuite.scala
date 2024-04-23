@@ -120,3 +120,11 @@ object DbSuite extends SimpleIOSuite:
         _      <- kv.put("fide_last_update_key", "2021-01-01")
         result <- db.allFederationsSummary(defaultPage)
       yield expect(result.size == 1)
+
+  test("query federation summary byId success"):
+    resourceP.use: (db, kv) =>
+      for
+        _      <- db.upsert(newPlayer, newFederation.some)
+        _      <- kv.put("fide_last_update_key", "2021-01-01")
+        result <- db.federationSummaryById("fide")
+      yield expect(result.isDefined)
