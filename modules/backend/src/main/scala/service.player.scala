@@ -15,7 +15,7 @@ import java.time.OffsetDateTime
 
 class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
 
-  import Transformers.*
+  import PlayerTransformers.*
 
   override def getPlayers(
       page: Natural,
@@ -68,7 +68,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       .map(_.map(p => p.id.toString -> p.transform).toMap)
       .map(GetPlayersByIdsOutput.apply)
 
-object Transformers:
+private object PlayerTransformers:
   given Transformer.Derived[Int, Rating]          = Transformer.Derived.FromFunction(Rating.apply)
   given Transformer.Derived[String, FederationId] = Transformer.Derived.FromFunction(FederationId.apply)
   given Transformer.Derived[Int, PlayerId]        = Transformer.Derived.FromFunction(PlayerId.apply)

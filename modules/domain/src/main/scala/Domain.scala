@@ -114,6 +114,22 @@ case class FederationInfo(
     id: FederationId,
     name: String
 )
+
+case class FederationSummary(
+    id: FederationId,
+    name: String,
+    nbPlayers: Int,
+    standard: Stats,
+    rapid: Stats,
+    blitz: Stats
+)
+
+case class Stats(
+    rank: Int,
+    nbPlayers: Int,
+    top10Rating: Int
+)
+
 case class Federation(
     id: FederationId,
     name: String,

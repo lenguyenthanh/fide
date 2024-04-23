@@ -17,6 +17,7 @@ trait Db:
   def playersByName(name: String, sorting: Sorting, paging: Pagination, filter: Filter): IO[List[PlayerInfo]]
   def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]]
   def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
+  def allFederationsSummary(paging: Pagination): IO[List[FederationSummary]]
 
 object Db:
 
@@ -74,6 +75,11 @@ object Db:
     def playersByFederationId(id: FederationId): IO[List[PlayerInfo]] =
       postgres.use(_.execute(Sql.playersByFederationId)(id))
 
+    def allFederationsSummary(paging: Pagination): IO[List[FederationSummary]] =
+      val f = Sql.allFederationsSummary(paging)
+      val q = f.fragment.query(Codecs.federationSummary)
+      postgres.use(_.execute(q)(f.argument))
+
   extension (p: NewPlayer)
     def toInsertPlayer(fedId: Option[FederationId]) =
       p.into[InsertPlayer].transform(Field.const(_.federation, fedId))
@@ -104,6 +110,12 @@ private object Codecs:
 
   val federationInfo: Codec[FederationInfo] =
     (text *: text).to[FederationInfo]
+
+  val stats: Codec[Stats] =
+    (int4 *: int4 *: int4).to[Stats]
+
+  val federationSummary: Codec[FederationSummary] =
+    (text *: text *: int4 *: stats *: stats *: stats).to[FederationSummary]
 
   val playerInfo: Codec[PlayerInfo] =
     (int4 *: text *: title.opt *: title.opt *: otherTitles *: int4.opt *: int4.opt *: int4.opt *: sex.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
@@ -163,6 +175,9 @@ private object Sql:
     val ids = int4.values.list(n)
     sql"$allPlayersFragment AND p.id IN ($ids)"
 
+  def allFederationsSummary(paging: Pagination): AppliedFragment =
+    allFederationsSummaryFragment(Void) |+| pagingFragment(paging)
+
   private val void: AppliedFragment = sql"".apply(Void)
 
   private def between(column: String, min: Option[Rating], max: Option[Rating]): AppliedFragment =
@@ -220,3 +235,8 @@ private object Sql:
         SELECT p.id, p.name, p.title, p.women_title, p.other_titles, p.standard, p.rapid, p.blitz, p.sex, p.birth_year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p, federations AS f
         WHERE p.federation_id = f.id"""
+
+  private lazy val allFederationsSummaryFragment: Fragment[Void] =
+    sql"""
+        SELECT id, name, players, avg_top_standard_rank, standard_players, avg_top_standard, avg_top_rapid_rank, rapid_players, avg_top_rapid, avg_top_blitz_rank, blitz_players, avg_top_blitz
+        FROM federations_summary"""
