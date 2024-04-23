@@ -23,7 +23,7 @@ $FUNCTION$ LANGUAGE PLPGSQL;
 CREATE OR REPLACE VIEW federations_with_players_count_and_avg_rating AS
 (
   WITH f1 AS (
-    SELECT federations.id, federations.name, COUNT(players.id) as players, ROUND(avg(players.standard)) as avg_standard, ROUND(avg(players.rapid)) as avg_rapid, ROUND(avg(players.blitz)) as avg_blitz, COUNT(COALESCE(players.standard, NULL)) as standard_players, COUNT(COALESCE(players.rapid, NULL)) as rapid_players, COUNT(COALESCE(players.blitz, NULL)) as blitz_players
+    SELECT federations.id, federations.name, CAST (COUNT(players.id) AS integer) as players, CAST(ROUND(avg(players.standard)) as integer) as avg_standard, CAST(ROUND(avg(players.rapid)) as integer) as avg_rapid, CAST(ROUND(avg(players.blitz)) as integer) as avg_blitz, CAST(COUNT(COALESCE(players.standard, NULL)) as integer) as standard_players, CAST(COUNT(COALESCE(players.rapid, NULL)) as integer) as rapid_players, CAST(COUNT(COALESCE(players.blitz, NULL)) as integer) as blitz_players
     FROM players, federations
     WHERE players.federation_id = federations.id AND players.active = true
     GROUP BY federations.id)
@@ -56,18 +56,18 @@ WHERE players.federation_id = federations.id AND players.active = true),
 fed_with_avg_top_10 as
 (select t1.id, t1.avg_top_standard, t2.avg_top_rapid, t3.avg_top_blitz
 FROM
-(SELECT fed_with_ranking.id, ROUND(avg(standard)) as avg_top_standard
+(SELECT fed_with_ranking.id, CAST(ROUND(avg(standard)) as integer) as avg_top_standard
     FROM fed_with_ranking
     WHERE fed_with_ranking.standard_rank <= 10
     GROUP BY fed_with_ranking.id) as t1
 LEFT JOIN
-(SELECT fed_with_ranking.id, ROUND(avg(rapid)) as avg_top_rapid
+(SELECT fed_with_ranking.id, CAST(ROUND(avg(rapid)) as integer) as avg_top_rapid
     FROM fed_with_ranking
     WHERE fed_with_ranking.rapid_rank <= 10
     GROUP BY fed_with_ranking.id) as t2
 ON t1.id = t2.id
 LEFT JOIN
-(SELECT fed_with_ranking.id, ROUND(avg(blitz)) as avg_top_blitz
+(SELECT fed_with_ranking.id, CAST(ROUND(avg(blitz)) as integer) as avg_top_blitz
     FROM fed_with_ranking
     WHERE fed_with_ranking.blitz_rank <= 10
     GROUP BY fed_with_ranking.id) as t3
@@ -76,15 +76,15 @@ ON t1.id = t3.id),
 -- average top 10 rating with ranking
 fed_with_avg_top_10_ranking AS (
 SELECT fed_with_avg_top_10.id, fed_with_avg_top_10.avg_top_standard, fed_with_avg_top_10.avg_top_rapid, fed_with_avg_top_10.avg_top_blitz,
-rank() OVER (
+CAST(rank() OVER (
     ORDER BY fed_with_avg_top_10.avg_top_standard DESC NULLS LAST
-        ) as avg_top_standard_rank,
-rank() OVER (
+        ) as integer) as avg_top_standard_rank,
+CAST(rank() OVER (
     ORDER BY fed_with_avg_top_10.avg_top_rapid DESC NULLS LAST
-        ) as avg_top_rapid_rank,
-rank() OVER (
+        ) as integer) as avg_top_rapid_rank,
+CAST(rank() OVER (
     ORDER BY fed_with_avg_top_10.avg_top_blitz DESC NULLS LAST
-        ) as avg_top_blitz_rank
+        ) as integer) as avg_top_blitz_rank
 FROM fed_with_avg_top_10)
 select * from fed_with_avg_top_10_ranking
 );

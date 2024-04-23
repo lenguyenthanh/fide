@@ -16,7 +16,9 @@ object DbSuite extends SimpleIOSuite:
 
   given Logger[IO] = NoOpLogger[IO]
 
-  private def resource: Resource[IO, Db] = Containers.createResource.map(x => Db(x.postgres))
+  private def resourceP: Resource[IO, (Db, KVStore)] =
+    Containers.createResource.map(x => Db(x.postgres) -> KVStore(x.postgres))
+  private def resource: Resource[IO, Db] = resourceP.map(_._1)
 
   val newPlayer = NewPlayer(
     1,
@@ -110,3 +112,11 @@ object DbSuite extends SimpleIOSuite:
         players.length == 1 && players.head.to[NewPlayer] == newPlayer && players.head.federation.get
           .to[NewFederation] == newFederation
       )
+
+  test("query federation summary success"):
+    resourceP.use: (db, kv) =>
+      for
+        _      <- db.upsert(newPlayer, newFederation.some)
+        _      <- kv.put("fide_last_update_key", "2021-01-01")
+        result <- db.allFederationsSummary(defaultPage)
+      yield expect(result.size == 1)
