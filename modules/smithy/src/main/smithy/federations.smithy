@@ -41,10 +41,10 @@ structure GetFederationPlayersInput {
   @required
   id: FederationId
   @httpQuery("page")
-  page: PageNumber
+  page: PageNumber = "1"
   @httpQuery("page_size")
   @range(min: 1, max: 100)
-  pageSize: Integer
+  pageSize: PageSize = 30
 }
 
 structure GetFederationPlayersByIdOutput {
@@ -55,10 +55,10 @@ structure GetFederationPlayersByIdOutput {
 
 structure GetFederationsSummaryInput {
   @httpQuery("page")
-  page: PageNumber
+  page: PageNumber = "1"
   @httpQuery("page_size")
   @range(min: 1, max: 100)
-  pageSize: Integer
+  pageSize: PageSize = 30
 }
 
 structure GetFederationsSummaryOutput {
