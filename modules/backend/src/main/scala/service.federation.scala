@@ -12,13 +12,15 @@ import org.typelevel.log4cats.syntax.*
 class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[IO]:
 
   import FederationTransformers.*
-  override def getFederationSummaryById(id: FederationId): IO[FederationSummary] = ???
+  override def getFederationSummaryById(id: FederationId): IO[FederationSummary] =
+    IO.raiseError(InternalServerError("Not implemented yet"))
 
   override def getFederationPlayersById(
       id: FederationId,
       page: Natural,
       pageSize: Natural
-  ): IO[GetFederationPlayersByIdOutput] = ???
+  ): IO[GetFederationPlayersByIdOutput] =
+    IO.raiseError(InternalServerError("Not implemented yet"))
 
   override def getFederationsSummary(
       page: Natural,
