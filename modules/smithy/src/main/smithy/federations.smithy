@@ -16,6 +16,7 @@ service FederationService {
 operation GetFederationsSummary {
   input: GetFederationsSummaryInput,
   output: GetFederationsSummaryOutput
+  errors: [InternalServerError]
 }
 
 /// Get a federation summary by its id
@@ -24,7 +25,7 @@ operation GetFederationsSummary {
 operation GetFederationSummaryById {
   input: GetFederationByIdInput,
   output: FederationSummary,
-  errors: [FederationNotFound]
+  errors: [FederationNotFound, InternalServerError]
 }
 
 @readonly
@@ -33,7 +34,7 @@ operation GetFederationSummaryById {
 operation GetFederationPlayersById {
   input: GetFederationPlayersInput,
   output: GetFederationPlayersByIdOutput,
-  errors: [FederationNotFound]
+  errors: [FederationNotFound, InternalServerError]
 }
 
 structure GetFederationPlayersInput {
