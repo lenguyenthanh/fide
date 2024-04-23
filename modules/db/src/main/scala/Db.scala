@@ -210,7 +210,8 @@ private object Sql:
     val bw = between("standard", filter.standard.min, filter.standard.max) |+|
       between("rapid", filter.rapid.min, filter.rapid.max) |+|
       between("blitz", filter.blitz.min, filter.blitz.max)
-    filter.isActive.fold(bw)(x => bw |+| filterActive(x))
+    val f = filter.isActive.fold(bw)(bw |+| filterActive(_))
+    filter.federationId.fold(f)(f |+| federationIdFragment(_))
 
   private lazy val filterActive: Fragment[Boolean] =
     sql"""
@@ -235,6 +236,10 @@ private object Sql:
   private def pagingFragment(page: Pagination): AppliedFragment =
     sql"""
         LIMIT ${int4} OFFSET ${int4}""".apply(page.limit, page.offset)
+
+  private def federationIdFragment(id: FederationId): AppliedFragment =
+    sql"""
+        AND p.federation_id = $text""".apply(id)
 
   private def sortingFragment(sorting: Sorting): AppliedFragment =
     val column  = s"p.${sorting.sortBy.value}"
