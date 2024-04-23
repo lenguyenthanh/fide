@@ -39,6 +39,7 @@ lazy val smithy = (project in file("modules/smithy"))
     smithy4sWildcardArgument := "?",
     libraryDependencies ++= Seq(
       "com.disneystreaming.smithy4s" %% "smithy4s-core" % smithy4sVersion.value,
+      catsCore,
       iron
     )
   )

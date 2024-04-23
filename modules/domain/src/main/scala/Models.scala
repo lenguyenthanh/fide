@@ -20,6 +20,14 @@ object Models:
 
   object Sorting:
     def default = Sorting(SortBy.Name, Order.Desc)
+    def fromOption(sortBy: Option[SortBy], order: Option[Order]): Sorting =
+      val _sortBy = sortBy.getOrElse(Models.SortBy.Name)
+      val defaultOrder =
+        _sortBy match
+          case Models.SortBy.Name => Models.Order.Asc
+          case _                  => Models.Order.Desc
+      val _order = order.getOrElse(defaultOrder)
+      Models.Sorting(_sortBy, _order)
 
   // start at 1
   case class Pagination(limit: Int, offset: Int):

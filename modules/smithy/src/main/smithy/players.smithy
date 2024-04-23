@@ -62,7 +62,7 @@ structure GetPlayersInput with [SortingMixin, FilterMixin] {
   page: PageNumber = "1"
   @httpQuery("page_size")
   @range(min: 1, max: 100)
-  pageSize: Integer = 30
+  pageSize: PageSize = 30
 }
 
 structure GetPlayersOutput {
