@@ -78,7 +78,7 @@ object DbSuite extends SimpleIOSuite:
     resource.use: db =>
       for
         _       <- db.upsert(newPlayer, newFederation.some)
-        players <- db.playersByName("Jo", defaultSorting, defaultPage, Filter.default)
+        players <- db.playersByName("Jo", defaultSorting, defaultPage, PlayerFilter.default)
       yield expect(
         players.length == 1 && players.head.to[NewPlayer] == newPlayer && players.head.federation.get
           .to[NewFederation] == newFederation
@@ -90,7 +90,7 @@ object DbSuite extends SimpleIOSuite:
       for
         _       <- db.upsert(newPlayer, newFederation.some)
         _       <- db.upsert(player2, newFederation.some)
-        players <- db.allPlayers(defaultSorting, defaultPage, Filter.default)
+        players <- db.allPlayers(defaultSorting, defaultPage, PlayerFilter.default)
       yield expect(players.length == 2 && players.head.name == "A")
 
   test("search playersByFederationId success"):
@@ -120,3 +120,11 @@ object DbSuite extends SimpleIOSuite:
         _      <- kv.put("fide_last_update_key", "2021-01-01")
         result <- db.allFederationsSummary(defaultPage)
       yield expect(result.size == 1)
+
+  test("query federation summary byId success"):
+    resourceP.use: (db, kv) =>
+      for
+        _      <- db.upsert(newPlayer, newFederation.some)
+        _      <- kv.put("fide_last_update_key", "2021-01-01")
+        result <- db.federationSummaryById("fide")
+      yield expect(result.isDefined)

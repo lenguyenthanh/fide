@@ -12,12 +12,18 @@ trait Db:
   def upsert(player: NewPlayer, federation: Option[NewFederation]): IO[Unit]
   def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit]
   def playerById(id: PlayerId): IO[Option[PlayerInfo]]
-  def allPlayers(sorting: Sorting, paging: Pagination, filter: Filter): IO[List[PlayerInfo]]
+  def allPlayers(sorting: Sorting, paging: Pagination, filter: PlayerFilter): IO[List[PlayerInfo]]
   def allFederations: IO[List[FederationInfo]]
-  def playersByName(name: String, sorting: Sorting, paging: Pagination, filter: Filter): IO[List[PlayerInfo]]
+  def playersByName(
+      name: String,
+      sorting: Sorting,
+      paging: Pagination,
+      filter: PlayerFilter
+  ): IO[List[PlayerInfo]]
   def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]]
   def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
   def allFederationsSummary(paging: Pagination): IO[List[FederationSummary]]
+  def federationSummaryById(id: FederationId): IO[Option[FederationSummary]]
 
 object Db:
 
@@ -49,7 +55,7 @@ object Db:
     def playerById(id: PlayerId): IO[Option[PlayerInfo]] =
       postgres.use(_.option(Sql.playerById)(id))
 
-    def allPlayers(sorting: Sorting, paging: Pagination, filter: Filter): IO[List[PlayerInfo]] =
+    def allPlayers(sorting: Sorting, paging: Pagination, filter: PlayerFilter): IO[List[PlayerInfo]] =
       val f = Sql.allPlayers(sorting, paging, filter)
       val q = f.fragment.query(Codecs.playerInfo)
       postgres.use(_.execute(q)(f.argument))
@@ -61,7 +67,7 @@ object Db:
         name: String,
         sorting: Sorting,
         paging: Pagination,
-        filter: Filter
+        filter: PlayerFilter
     ): IO[List[PlayerInfo]] =
       val f = Sql.playersByName(name, sorting, paging, filter)
       val q = f.fragment.query(Codecs.playerInfo)
@@ -79,6 +85,9 @@ object Db:
       val f = Sql.allFederationsSummary(paging)
       val q = f.fragment.query(Codecs.federationSummary)
       postgres.use(_.execute(q)(f.argument))
+
+    def federationSummaryById(id: FederationId): IO[Option[FederationSummary]] =
+      postgres.use(_.option(Sql.federationSummaryById)(id))
 
   extension (p: NewPlayer)
     def toInsertPlayer(fedId: Option[FederationId]) =
@@ -143,7 +152,6 @@ private object Sql:
         $onPlayerConflictDoUpdate
        """.command
 
-  // TODO use returning
   lazy val playerById: Query[PlayerId, PlayerInfo] =
     sql"$allPlayersFragment AND p.id = $int4".query(playerInfo)
 
@@ -163,11 +171,11 @@ private object Sql:
         FROM federations
        """.query(federationInfo)
 
-  def allPlayers(sorting: Sorting, page: Pagination, filter: Filter): AppliedFragment =
+  def allPlayers(sorting: Sorting, page: Pagination, filter: PlayerFilter): AppliedFragment =
     allPlayersFragment(Void) |+| filterFragment(filter) |+|
       sortingFragment(sorting) |+| pagingFragment(page)
 
-  def playersByName(name: String, sorting: Sorting, page: Pagination, filter: Filter): AppliedFragment =
+  def playersByName(name: String, sorting: Sorting, page: Pagination, filter: PlayerFilter): AppliedFragment =
     allPlayersFragment(Void) |+| nameLikeFragment(name) |+| filterFragment(filter) |+|
       sortingFragment(sorting) |+| pagingFragment(page)
 
@@ -177,6 +185,10 @@ private object Sql:
 
   def allFederationsSummary(paging: Pagination): AppliedFragment =
     allFederationsSummaryFragment(Void) |+| pagingFragment(paging)
+
+  lazy val federationSummaryById: Query[FederationId, FederationSummary] =
+    sql"""$allFederationsSummaryFragment
+        WHERE id = $text""".query(federationSummary)
 
   private val void: AppliedFragment = sql"".apply(Void)
 
@@ -194,11 +206,12 @@ private object Sql:
             AND #$_column <= ${int4}""".apply(max)
       case (None, None) => void
 
-  private def filterFragment(filter: Filter): AppliedFragment =
+  private def filterFragment(filter: PlayerFilter): AppliedFragment =
     val bw = between("standard", filter.standard.min, filter.standard.max) |+|
       between("rapid", filter.rapid.min, filter.rapid.max) |+|
       between("blitz", filter.blitz.min, filter.blitz.max)
-    filter.isActive.fold(bw)(x => bw |+| filterActive(x))
+    val f = filter.isActive.fold(bw)(bw |+| filterActive(_))
+    filter.federationId.fold(f)(f |+| federationIdFragment(_))
 
   private lazy val filterActive: Fragment[Boolean] =
     sql"""
@@ -223,6 +236,10 @@ private object Sql:
   private def pagingFragment(page: Pagination): AppliedFragment =
     sql"""
         LIMIT ${int4} OFFSET ${int4}""".apply(page.limit, page.offset)
+
+  private def federationIdFragment(id: FederationId): AppliedFragment =
+    sql"""
+        AND p.federation_id = $text""".apply(id)
 
   private def sortingFragment(sorting: Sorting): AppliedFragment =
     val column  = s"p.${sorting.sortBy.value}"

@@ -53,12 +53,13 @@ object Models:
   object RatingRange:
     def empty = RatingRange(None, None)
 
-  case class Filter(
+  case class PlayerFilter(
       isActive: Option[Boolean],
       standard: RatingRange,
       rapid: RatingRange,
-      blitz: RatingRange
+      blitz: RatingRange,
+      federationId: Option[FederationId]
   )
 
-  object Filter:
-    val default = Filter(None, RatingRange.empty, RatingRange.empty, RatingRange.empty)
+  object PlayerFilter:
+    val default = PlayerFilter(None, RatingRange.empty, RatingRange.empty, RatingRange.empty, None)

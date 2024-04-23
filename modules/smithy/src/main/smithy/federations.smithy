@@ -37,7 +37,7 @@ operation GetFederationPlayersById {
   errors: [FederationNotFound, InternalServerError]
 }
 
-structure GetFederationPlayersInput {
+structure GetFederationPlayersInput with [SortingMixin, FilterMixin]{
   @httpLabel
   @required
   id: FederationId
@@ -125,4 +125,7 @@ structure Stats {
 
 @error("client")
 @httpError(404)
-structure FederationNotFound {}
+structure FederationNotFound {
+  @required
+  id: FederationId
+}
