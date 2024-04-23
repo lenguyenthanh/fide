@@ -35,16 +35,14 @@ integer Rating
 structure PageFormat {}
 
 @trait(selector: "integer")
-structure PageSizeFormat {}
+structure PageSizeFormat { }
 
 apply fide.spec#PageFormat @refinement(
    targetType: "fide.types.Natural",
-   providerImport: "fide.types.providers.given"
 )
 
 apply fide.spec#PageSizeFormat @refinement(
    targetType: "fide.types.Natural",
-   providerImport: "fide.types.providers.given"
 )
 
 @PageFormat

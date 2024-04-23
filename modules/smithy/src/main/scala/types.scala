@@ -7,16 +7,17 @@ import io.github.iltotore.iron.*
 import io.github.iltotore.iron.constraint.all.*
 import smithy4s.*
 
-type Natural = Int :| Greater[0]
+opaque type Natural <: Int :| Positive = Int :| Positive
 
 object Natural extends RefinedTypeOps[Int, Positive, Natural]:
-  def apply(value: String): Either[String, Natural] =
+  def fromString(value: String): Either[String, Natural] =
     value.toIntOption.toRight(s"$value is not an int") >>= Natural.either
 
-object providers:
-
   given RefinementProvider[PageFormat, String, Natural] =
-    Refinement.drivenBy(Natural.apply, _.toString)
+    Refinement.drivenBy(Natural.fromString, _.toString)
+
+  given RefinementProvider.Simple[smithy.api.Range, Natural] =
+    RefinementProvider.rangeConstraint(x => x: Int)
 
   given RefinementProvider[PageSizeFormat, Int, Natural] =
     Refinement.drivenBy(Natural.either, identity)
