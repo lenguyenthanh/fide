@@ -48,7 +48,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       .map: xs =>
         GetPlayersOutput(
           xs,
-          Option.when(xs.size == pageSize)(Natural.applyUnsafe(paging.nextPage))
+          Option.when(xs.size == pageSize)(page.succ)
         )
 
   override def getPlayerById(id: PlayerId): IO[Player] =

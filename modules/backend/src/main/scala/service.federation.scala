@@ -34,7 +34,7 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
       .map: xs =>
         GetFederationsSummaryOutput(
           xs,
-          Option.when(xs.size == pageSize)(Natural.applyUnsafe(page + 1))
+          Option.when(xs.size == pageSize)(page.succ)
         )
 
 private object FederationTransformers:

@@ -13,6 +13,8 @@ object Natural extends RefinedTypeOps[Int, Positive, Natural]:
   def fromString(value: String): Either[String, Natural] =
     value.toIntOption.toRight(s"$value is not an int") >>= Natural.either
 
+  extension (self: Natural) def succ: Natural = Natural.applyUnsafe(self + 1)
+
   given RefinementProvider[PageFormat, String, Natural] =
     Refinement.drivenBy(Natural.fromString, _.toString)
 
