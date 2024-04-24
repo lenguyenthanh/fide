@@ -10,9 +10,18 @@ service HealthService {
   operations: [HealthCheck]
 }
 
+@readonly
 @http(method: "GET", uri: "/api/health", code: 200)
 operation HealthCheck {
-  output := {
-    service: String
-  }
+  output: HealthStatusOutput
+}
+
+enum PostgresStatus {
+  Ok = "ok"
+  Unreachable = "unreachable"
+}
+
+structure HealthStatusOutput {
+  @required
+  postgres: PostgresStatus
 }

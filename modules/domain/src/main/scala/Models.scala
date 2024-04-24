@@ -63,3 +63,7 @@ object Models:
 
   object PlayerFilter:
     val default = PlayerFilter(None, RatingRange.empty, RatingRange.empty, RatingRange.empty, None)
+
+  enum PostgresStatus:
+    case Ok
+    case Unreachable
