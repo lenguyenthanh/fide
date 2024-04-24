@@ -12,7 +12,7 @@ def Routes(resources: AppResources)(using Logger[IO]): Resource[IO, HttpApp[IO]]
 
   val playerServiceImpl: PlayerService[IO]         = PlayerServiceImpl(resources.db)
   val federationServiceImpl: FederationService[IO] = FederationServiceImpl(resources.db)
-  val healthServiceImpl: HealthService[IO]         = new HealthService.Default[IO](IO.stub)
+  val healthServiceImpl: HealthService[IO]         = HealthServiceImpl(resources.health)
 
   val players: Resource[IO, HttpRoutes[IO]] =
     SimpleRestJsonBuilder.routes(playerServiceImpl).resource
