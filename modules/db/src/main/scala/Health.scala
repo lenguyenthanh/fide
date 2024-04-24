@@ -23,6 +23,6 @@ object Health:
       postgres
         .use(_.option(q))
         .timeout(1.second)
-        .map(_.fold(PostgresStatus.Ok)(_ => PostgresStatus.Unreachable))
+        .map(_.fold(PostgresStatus.Unreachable)(_ => PostgresStatus.Ok))
         .handleErrorWith: e =>
           error"Error in health check: $e" *> IO.pure(PostgresStatus.Unreachable)
