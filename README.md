@@ -39,7 +39,19 @@ Also requires JDK 21 with [sbt](https://www.scala-sbt.org/1.x/docs/Setup.html)
 ```bash
 cp .env.example .env
 docker compose up -d
+```
+
+then
+
+```bash
 sbt backend/run
+```
+
+or
+
+```bash
+sbt backend/stage
+export $(cat .env | xargs) && ./modules/backend/target/universal/stage/bin/backend
 ```
 
 ### Run (with sbt in Docker)
@@ -58,6 +70,15 @@ curl http://localhost:9669/api/players
 ### Database viewer
 
 http://localhost:8180/?pgsql=db&username=admin&db=fide&ns=fide (password: dummy)
+
+
+### Stress test with Gatling
+
+Run [server](#run-with-sbt-locally) and then run Gatling
+
+```bash
+sbt gatling/gatling:test
+```
 
 ### Before submitting PR
 
