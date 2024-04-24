@@ -1,5 +1,7 @@
 # Experimental FIDE API
 
+[![Continuous Integration](https://github.com/lenguyenthanh/fide/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lenguyenthanh/fide/actions/workflows/ci.yml)
+
 ## How to use
 
 Check [Open API docs](https://fide.thanh.se/docs/index.html)
