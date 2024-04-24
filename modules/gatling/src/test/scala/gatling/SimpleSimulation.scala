@@ -6,6 +6,8 @@ import io.gatling.core.controller.inject.open.OpenInjectionStep
 import io.gatling.http.Predef.*
 import org.HdrHistogram.ConcurrentHistogram
 
+import scala.concurrent.duration.DurationInt
+
 class SimpleSimulation extends Simulation:
 
   import SimpleSimulation.*
@@ -13,8 +15,15 @@ class SimpleSimulation extends Simulation:
   private val httpProtocol = http.baseUrl(config.serverUri)
 
 // Add the ScenarioBuilder:
-  val one = scenario("My Scenario")
-    .exec(http("players").get("/players/").check(status.is(200)))
+  val one = scenario("Simple Scenario")
+    .exec(http("players").get("/players").check(status.is(200)))
+    .exec(http("player-standard").get("/players?sort_by=standard&order=desc&size=10").check(status.is(200)))
+    .exec(
+      http("player-blitz-active")
+        .get("/players?sort_by=blitz&order=desc&page=5&is_active=true")
+        .check(status.is(200))
+    )
+    .exec(http("federation_summary").get("/federations/summary").check(status.is(200)))
 
   setUp(one.inject(config.injectionPolicy)).protocols(httpProtocol)
 
@@ -28,8 +37,8 @@ object SimpleSimulation:
   )
 
   object config:
-    val numberOfUsers = 25
+    val numberOfUsers = 1000
 
-    val serverUri = "localhost:9669/api"
+    val serverUri = "http://localhost:9669/api"
 
-    val injectionPolicy: OpenInjectionStep = constantUsersPerSec(25).during(10)
+    val injectionPolicy: OpenInjectionStep = rampUsers(numberOfUsers).during(30.seconds)
