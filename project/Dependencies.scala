@@ -9,6 +9,7 @@ object Dependencies {
     val fs2        = "3.10.2"
     val http4s     = "0.23.26"
     val iron       = "2.5.0"
+    val gatling    = "3.10.1"
   }
 
   def http4s(artifact: String) = "org.http4s" %% s"http4s-$artifact" % V.http4s
@@ -42,6 +43,9 @@ object Dependencies {
   val ducktape = "io.github.arainko" %% "ducktape" % "0.2.0"
 
   val log4CatsNoop = "org.typelevel" %% "log4cats-noop" % "2.6.0" % Test
+
+  val gatlingTestFramework = "io.gatling"            % "gatling-test-framework"    % V.gatling % Test
+  val gatlingHighCharts    = "io.gatling.highcharts" % "gatling-charts-highcharts" % V.gatling % Test
 
   val testContainers    = "com.dimafeng"        %% "testcontainers-scala-postgresql" % "0.41.3"     % Test
   val weaver            = "com.disneystreaming" %% "weaver-cats"                     % "0.8.4"      % Test
