@@ -21,8 +21,8 @@ object Health:
       val q = sql"SELECT pid FROM pg_stat_activity".query(int4)
 
       postgres
-        .use(_.option(q))
+        .use(_.execute(q))
         .timeout(1.second)
-        .map(_.fold(PostgresStatus.Unreachable)(_ => PostgresStatus.Ok))
+        .map(xs => if xs.nonEmpty then PostgresStatus.Ok else PostgresStatus.Unreachable)
         .handleErrorWith: e =>
           error"Error in health check: $e" *> IO.pure(PostgresStatus.Unreachable)
