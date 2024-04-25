@@ -40,6 +40,8 @@ services:
       - 8180:8080
     networks:
       - fide
+    profiles:
+      - adminer
     restart: unless-stopped
 
 volumes:

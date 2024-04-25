@@ -69,6 +69,10 @@ curl http://localhost:9669/api/players
 
 ### Database viewer
 
+```bash
+COMPOSE_PROFILES=adminer docker compose up -d
+```
+
 http://localhost:8180/?pgsql=db&username=admin&db=fide&ns=fide (password: dummy)
 
 
