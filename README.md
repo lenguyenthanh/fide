@@ -6,33 +6,13 @@
 
 Check [Open API docs](https://fide.thanh.se/docs/index.html)
 
-## Examples
-
-Get all players
-
-```bash
-curl 'fide.thanh.se/api/players'
-```
-
-Get top 10 players by standard rating with descending order
-
-```bash
-curl 'fide.thanh.se/api/players?sort_by=standard&order=desc&size=10'
-```
-
-Get all players sort by blitz rating and is active on page 5
-
-```bash
-curl 'fide.thanh.se/api/players?sort_by=blitz&order=desc&page=5&is_active=true'
-```
-
 ## Development
 
 ### Prerequisites:
 
 - Docker
 
-### Run (with sbt locally)
+### Run
 
 Also requires JDK 21 with [sbt](https://www.scala-sbt.org/1.x/docs/Setup.html)
 
@@ -54,16 +34,10 @@ sbt backend/stage
 export $(cat .env | xargs) && ./modules/backend/target/universal/stage/bin/backend
 ```
 
-### Run (with sbt in Docker)
-
-```bash
-COMPOSE_PROFILES=sbt docker compose up -d
-```
-
 ### Usage
 
 ```bash
-open http://localhost:9669/docs // you may need to wait a bit for syncing
+open http://localhost:9669/docs
 curl http://localhost:9669/api/players
 ```
 
@@ -78,7 +52,7 @@ http://localhost:8180/?pgsql=db&username=admin&db=fide&ns=fide (password: dummy)
 
 ### Stress test with Gatling
 
-Run [server](#run-with-sbt-locally) and then run Gatling
+Run [server](#run) and then run Gatling
 
 ```bash
 sbt gatling/gatling:test
@@ -89,4 +63,40 @@ sbt gatling/gatling:test
 ```bash
 sbt test
 sbt lint
+```
+
+## Run without building
+
+You can use a pre-built Docker image from [GitHub Container Registry](https://github.com/lenguyenthanh/fide/pkgs/container/fide). Here is an example of how to run it with docker-compose:
+
+```yaml
+name: fide
+
+services:
+
+  api:
+    image: ghcr.io/lenguyenthanh/fide:0.1.0-snapshot
+    env_file: .env.docker
+    ports:
+      - 9669:9669
+    networks:
+      - fide_api
+
+  db:
+    image: postgres:16.2-alpine3.19
+    ports:
+      - 5432:5432
+    networks:
+      - fide_api
+    restart: unless-stopped
+
+networks:
+  fide_api:
+    driver: bridge
+```
+
+Then run:
+
+```bash
+docker compose up -d
 ```
