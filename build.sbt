@@ -8,7 +8,8 @@ inThisBuild(
     organizationName                       := "Thanh Le",
     licenses += ("agpl-v3"                 -> url("https://opensource.org/license/agpl-v3")),
     semanticdbEnabled                      := true, // for scalafix
-    Compile / packageDoc / publishArtifact := false
+    Compile / packageDoc / publishArtifact := false,
+    dockerBaseImage                        := "openjdk:21"
   )
 )
 
