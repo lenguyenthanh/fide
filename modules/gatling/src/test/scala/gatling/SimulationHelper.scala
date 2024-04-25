@@ -1,18 +1,13 @@
-package fide
-package gatling
+package fide.gatling
 
 import io.gatling.core.Predef.*
 import io.gatling.core.controller.inject.open.OpenInjectionStep
 import io.gatling.http.Predef.*
-import org.HdrHistogram.ConcurrentHistogram
-
 import scala.concurrent.duration.DurationInt
 
-class SimpleSimulation extends Simulation:
+object SimulationHelper:
 
-  import SimpleSimulation.*
-
-  private val httpProtocol = http.baseUrl(config.serverUri)
+  val httpProtocol = http.baseUrl(config.serverUri)
 
   def defaultPlayers(page: Int): String =
     s"/players?page=$page"
@@ -32,26 +27,10 @@ class SimpleSimulation extends Simulation:
     .exec(requests(page, "standard-players", sortByStandard))
     .exec(requests(page, "federation-summary", federationSummary))
 
-  val warmup = makeScenario(1, "warmup").inject(config.warmupPolicy)
-  val stress = makeScenario(config.maxPages, "stress").inject(config.stressPolicy)
-
-  setUp(warmup.andThen(stress)).protocols(httpProtocol)
-
-object SimpleSimulation:
-  private val hist = new ConcurrentHistogram(1L, 10000L, 3)
-
-  Runtime.getRuntime.addShutdownHook(
-    new Thread:
-      override def run(): Unit =
-        hist.outputPercentileDistribution(System.out, 1.0)
-  )
-
   object config:
     val numberOfUsers = 1000
-    val warmupUsers   = 100
     val maxPages      = 10
 
     val serverUri = "http://localhost:9669/api"
 
-    val warmupPolicy: OpenInjectionStep = rampUsers(warmupUsers).during(30.seconds)
     val stressPolicy: OpenInjectionStep = rampUsers(numberOfUsers).during(30.seconds)
