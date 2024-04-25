@@ -14,16 +14,23 @@ class SimpleSimulation extends Simulation:
 
   private val httpProtocol = http.baseUrl(config.serverUri)
 
+  def defaultPlayers(page: Int): String =
+    s"/players?page=$page"
+
+  def sortByStandard(page: Int): String =
+    s"/players?sort_by=standard&order=desc&page=$page"
+
+  def federationSummary(page: Int): String =
+    s"/federations/summary?page=$page"
+
+  def requests(name: String, f: Int => String) =
+    Range.inclusive(1, config.maxPages).map(f).map(http(name).get(_).check(status.is(200)))
+
 // Add the ScenarioBuilder:
   val one = scenario("Simple Scenario")
-    .exec(http("players").get("/players").check(status.is(200)))
-    .exec(http("player-standard").get("/players?sort_by=standard&order=desc&size=10").check(status.is(200)))
-    .exec(
-      http("player-blitz-active")
-        .get("/players?sort_by=blitz&order=desc&page=5&is_active=true")
-        .check(status.is(200))
-    )
-    .exec(http("federation_summary").get("/federations/summary").check(status.is(200)))
+    .exec(requests("default-players", defaultPlayers))
+    .exec(requests("standard-players", sortByStandard))
+    .exec(requests("federation-summary", federationSummary))
 
   setUp(one.inject(config.injectionPolicy)).protocols(httpProtocol)
 
@@ -38,6 +45,7 @@ object SimpleSimulation:
 
   object config:
     val numberOfUsers = 1000
+    val maxPages      = 10
 
     val serverUri = "http://localhost:9669/api"
 
