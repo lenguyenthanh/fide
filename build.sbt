@@ -95,7 +95,9 @@ lazy val backend = (project in file("modules/backend"))
     Compile / run / fork         := true,
     Compile / run / connectInput := true,
     Docker / dockerExposedPorts  := Seq(9000, 9443),
-    Docker / packageName         := "thanh/fide"
+    Docker / packageName         := "lenguyenthanh/fide",
+    Docker / maintainer          := "Thanh Le",
+    Docker / dockerRepository    := Some("ghcr.io")
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .dependsOn(smithy, domain, db, crawler)
@@ -103,7 +105,6 @@ lazy val backend = (project in file("modules/backend"))
 lazy val gatling = (project in file("modules/gatling"))
   .settings(name := "gatling")
   .enablePlugins(GatlingPlugin)
-  // .disablePlugins(ScalafixPlugin)
   .settings(
     scalacOptions -= "-Xfatal-warnings",
     libraryDependencies ++= Seq(
