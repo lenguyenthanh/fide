@@ -1,9 +1,7 @@
 package fide.gatling
 
 import io.gatling.core.Predef.*
-import io.gatling.core.controller.inject.open.OpenInjectionStep
 import io.gatling.http.Predef.*
-import scala.concurrent.duration.DurationInt
 
 object SimulationHelper:
 
@@ -28,9 +26,4 @@ object SimulationHelper:
     .exec(requests(page, "federation-summary", federationSummary))
 
   object config:
-    val numberOfUsers = 1000
-    val maxPages      = 10
-
     val serverUri = "http://localhost:9669/api"
-
-    val stressPolicy: OpenInjectionStep = rampUsers(numberOfUsers).during(30.seconds)

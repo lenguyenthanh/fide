@@ -102,7 +102,7 @@ lazy val backend = (project in file("modules/backend"))
 lazy val gatling = (project in file("modules/gatling"))
   .settings(name := "gatling")
   .enablePlugins(GatlingPlugin)
-  .disablePlugins(ScalafixPlugin)
+  // .disablePlugins(ScalafixPlugin)
   .settings(
     scalacOptions -= "-Xfatal-warnings",
     libraryDependencies ++= Seq(

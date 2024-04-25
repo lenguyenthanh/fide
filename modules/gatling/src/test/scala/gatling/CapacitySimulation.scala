@@ -2,9 +2,6 @@ package fide
 package gatling
 
 import io.gatling.core.Predef.*
-import io.gatling.core.controller.inject.open.OpenInjectionStep
-
-import scala.concurrent.duration.DurationInt
 
 class CapacitySimulation extends Simulation:
 

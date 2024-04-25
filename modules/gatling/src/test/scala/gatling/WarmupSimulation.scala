@@ -2,8 +2,6 @@ package fide
 package gatling
 
 import io.gatling.core.Predef.*
-import io.gatling.core.controller.inject.open.OpenInjectionStep
-import io.gatling.http.Predef.*
 
 import scala.concurrent.duration.DurationInt
 
