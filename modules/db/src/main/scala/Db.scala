@@ -255,5 +255,5 @@ private object Sql:
 
   private lazy val allFederationsSummaryFragment: Fragment[Void] =
     sql"""
-        SELECT id, name, players, avg_top_standard_rank, standard_players, avg_top_standard, avg_top_rapid_rank, rapid_players, avg_top_rapid, avg_top_blitz_rank, blitz_players, avg_top_blitz
+        SELECT id, name, players, avg_top_standard_rank, standard_players, coalesce(avg_top_standard, 0), avg_top_rapid_rank, rapid_players, coalesce(avg_top_rapid, 0), avg_top_blitz_rank, blitz_players, coalesce(avg_top_blitz, 0)
         FROM federations_summary"""
