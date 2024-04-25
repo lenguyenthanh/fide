@@ -2,20 +2,6 @@ name: fide
 
 services:
 
-  api:
-    image: sbtscala/scala-sbt:eclipse-temurin-jammy-21.0.2_13_1.9.9_3.4.1
-    volumes:
-      - .:/app
-      - .env.docker:/app/.env
-    working_dir: /app
-    entrypoint: sbt backend/run
-    ports:
-      - 9669:9669
-    networks:
-      - fide
-    profiles:
-      - sbt
-
   db:
     image: postgres:16.2-alpine3.19
     container_name: fide_postgres
