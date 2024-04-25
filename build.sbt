@@ -99,10 +99,23 @@ lazy val backend = (project in file("modules/backend"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .dependsOn(smithy, domain, db, crawler)
 
+lazy val gatling = (project in file("modules/gatling"))
+  .settings(name := "gatling")
+  .enablePlugins(GatlingPlugin)
+  .disablePlugins(ScalafixPlugin)
+  .settings(
+    scalacOptions -= "-Xfatal-warnings",
+    libraryDependencies ++= Seq(
+      gatlingTestFramework,
+      gatlingHighCharts,
+      logback
+    )
+  )
+
 lazy val root = project
   .in(file("."))
   .settings(publish := {}, publish / skip := true)
-  .aggregate(smithy, domain, db, crawler, backend)
+  .aggregate(smithy, domain, db, crawler, backend, gatling)
 
 addCommandAlias("lint", "scalafixAll; scalafmtAll")
 addCommandAlias("lintCheck", "; scalafixAll --check ; scalafmtCheckAll")
