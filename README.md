@@ -76,14 +76,25 @@ services:
 
   api:
     image: ghcr.io/lenguyenthanh/fide:0.1.0-snapshot
-    env_file: .env.docker
+    environment:
+      - HTTP_SHUTDOWN_TIMEOUT=1
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=dummy
+      - POSTGRES_DATABASE=fide
     ports:
       - 9669:9669
     networks:
       - fide_api
+    restart: unless-stopped
 
   db:
     image: postgres:16.2-alpine3.19
+    environment:
+      POSTGRES_DB: fide
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: dummy
     ports:
       - 5432:5432
     networks:
