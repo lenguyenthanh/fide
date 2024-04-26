@@ -81,7 +81,7 @@ name: fide
 services:
 
   api:
-    image: ghcr.io/lenguyenthanh/fide:0.1.0-snapshot
+    image: ghcr.io/lenguyenthanh/fide:latest
     environment:
       - HTTP_SHUTDOWN_TIMEOUT=1
       - POSTGRES_HOST=db
