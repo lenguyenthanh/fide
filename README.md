@@ -52,9 +52,8 @@ http://localhost:8180/?pgsql=db&username=admin&db=fide&ns=fide (password: dummy)
 
 ### Stress test with Gatling
 
-Run [server](#run) and then run Gatling
-
 ```bash
+docker compose -f docker-compose.gatling.yml up -d
 sbt gatling/gatling:test
 ```
 

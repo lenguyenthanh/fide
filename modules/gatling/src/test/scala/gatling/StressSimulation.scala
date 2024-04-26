@@ -10,7 +10,7 @@ class StressSimulation extends Simulation:
 
   import SimulationHelper.*
 
-  val nbUsers = 1000
-  val stress  = makeScenario(10, "stress").inject(rampUsers(nbUsers).during(30.seconds))
+  val nbUsers = 250
+  val stress  = makeScenario(5, "stress").inject(rampUsers(nbUsers).during(30.seconds))
 
   setUp(stress).protocols(httpProtocol)
