@@ -96,7 +96,8 @@ lazy val backend = (project in file("modules/backend"))
     Docker / dockerExposedPorts  := Seq(9000, 9443),
     Docker / packageName         := "lenguyenthanh/fide",
     Docker / maintainer          := "Thanh Le",
-    Docker / dockerRepository    := Some("ghcr.io")
+    Docker / dockerRepository    := Some("ghcr.io"),
+    Docker / dockerUpdateLatest  := true
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .dependsOn(smithy, domain, db, crawler)
