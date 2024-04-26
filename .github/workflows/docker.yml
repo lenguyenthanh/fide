@@ -14,10 +14,6 @@ jobs:
       contents: read
       packages: write
     steps:
-      # Only release from prod branch
-      - name: Exit if not on main branch
-        if: endsWith(github.event.base_ref, 'main') == false
-        run: exit -1
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Log in to the Container registry
