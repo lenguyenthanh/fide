@@ -65,6 +65,12 @@ sbt test
 sbt lint
 ```
 
+### release
+
+```bash
+sbt release with-defaults
+```
+
 ## Run without building
 
 You can use a pre-built Docker image from [GitHub Container Registry](https://github.com/lenguyenthanh/fide/pkgs/container/fide). Here is an example of how to run it with docker-compose:
