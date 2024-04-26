@@ -8,7 +8,8 @@ inThisBuild(
     licenses += ("agpl-v3"                 -> url("https://opensource.org/license/agpl-v3")),
     semanticdbEnabled                      := true, // for scalafix
     Compile / packageDoc / publishArtifact := false,
-    dockerBaseImage                        := "openjdk:21"
+    dockerBaseImage                        := "openjdk:21",
+    dockerUpdateLatest                     := true
   )
 )
 
@@ -96,8 +97,7 @@ lazy val backend = (project in file("modules/backend"))
     Docker / dockerExposedPorts  := Seq(9000, 9443),
     Docker / packageName         := "lenguyenthanh/fide",
     Docker / maintainer          := "Thanh Le",
-    Docker / dockerRepository    := Some("ghcr.io"),
-    Docker / dockerUpdateLatest  := true
+    Docker / dockerRepository    := Some("ghcr.io")
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .dependsOn(smithy, domain, db, crawler)
