@@ -1,0 +1,55 @@
+name: fide
+
+services:
+
+  api:
+    image: ghcr.io/lenguyenthanh/fide:0.1.0-snapshot
+    container_name: fide_api_gatling
+    environment:
+      - HTTP_SHUTDOWN_TIMEOUT=1
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=dummy
+      - POSTGRES_MAX=20
+      - POSTGRES_DATABASE=fide
+      - CRAWLER_JOB_DELAY=1
+      - CRAWLER_CONCURRENT_UPSERT=20
+    ports:
+      - 9669:9669
+    networks:
+      - fide_api
+    restart: unless-stopped
+    deploy:
+      resources:
+          limits:
+            cpus: "4"
+            memory: 512M
+          reservations:
+            cpus: "2"
+            memory: 250M
+
+  db:
+    image: postgres:16.2-alpine3.19
+    container_name: fide_postgres_gatling
+    environment:
+      POSTGRES_DB: fide
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: dummy
+    ports:
+      - 5432:5432
+    networks:
+      - fide_api
+    restart: unless-stopped
+    deploy:
+      resources:
+          limits:
+            cpus: "4"
+            memory: 2G
+          reservations:
+            cpus: "2"
+            memory: 1G
+
+networks:
+  fide_api:
+    driver: bridge
