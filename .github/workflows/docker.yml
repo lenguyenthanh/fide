@@ -1,7 +1,8 @@
 name: Create and publish a Docker image
 on:
   push:
-    branches: ['main']
+    tags:
+      - v*
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -13,6 +14,10 @@ jobs:
       contents: read
       packages: write
     steps:
+      # Only release from prod branch
+      - name: Exit if not on main branch
+        if: endsWith(github.event.base_ref, 'main') == false
+        run: exit -1
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Log in to the Container registry
