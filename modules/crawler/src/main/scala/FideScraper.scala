@@ -28,6 +28,4 @@ object FideScraper:
   private val extract: Response[IO] => Option[String] = response =>
     response.headers
       .get(CIString("Last-Modified"))
-      .map { header =>
-        header.head.value
-      }
+      .map(_.head.value)
