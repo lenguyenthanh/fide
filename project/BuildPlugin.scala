@@ -18,6 +18,7 @@ object BuildPlugin extends AutoPlugin {
         checkSnapshotDependencies,
         inquireVersions,
         runClean,
+        runTest,
         setReleaseVersion,
         commitReleaseVersion,
         tagRelease,
