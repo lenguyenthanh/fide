@@ -29,9 +29,9 @@ object Syncer:
         case (_, None)                    => Status.OutDated(none)
 
   def instance(store: KVStore, client: Client[IO])(using Logger[IO]): Syncer =
-    Syncer(store, FideScraper(client))
+    Syncer(store, UpdateChecker(client))
 
-  def apply(store: KVStore, scraper: FideScraper)(using Logger[IO]): Syncer = new:
+  def apply(store: KVStore, scraper: UpdateChecker)(using Logger[IO]): Syncer = new:
     def fetchStatus: IO[Status] =
       (lastLocalUpdate, scraper.lastUpdate).flatMapN: (local, remote) =>
         info"last local update: $local, last remote update: $remote" *>

@@ -8,11 +8,11 @@ import org.typelevel.ci.CIString
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
 
-trait FideScraper:
+trait UpdateChecker:
   def lastUpdate: IO[Option[String]]
 
-object FideScraper:
-  def apply(client: Client[IO])(using Logger[IO]): FideScraper = new:
+object UpdateChecker:
+  def apply(client: Client[IO])(using Logger[IO]): UpdateChecker = new:
 
     def lastUpdate: IO[Option[String]] =
       client
