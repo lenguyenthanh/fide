@@ -25,7 +25,7 @@ object FideScraper:
     uri = uri"http://ratings.fide.com/download/players_list.zip"
   )
 
-  private val extract: Response[IO] => Option[String] = response =>
-    response.headers
+  private val extract: Response[IO] => Option[String] =
+    _.headers
       .get(CIString("Last-Modified"))
       .map(_.head.value)
