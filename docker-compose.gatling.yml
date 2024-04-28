@@ -40,6 +40,7 @@ services:
       - 5432:5432
     networks:
       - fide_api
+    command: postgres -c shared_preload_libraries=pg_stat_statements -c pg_stat_statements.track=all
     restart: unless-stopped
     deploy:
       resources:
