@@ -20,8 +20,10 @@ val commonSettings = Seq(
     "-rewrite",
     "-indent",
     "-explain",
-    "-Wunused:all"
+    "-Wunused:all",
+    "-release:21"
   ),
+  javacOptions ++= Seq("--release", "21"),
   libraryDependencies ++= Seq(
     catsCore,
     catsEffect,
