@@ -14,7 +14,7 @@ services:
       - POSTGRES_MAX=20
       - POSTGRES_DATABASE=fide
       - CRAWLER_JOB_DELAY=1
-      - CRAWLER_CONCURRENT_UPSERT=20
+      - CRAWLER_CONCURRENT_UPSERT=10
     ports:
       - 9669:9669
     networks:
@@ -24,10 +24,10 @@ services:
       resources:
           limits:
             cpus: "4"
-            memory: 512M
+            memory: 16G
           reservations:
             cpus: "2"
-            memory: 250M
+            memory: 8G
 
   db:
     image: postgres:16.2-alpine3.19
@@ -40,13 +40,12 @@ services:
       - 5432:5432
     networks:
       - fide_api
-    command: postgres -c shared_preload_libraries=pg_stat_statements -c pg_stat_statements.track=all
     restart: unless-stopped
     deploy:
       resources:
           limits:
             cpus: "4"
-            memory: 2G
+            memory: 8G
           reservations:
             cpus: "2"
             memory: 1G
