@@ -60,10 +60,8 @@ enum Title {
   WIM = "WIM"
   FM = "FM"
   WFM = "WFM"
-  NM = "NM"
   CM = "CM"
   WCM = "WCM"
-  WNM = "WNM"
 }
 
 enum OtherTitle {
