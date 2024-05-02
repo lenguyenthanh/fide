@@ -96,7 +96,6 @@ lazy val backend = (project in file("modules/backend"))
     ),
     Compile / run / fork         := true,
     Compile / run / connectInput := true,
-    Docker / dockerExposedPorts  := Seq(9000, 9443),
     Docker / packageName         := "lenguyenthanh/fide",
     Docker / maintainer          := "Thanh Le",
     Docker / dockerRepository    := Some("ghcr.io")
