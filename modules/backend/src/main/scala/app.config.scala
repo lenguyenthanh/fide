@@ -66,7 +66,7 @@ object PostgresDriverLoader:
       .or(prop("database.url"))
       .as[DriverUrl]
 
-  private def host     = env("POSTGRES_HOST").or(prop("postgres.host")).as[Host].default(ip"128.0.0.1")
+  private def host     = env("POSTGRES_HOST").or(prop("postgres.host")).as[Host].default(ip"0.0.0.0")
   private def port     = env("POSTGRES_PORT").or(prop("postgres.port")).as[Port].default(port"5432")
   private def user     = env("POSTGRES_USER").or(prop("postgres.user")).as[String]
   private def password = env("POSTGRES_PASSWORD").or(prop("postgres.password")).as[String]
