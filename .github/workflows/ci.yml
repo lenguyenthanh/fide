@@ -22,7 +22,7 @@ jobs:
           cache: sbt
 
       - name: Build project
-        run: sbt compile
+        run: sbt --client compile
 
   test:
     runs-on: ubuntu-latest
@@ -39,7 +39,7 @@ jobs:
           cache: sbt
 
       - name: Test project
-        run: sbt test
+        run: sbt --client test
 
   lint:
     runs-on: ubuntu-latest
@@ -56,4 +56,4 @@ jobs:
           cache: sbt
 
       - name: Check Formatting
-        run: sbt lintCheck
+        run: sbt --client lintCheck
