@@ -17,9 +17,9 @@ object Dependencies {
   val catsCore   = "org.typelevel" %% "cats-core"   % "2.10.0"
   val catsEffect = "org.typelevel" %% "cats-effect" % V.catsEffect
 
-  val fs2         = "co.fs2"  %% "fs2-core"         % V.fs2
-  val fs2IO       = "co.fs2"  %% "fs2-io"           % V.fs2
-  val fs2Compress = "de.lhns" %% "fs2-compress-zip" % "2.0.0"
+  val fs2         = "co.fs2"  %% "fs2-core"           % V.fs2
+  val fs2IO       = "co.fs2"  %% "fs2-io"             % V.fs2
+  val fs2Compress = "de.lhns" %% "fs2-compress-zip4j" % "2.0.0"
 
   val cirisCore  = "is.cir"             %% "ciris"        % V.ciris
   val cirisHtt4s = "is.cir"             %% "ciris-http4s" % V.ciris
