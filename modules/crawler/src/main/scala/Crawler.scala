@@ -44,7 +44,7 @@ object Downloader:
         *> fetch
         *> info"Finished crawling"
 
-    private def fetch =
+    private def fetch: IO[Unit] =
       client
         .stream(request)
         .switchMap(_.body)
@@ -102,4 +102,4 @@ object Decompressor:
   val defaultChunkSize = 1024 * 4
 
   def decompress: fs2.Pipe[IO, Byte, Byte] =
-    _.through(ArchiveSingleFileDecompressor(ZipUnarchiver.make[IO](defaultChunkSize)).decompress)
+    _.through(ArchiveSingleFileDecompressor(Zip4JUnarchiver.make[IO](defaultChunkSize)).decompress)
