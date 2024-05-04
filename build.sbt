@@ -29,7 +29,6 @@ val commonSettings = Seq(
     catsEffect,
     fs2,
     log4Cats,
-    log4CatsNoop,
     weaver,
     weaverScalaCheck
   )

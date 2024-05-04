@@ -42,8 +42,6 @@ object Dependencies {
 
   val ducktape = "io.github.arainko" %% "ducktape" % "0.2.0"
 
-  val log4CatsNoop = "org.typelevel" %% "log4cats-noop" % "2.7.0" % Test
-
   val gatlingTestFramework = "io.gatling"            % "gatling-test-framework"    % V.gatling % Test
   val gatlingHighCharts    = "io.gatling.highcharts" % "gatling-charts-highcharts" % V.gatling % Test
 
