@@ -5,7 +5,6 @@ import cats.*
 import cats.effect.*
 import cats.syntax.all.*
 import fs2.io.net.Network
-import natchez.Trace.Implicits.noop
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
 import skunk.*
@@ -15,6 +14,8 @@ import skunk.implicits.*
 class DbResource private (val postgres: Resource[IO, Session[IO]])
 
 object DbResource:
+
+  given org.typelevel.otel4s.trace.Tracer[IO] = org.typelevel.otel4s.trace.Tracer.noop[IO]
 
   def instance(postgresConf: PostgresConfig)(using Logger[IO]): Resource[IO, DbResource] =
 
