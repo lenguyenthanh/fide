@@ -6,7 +6,7 @@ use alloy#simpleRestJson
 
 @simpleRestJson
 service PlayerService {
-  version: "0.0.1",
+  version: "0.0.1"
   operations: [GetPlayers, GetPlayerById, GetPlayerByIds],
 }
 
@@ -14,16 +14,34 @@ service PlayerService {
 @paginated(inputToken: "page", outputToken: "nextPage", pageSize: "pageSize")
 @http(method: "GET", uri: "/api/players", code: 200)
 operation GetPlayers {
-  input: GetPlayersInput,
-  output: GetPlayersOutput
+
+  input := with [SortingMixin, FilterMixin] {
+    @httpQuery("page")
+    page: PageNumber = "1"
+    @httpQuery("page_size")
+    @range(min: 1, max: 100)
+    pageSize: PageSize = 30
+  }
+
+  output := {
+    @required
+    items: Players
+    nextPage: PageNumber
+  }
+
   errors: [InternalServerError]
 }
 
 @readonly
 @http(method: "GET", uri: "/api/players/{id}", code: 200)
 operation GetPlayerById {
-  input: GetPlayerByIdInput,
-  output: Player
+  input := {
+    @httpLabel
+    @required
+    id: PlayerId
+  }
+
+  output: GetPlayerByIdOutput
   errors: [PlayerNotFound, InternalServerError]
 }
 
@@ -31,44 +49,22 @@ operation GetPlayerById {
 @readonly
 @http(method: "POST", uri: "/api/players", code: 200)
 operation GetPlayerByIds {
-  input: GetPlayerByIdsInput
-  output: GetPlayersByIdsOutput
+  input := {
+    @required
+    ids: SetPlayerIds
+  }
+
+  output := {
+    @required
+    players: PlayerMap
+  }
+
   errors: [InternalServerError]
-}
-
-structure GetPlayerByIdInput {
-  @httpLabel
-  @required
-  id: PlayerId
-}
-
-structure GetPlayerByIdsInput {
-  @required
-  ids: SetPlayerIds
 }
 
 map PlayerMap {
   key: String
-  value: Player
-}
-
-structure GetPlayersByIdsOutput {
-  @required
-  players: PlayerMap
-}
-
-structure GetPlayersInput with [SortingMixin, FilterMixin] {
-  @httpQuery("page")
-  page: PageNumber = "1"
-  @httpQuery("page_size")
-  @range(min: 1, max: 100)
-  pageSize: PageSize = 30
-}
-
-structure GetPlayersOutput {
-  @required
-  items: Players
-  nextPage: PageNumber
+  value: GetPlayerByIdOutput
 }
 
 @uniqueItems
