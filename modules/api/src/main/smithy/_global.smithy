@@ -28,6 +28,7 @@ structure InternalServerError {
 
 integer PlayerId
 string FederationId
+
 @range(min: 0, max: 4000)
 integer Rating
 
@@ -39,10 +40,12 @@ structure PageSizeFormat { }
 
 apply fide.spec#PageFormat @refinement(
    targetType: "fide.types.Natural"
+   providerImport: "fide.spec.providers.given"
 )
 
 apply fide.spec#PageSizeFormat @refinement(
    targetType: "fide.types.Natural"
+   providerImport: "fide.spec.providers.given"
 )
 
 @PageFormat

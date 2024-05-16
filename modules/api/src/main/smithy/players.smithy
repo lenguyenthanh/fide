@@ -16,8 +16,10 @@ service PlayerService {
 operation GetPlayers {
 
   input := with [SortingMixin, FilterMixin] {
+
     @httpQuery("page")
     page: PageNumber = "1"
+
     @httpQuery("page_size")
     @range(min: 1, max: 100)
     pageSize: PageSize = 30

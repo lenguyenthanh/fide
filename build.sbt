@@ -34,17 +34,24 @@ val commonSettings = Seq(
   )
 )
 
+lazy val types = (project in file("modules/types"))
+  .settings(
+    name := "types",
+    libraryDependencies ++= Seq(
+      catsCore,
+      iron
+    )
+  )
+
 lazy val api = (project in file("modules/api"))
   .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
     name                     := "api",
     smithy4sWildcardArgument := "?",
     libraryDependencies ++= Seq(
-      "com.disneystreaming.smithy4s" %% "smithy4s-core" % smithy4sVersion.value,
-      catsCore,
-      iron
+      "com.disneystreaming.smithy4s" %% "smithy4s-core" % smithy4sVersion.value
     )
-  )
+  ).dependsOn(types)
 
 lazy val domain = (project in file("modules/domain"))
   .settings(
@@ -116,7 +123,7 @@ lazy val gatling = (project in file("modules/gatling"))
 lazy val root = project
   .in(file("."))
   .settings(publish := {}, publish / skip := true)
-  .aggregate(api, domain, db, crawler, backend, gatling)
+  .aggregate(types, api, domain, db, crawler, backend, gatling)
 
 addCommandAlias("lint", "scalafixAll; scalafmtAll")
 addCommandAlias("lintCheck", "; scalafixAll --check ; scalafmtCheckAll")
