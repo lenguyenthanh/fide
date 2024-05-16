@@ -34,10 +34,10 @@ val commonSettings = Seq(
   )
 )
 
-lazy val smithy = (project in file("modules/smithy"))
+lazy val api = (project in file("modules/api"))
   .enablePlugins(Smithy4sCodegenPlugin)
   .settings(
-    name                     := "smithy",
+    name                     := "api",
     smithy4sWildcardArgument := "?",
     libraryDependencies ++= Seq(
       "com.disneystreaming.smithy4s" %% "smithy4s-core" % smithy4sVersion.value,
@@ -99,7 +99,7 @@ lazy val backend = (project in file("modules/backend"))
     Docker / dockerRepository    := Some("ghcr.io")
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
-  .dependsOn(smithy, domain, db, crawler)
+  .dependsOn(api, domain, db, crawler)
 
 lazy val gatling = (project in file("modules/gatling"))
   .settings(name := "gatling")
@@ -116,7 +116,7 @@ lazy val gatling = (project in file("modules/gatling"))
 lazy val root = project
   .in(file("."))
   .settings(publish := {}, publish / skip := true)
-  .aggregate(smithy, domain, db, crawler, backend, gatling)
+  .aggregate(api, domain, db, crawler, backend, gatling)
 
 addCommandAlias("lint", "scalafixAll; scalafmtAll")
 addCommandAlias("lintCheck", "; scalafixAll --check ; scalafmtCheckAll")
