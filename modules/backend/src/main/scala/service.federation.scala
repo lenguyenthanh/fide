@@ -3,8 +3,8 @@ package fide
 import cats.effect.*
 import cats.syntax.all.*
 import fide.db.Db
-import fide.domain.Models
 import fide.domain.Models.Pagination
+import fide.domain.{ FederationSummary, Models }
 import fide.spec.*
 import fide.types.Natural
 import io.github.arainko.ducktape.*
@@ -52,7 +52,7 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
           Option.when(xs.size == pageSize)(page.succ)
         )
 
-  override def getFederationSummaryById(id: FederationId): IO[FederationSummary] =
+  override def getFederationSummaryById(id: FederationId): IO[GetFederationSummaryByIdOutput] =
     db.federationSummaryById(id.value)
       .handleErrorWith: e =>
         error"Error in getFederationSummaryById: $id, $e" *>
@@ -77,6 +77,6 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
 
 object FederationTransformers:
   given Transformer.Derived[String, FederationId] = Transformer.Derived.FromFunction(FederationId.apply)
-  extension (p: fide.domain.FederationSummary)
-    def transform: FederationSummary =
-      p.to[FederationSummary]
+  extension (p: FederationSummary)
+    def transform: GetFederationSummaryByIdOutput =
+      p.to[GetFederationSummaryByIdOutput]
