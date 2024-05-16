@@ -2,7 +2,7 @@ import Dependencies.*
 
 inThisBuild(
   Seq(
-    scalaVersion                           := "3.4.1",
+    scalaVersion                           := "3.4.2",
     organization                           := "se.thanh",
     organizationName                       := "Thanh Le",
     licenses += ("agpl-v3"                 -> url("https://opensource.org/license/agpl-v3")),
