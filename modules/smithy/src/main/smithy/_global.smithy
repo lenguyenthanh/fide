@@ -92,7 +92,7 @@ structure Federation {
 
 }
 
-structure Player {
+structure GetPlayerByIdOutput {
   @required
   id: PlayerId
 
@@ -118,7 +118,7 @@ structure Player {
 }
 
 list Players {
-  member: Player
+  member: GetPlayerByIdOutput
 }
 
 list OtherTitles {

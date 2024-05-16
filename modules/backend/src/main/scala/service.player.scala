@@ -52,7 +52,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
           Option.when(xs.size == pageSize)(page.succ)
         )
 
-  override def getPlayerById(id: PlayerId): IO[Player] =
+  override def getPlayerById(id: PlayerId): IO[GetPlayerByIdOutput] =
     db.playerById(id.value)
       .handleErrorWith: e =>
         error"Error in getPlayerById: $id, $e" *>
@@ -61,13 +61,13 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
         _.fold(IO.raiseError(PlayerNotFound(id))):
           _.transform.pure[IO]
 
-  override def getPlayerByIds(ids: Set[PlayerId]): IO[GetPlayersByIdsOutput] =
+  override def getPlayerByIds(ids: Set[PlayerId]): IO[GetPlayerByIdsOutput] =
     db.playersByIds(ids.map(_.value))
       .handleErrorWith: e =>
         error"Error in getPlayersByIds: $ids, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
       .map(_.map(p => p.id.toString -> p.transform).toMap)
-      .map(GetPlayersByIdsOutput.apply)
+      .map(GetPlayerByIdsOutput.apply)
 
 object PlayerTransformers:
   given Transformer.Derived[Int, Rating]          = Transformer.Derived.FromFunction(Rating.apply)
@@ -77,8 +77,8 @@ object PlayerTransformers:
     Transformer.Derived.FromFunction(Timestamp.fromOffsetDateTime)
 
   extension (p: fide.domain.PlayerInfo)
-    def transform: Player =
-      p.into[Player]
+    def transform: GetPlayerByIdOutput =
+      p.into[GetPlayerByIdOutput]
         .transform(
           Field.const(
             _.otherTitles,
