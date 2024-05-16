@@ -45,7 +45,6 @@ operation GetPlayerById {
   errors: [PlayerNotFound, InternalServerError]
 }
 
-// todo limit the number of ids
 @readonly
 @http(method: "POST", uri: "/api/players", code: 200)
 operation GetPlayerByIds {
@@ -59,7 +58,7 @@ operation GetPlayerByIds {
     players: PlayerMap
   }
 
-  errors: [InternalServerError]
+  errors: [InternalServerError, TooManyIds]
 }
 
 map PlayerMap {
@@ -77,4 +76,11 @@ list SetPlayerIds {
 structure PlayerNotFound {
   @required
   id: PlayerId
+}
+
+@error("client")
+@httpError(400)
+structure TooManyIds {
+  @required
+  message: String
 }
