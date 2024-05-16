@@ -6,7 +6,7 @@ use alloy#simpleRestJson
 
 @simpleRestJson
 service FederationService {
-  version: "0.0.1",
+  version: "0.0.1"
   operations: [GetFederationsSummary, GetFederationSummaryById, GetFederationPlayersById],
 }
 
@@ -14,7 +14,7 @@ service FederationService {
 @paginated(inputToken: "page", outputToken: "nextPage", pageSize: "pageSize")
 @http(method: "GET", uri: "/api/federations/summary", code: 200)
 operation GetFederationsSummary {
-  input: GetFederationsSummaryInput,
+  input: GetFederationsSummaryInput
   output: GetFederationsSummaryOutput
   errors: [InternalServerError]
 }
@@ -23,8 +23,8 @@ operation GetFederationsSummary {
 @readonly
 @http(method: "GET", uri: "/api/federations/summary/{id}", code: 200)
 operation GetFederationSummaryById {
-  input: GetFederationByIdInput,
-  output: FederationSummary,
+  input: GetFederationByIdInput
+  output: FederationSummary
   errors: [FederationNotFound, InternalServerError]
 }
 
@@ -32,8 +32,8 @@ operation GetFederationSummaryById {
 @paginated(inputToken: "page", outputToken: "nextPage", pageSize: "pageSize")
 @http(method: "GET", uri: "/api/federations/summary/{id}/players", code: 200)
 operation GetFederationPlayersById {
-  input: GetFederationPlayersInput,
-  output: GetFederationPlayersByIdOutput,
+  input: GetFederationPlayersInput
+  output: GetFederationPlayersByIdOutput
   errors: [FederationNotFound, InternalServerError]
 }
 
@@ -84,19 +84,19 @@ structure GetFederationByIdOutput {
 
 structure FederationSummary {
   @required
-  id: FederationId,
+  id: FederationId
 
   @required
-  name: String,
+  name: String
 
   @required
-  nbPlayers: Integer,
+  nbPlayers: Integer
 
   @required
-  standard: Stats,
+  standard: Stats
 
   @required
-  rapid: Stats,
+  rapid: Stats
 
   @required
   blitz: Stats
@@ -113,13 +113,13 @@ list Federations {
 
 structure Stats {
   @required
-  rank: Integer,
+  rank: Integer
 
   @required
-  nbPlayers: Integer,
+  nbPlayers: Integer
 
   @required
-  top10Rating: Integer,
+  top10Rating: Integer
 }
 
 

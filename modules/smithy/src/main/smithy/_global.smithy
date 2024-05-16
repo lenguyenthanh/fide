@@ -38,11 +38,11 @@ structure PageFormat {}
 structure PageSizeFormat { }
 
 apply fide.spec#PageFormat @refinement(
-   targetType: "fide.types.Natural",
+   targetType: "fide.types.Natural"
 )
 
 apply fide.spec#PageSizeFormat @refinement(
-   targetType: "fide.types.Natural",
+   targetType: "fide.types.Natural"
 )
 
 @PageFormat
@@ -85,10 +85,10 @@ enum Sex {
 
 structure Federation {
   @required
-  id: FederationId,
+  id: FederationId
 
   @required
-  name: String,
+  name: String
 
 }
 

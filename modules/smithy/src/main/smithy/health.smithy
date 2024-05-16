@@ -6,7 +6,7 @@ use alloy#simpleRestJson
 
 @simpleRestJson
 service HealthService {
-  version: "0.0.1",
+  version: "0.0.1"
   operations: [HealthCheck]
 }
 

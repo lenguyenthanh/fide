@@ -6,7 +6,7 @@ use alloy#simpleRestJson
 
 @simpleRestJson
 service PlayerService {
-  version: "0.0.1",
+  version: "0.0.1"
   operations: [GetPlayers, GetPlayerById, GetPlayerByIds],
 }
 
@@ -14,7 +14,7 @@ service PlayerService {
 @paginated(inputToken: "page", outputToken: "nextPage", pageSize: "pageSize")
 @http(method: "GET", uri: "/api/players", code: 200)
 operation GetPlayers {
-  input: GetPlayersInput,
+  input: GetPlayersInput
   output: GetPlayersOutput
   errors: [InternalServerError]
 }
@@ -22,7 +22,7 @@ operation GetPlayers {
 @readonly
 @http(method: "GET", uri: "/api/players/{id}", code: 200)
 operation GetPlayerById {
-  input: GetPlayerByIdInput,
+  input: GetPlayerByIdInput
   output: Player
   errors: [PlayerNotFound, InternalServerError]
 }
