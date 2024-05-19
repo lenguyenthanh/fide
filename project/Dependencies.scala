@@ -39,7 +39,7 @@ object Dependencies {
   val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.7.0"
   val logback  = "ch.qos.logback" % "logback-classic" % "1.5.6"
 
-  val ducktape = "io.github.arainko" %% "ducktape" % "0.2.0"
+  val ducktape = "io.github.arainko" %% "ducktape" % "0.2.1"
 
   val gatlingTestFramework = "io.gatling"            % "gatling-test-framework"    % V.gatling % Test
   val gatlingHighCharts    = "io.gatling.highcharts" % "gatling-charts-highcharts" % V.gatling % Test
