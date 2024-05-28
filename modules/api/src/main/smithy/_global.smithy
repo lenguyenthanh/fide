@@ -135,7 +135,7 @@ enum SortBy {
   Standard = "standard"
   Rapid = "rapid"
   Blitz = "blitz"
-  Year = "year"
+  BirthYear = "birth_year"
 }
 
 @mixin
