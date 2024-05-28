@@ -342,6 +342,5 @@ object Federation:
     FederationId("SOL") -> "Solomon Islands",
     FederationId("TGA") -> "Tonga",
     FederationId("TLS") -> "Timor-Leste",
-    FederationId("VAN") -> "Vanuatu",
-    FederationId("NON") -> "NON FEDERATION"
+    FederationId("VAN") -> "Vanuatu"
   )
