@@ -100,21 +100,22 @@ object DbSuite extends SimpleIOSuite:
 
   val defaultSorting = Sorting(SortBy.Name, Order.Asc)
   val defaultPage    = Pagination(10, 0)
+
   test("search playersByName success"):
     resource.use: db =>
       for
-        _       <- db.upsert(newPlayer1, newFederation.some)
+        _       <- db.upsert(newPlayers)
         players <- db.playersByName("Jo", defaultSorting, defaultPage, PlayerFilter.default)
       yield expect(
         players.length == 1 && players.head.to[NewPlayer] == newPlayer1 && players.head.federation.get
           .to[NewFederation] == newFederation
       )
 
-  test("allPlayers sortBy name success"):
+  test("allPlayers with default filter"):
     val player2 = newPlayer1.copy(id = 2, name = "A")
     resource.use: db =>
       for
-        _       <- db.upsert(newPlayer1, newFederation.some)
+        _       <- db.upsert(newPlayer1, none)
         _       <- db.upsert(player2, newFederation.some)
         players <- db.allPlayers(defaultSorting, defaultPage, PlayerFilter.default)
       yield expect(players.length == 2 && players.head.name == "A")
@@ -122,21 +123,20 @@ object DbSuite extends SimpleIOSuite:
   test("search playersByFederationId success"):
     resource.use: db =>
       for
-        _       <- db.upsert(newPlayer1, newFederation.some)
+        _       <- db.upsert(newPlayers)
         players <- db.playersByFederationId("fide")
       yield expect(
         players.length == 1 && players.head.to[NewPlayer] == newPlayer1 && players.head.federation.get
           .to[NewFederation] == newFederation
       )
 
-  test("search playersByIds success"):
+  test("playersByIds success"):
     resource.use: db =>
       for
-        _       <- db.upsert(newPlayer1, newFederation.some)
-        players <- db.playersByIds(Set(1, 2))
+        _       <- db.upsert(newPlayers)
+        players <- db.playersByIds(Set(2, 3))
       yield expect(
-        players.length == 1 && players.head.to[NewPlayer] == newPlayer1 && players.head.federation.get
-          .to[NewFederation] == newFederation
+        players.length == 1 && players.head.to[NewPlayer] == newPlayer2 && players.head.federation.isEmpty
       )
 
   test("query federation summary success"):
