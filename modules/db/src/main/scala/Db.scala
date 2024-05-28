@@ -218,15 +218,14 @@ private object Sql:
 
     val f = filter.isActive.fold(bw): x =>
       val a = filterActive(x)
-      bw.fold(a)(_ |+| a).some
+      bw.fold(a)(_ |+| and |+| a).some
 
     filter.federationId.fold(f): x =>
       val a = federationIdFragment(x)
-      f.fold(a)(_ |+| a).some
+      f.fold(a)(_ |+| and |+| a).some
 
   private lazy val filterActive: Fragment[Boolean] =
-    sql"""
-        AND p.active = $bool"""
+    sql"p.active = $bool"
 
   private lazy val insertIntoPlayer =
     sql"INSERT INTO players (id, name, title, women_title, other_titles, standard, rapid, blitz, sex, birth_year, active, federation_id)"
@@ -249,8 +248,7 @@ private object Sql:
         LIMIT ${int4} OFFSET ${int4}""".apply(page.limit, page.offset)
 
   private def federationIdFragment(id: FederationId): AppliedFragment =
-    sql"""
-        AND p.federation_id = $text""".apply(id)
+    sql"""p.federation_id = $text""".apply(id)
 
   private def sortingFragment(sorting: Sorting): AppliedFragment =
     val column  = s"p.${sorting.sortBy.value}"
