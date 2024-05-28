@@ -7,11 +7,11 @@ object Models:
     case Desc extends Order("DESC")
 
   enum SortBy(val value: String):
-    case Name     extends SortBy("name")
-    case Standard extends SortBy("standard")
-    case Rapid    extends SortBy("rapid")
-    case Blitz    extends SortBy("blitz")
-    case Year     extends SortBy("year")
+    case Name      extends SortBy("name")
+    case Standard  extends SortBy("standard")
+    case Rapid     extends SortBy("rapid")
+    case Blitz     extends SortBy("blitz")
+    case BirthYear extends SortBy("birth_year")
 
   case class Sorting(
       sortBy: SortBy,
