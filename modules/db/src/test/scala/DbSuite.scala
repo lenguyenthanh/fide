@@ -47,7 +47,7 @@ object DbSuite extends SimpleIOSuite:
     val player2 = newPlayer.copy(name = "Jane", id = 2)
     resource
       .use:
-        _.upsert(List(newPlayer -> newFederation.some, player2 -> newFederation.some)).map(_ => expect(true))
+        _.upsert(List(newPlayer -> newFederation.some, player2 -> none)).map(_ => expect(true))
 
   test("create and query player success"):
     resource.use: db =>
@@ -57,6 +57,16 @@ object DbSuite extends SimpleIOSuite:
         found = result.get
       yield expect(
         found.to[NewPlayer] == newPlayer && found.federation.get.to[NewFederation] == newFederation
+      )
+
+  test("create and query player without federation success"):
+    resource.use: db =>
+      for
+        _      <- db.upsert(newPlayer, none)
+        result <- db.playerById(1)
+        found = result.get
+      yield expect(
+        found.to[NewPlayer] == newPlayer && found.federation.isEmpty
       )
 
   test("overwriting player success"):
