@@ -4,6 +4,7 @@ namespace fide.spec
 
 use smithy4s.meta#unwrap
 use smithy4s.meta#refinement
+use smithy4s.meta#scalaImports
 
 @error("client")
 @httpError(400)
@@ -45,6 +46,18 @@ apply fide.spec#PageFormat @refinement(
 
 apply fide.spec#PageSizeFormat @refinement(
    targetType: "fide.types.Natural"
+   providerImport: "fide.spec.providers.given"
+)
+
+apply fide.spec#GetPlayersInput @scalaImports(
+   providerImport: "fide.spec.providers.given"
+)
+
+apply fide.spec#GetFederationPlayersByIdInput @scalaImports(
+   providerImport: "fide.spec.providers.given"
+)
+
+apply fide.spec#GetFederationsSummaryInput @scalaImports(
    providerImport: "fide.spec.providers.given"
 )
 

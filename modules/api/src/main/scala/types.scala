@@ -2,8 +2,8 @@ package fide.spec
 
 import cats.syntax.all.*
 import fide.spec.*
-import smithy4s.*
 import fide.types.*
+import smithy4s.*
 
 object providers:
   given RefinementProvider[PageFormat, String, Natural] =
