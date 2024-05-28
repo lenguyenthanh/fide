@@ -153,10 +153,10 @@ private object Sql:
        """.command
 
   lazy val playerById: Query[PlayerId, PlayerInfo] =
-    sql"$allPlayersFragment AND p.id = $int4".query(playerInfo)
+    sql"$allPlayersFragment WHERE p.id = $int4".query(playerInfo)
 
   lazy val playersByFederationId: Query[FederationId, PlayerInfo] =
-    sql"$allPlayersFragment AND p.federation_id = $text".query(playerInfo)
+    sql"$allPlayersFragment WHERE p.federation_id = $text".query(playerInfo)
 
   lazy val upsertFederation: Command[NewFederation] =
     sql"$insertIntoFederation VALUES ($newFederation) $onConflictDoNothing".command
@@ -172,16 +172,17 @@ private object Sql:
        """.query(federationInfo)
 
   def allPlayers(sorting: Sorting, page: Pagination, filter: PlayerFilter): AppliedFragment =
-    allPlayersFragment(Void) |+| filterFragment(filter) |+|
+    allPlayersFragment(Void) |+| filterFragment(filter).fold(void)(where |+| _) |+|
       sortingFragment(sorting) |+| pagingFragment(page)
 
   def playersByName(name: String, sorting: Sorting, page: Pagination, filter: PlayerFilter): AppliedFragment =
-    allPlayersFragment(Void) |+| nameLikeFragment(name) |+| filterFragment(filter) |+|
-      sortingFragment(sorting) |+| pagingFragment(page)
+    val whereQuery =
+      where |+| filterFragment(filter).fold(nameLikeFragment(name))(nameLikeFragment(name) |+| and |+| _)
+    allPlayersFragment(Void) |+| whereQuery |+| sortingFragment(sorting) |+| pagingFragment(page)
 
   def playersByIds(n: Int): Fragment[List[Int]] =
     val ids = int4.values.list(n)
-    sql"$allPlayersFragment AND p.id IN ($ids)"
+    sql"$allPlayersFragment WHERE p.id IN ($ids)"
 
   def allFederationsSummary(paging: Pagination): AppliedFragment =
     allFederationsSummaryFragment(Void) |+| pagingFragment(paging)
@@ -190,28 +191,38 @@ private object Sql:
     sql"""$allFederationsSummaryFragment
         WHERE id = $text""".query(federationSummary)
 
-  private val void: AppliedFragment = sql"".apply(Void)
+  private val void: AppliedFragment  = sql"".apply(Void)
+  private val and: AppliedFragment   = sql"AND ".apply(Void)
+  private val where: AppliedFragment = sql"WHERE ".apply(Void)
 
-  private def between(column: String, min: Option[Rating], max: Option[Rating]): AppliedFragment =
+  private def between(column: String, range: RatingRange): Option[AppliedFragment] =
     val _column = s"p.$column"
-    (min, max) match
+    (range.min, range.max) match
       case (Some(min), Some(max)) =>
         sql"""
-            AND #$_column BETWEEN ${int4} AND ${int4}""".apply(min, max)
+            #$_column BETWEEN ${int4} AND ${int4}""".apply(min, max).some
       case (Some(min), None) =>
         sql"""
-            AND #$_column >= ${int4}""".apply(min)
+            #$_column >= ${int4}""".apply(min).some
       case (None, Some(max)) =>
         sql"""
-            AND #$_column <= ${int4}""".apply(max)
-      case (None, None) => void
+            #$_column <= ${int4}""".apply(max).some
+      case (None, None) => none
 
-  private def filterFragment(filter: PlayerFilter): AppliedFragment =
-    val bw = between("standard", filter.standard.min, filter.standard.max) |+|
-      between("rapid", filter.rapid.min, filter.rapid.max) |+|
-      between("blitz", filter.blitz.min, filter.blitz.max)
-    val f = filter.isActive.fold(bw)(bw |+| filterActive(_))
-    filter.federationId.fold(f)(f |+| federationIdFragment(_))
+  private def filterFragment(filter: PlayerFilter): Option[AppliedFragment] =
+    val bw: Option[AppliedFragment] = List(
+      between("standard", filter.standard),
+      between("rapid", filter.rapid),
+      between("blitz", filter.blitz)
+    ).flatten.foldLeft(none)((a, b) => a.fold(b)(_ |+| and |+| b).some)
+
+    val f = filter.isActive.fold(bw): x =>
+      val a = filterActive(x)
+      bw.fold(a)(_ |+| a).some
+
+    filter.federationId.fold(f): x =>
+      val a = federationIdFragment(x)
+      f.fold(a)(_ |+| a).some
 
   private lazy val filterActive: Fragment[Boolean] =
     sql"""
@@ -231,7 +242,7 @@ private object Sql:
 
   private def nameLikeFragment(name: String): AppliedFragment =
     sql"""
-        AND p.name % $text""".apply(name)
+        p.name % $text""".apply(name)
 
   private def pagingFragment(page: Pagination): AppliedFragment =
     sql"""
@@ -250,8 +261,8 @@ private object Sql:
   private lazy val allPlayersFragment: Fragment[Void] =
     sql"""
         SELECT p.id, p.name, p.title, p.women_title, p.other_titles, p.standard, p.rapid, p.blitz, p.sex, p.birth_year, p.active, p.updated_at, p.created_at, f.id, f.name
-        FROM players AS p, federations AS f
-        WHERE p.federation_id = f.id"""
+        FROM players AS p LEFT JOIN federations AS f ON p.federation_id = f.id
+      """
 
   private lazy val allFederationsSummaryFragment: Fragment[Void] =
     sql"""
