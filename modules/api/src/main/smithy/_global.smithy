@@ -50,15 +50,15 @@ apply fide.spec#PageSizeFormat @refinement(
 )
 
 apply fide.spec#GetPlayersInput @scalaImports(
-   providerImport: "fide.spec.providers.given"
+   ["fide.spec.providers.given"]
 )
 
 apply fide.spec#GetFederationPlayersByIdInput @scalaImports(
-   providerImport: "fide.spec.providers.given"
+   ["fide.spec.providers.given"]
 )
 
 apply fide.spec#GetFederationsSummaryInput @scalaImports(
-   providerImport: "fide.spec.providers.given"
+   ["fide.spec.providers.given"]
 )
 
 @PageFormat
