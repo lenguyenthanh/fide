@@ -34,20 +34,18 @@ string FederationId
 integer Rating
 
 @trait(selector: "string")
+@refinement(
+   targetType: "fide.types.Natural"
+   providerImport: "fide.spec.providers.given"
+)
 structure PageFormat {}
 
 @trait(selector: "integer")
+@refinement(
+   targetType: "fide.types.Natural"
+   providerImport: "fide.spec.providers.given"
+)
 structure PageSizeFormat { }
-
-apply fide.spec#PageFormat @refinement(
-   targetType: "fide.types.Natural"
-   providerImport: "fide.spec.providers.given"
-)
-
-apply fide.spec#PageSizeFormat @refinement(
-   targetType: "fide.types.Natural"
-   providerImport: "fide.spec.providers.given"
-)
 
 apply fide.spec#GetPlayersInput @scalaImports(
    ["fide.spec.providers.given"]
