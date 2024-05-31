@@ -210,19 +210,15 @@ private object Sql:
       case (None, None) => none
 
   private def filterFragment(filter: PlayerFilter): Option[AppliedFragment] =
-    val bw: Option[AppliedFragment] = List(
+    List(
       between("standard", filter.standard),
       between("rapid", filter.rapid),
-      between("blitz", filter.blitz)
-    ).flatten.foldLeft(none)((a, b) => a.fold(b)(_ |+| and |+| b).some)
-
-    val f = filter.isActive.fold(bw): x =>
-      val a = filterActive(x)
-      bw.fold(a)(_ |+| and |+| a).some
-
-    filter.federationId.fold(f): x =>
-      val a = federationIdFragment(x)
-      f.fold(a)(_ |+| and |+| a).some
+      between("blitz", filter.blitz),
+      filter.isActive.map(filterActive),
+      filter.federationId.map(federationIdFragment)
+    ).flatten.match
+      case Nil => none
+      case xs  => xs.intercalate(and).some
 
   private lazy val filterActive: Fragment[Boolean] =
     sql"p.active = $bool"
