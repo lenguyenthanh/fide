@@ -3,6 +3,7 @@ $version: "2"
 namespace fide.spec
 
 use alloy#simpleRestJson
+use smithy4s.meta#scalaImports
 
 @simpleRestJson
 service FederationService {
@@ -14,7 +15,9 @@ service FederationService {
 @paginated(inputToken: "page", outputToken: "nextPage", pageSize: "pageSize")
 @http(method: "GET", uri: "/api/federations/summary", code: 200)
 operation GetFederationsSummary {
-  input := {
+  input :=
+    @scalaImports(["fide.spec.providers.given"]) {
+
     @httpQuery("page")
     page: PageNumber = "1"
     @httpQuery("page_size")
@@ -49,7 +52,10 @@ operation GetFederationSummaryById {
 @paginated(inputToken: "page", outputToken: "nextPage", pageSize: "pageSize")
 @http(method: "GET", uri: "/api/federations/summary/{id}/players", code: 200)
 operation GetFederationPlayersById {
-  input := with [SortingMixin, FilterMixin] {
+  input :=
+    @scalaImports(["fide.spec.providers.given"])
+    with [SortingMixin, FilterMixin] {
+
     @httpLabel
     @required
     id: FederationId
