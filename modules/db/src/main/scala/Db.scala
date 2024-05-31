@@ -176,8 +176,7 @@ private object Sql:
       sortingFragment(sorting) |+| pagingFragment(page)
 
   def playersByName(name: String, sorting: Sorting, page: Pagination, filter: PlayerFilter): AppliedFragment =
-    val whereQuery =
-      where |+| filterFragment(filter).fold(nameLikeFragment(name))(nameLikeFragment(name) |+| and |+| _)
+    val whereQuery = where |+| nameLikeFragment(name) |+| filterFragment(filter).fold(void)(and |+| _)
     allPlayersFragment(Void) |+| whereQuery |+| sortingFragment(sorting) |+| pagingFragment(page)
 
   def playersByIds(n: Int): Fragment[List[Int]] =
