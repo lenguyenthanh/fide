@@ -3,6 +3,7 @@ $version: "2"
 namespace fide.spec
 
 use alloy#simpleRestJson
+use smithy4s.meta#scalaImports
 
 @simpleRestJson
 service PlayerService {
@@ -15,11 +16,15 @@ service PlayerService {
 @http(method: "GET", uri: "/api/players", code: 200)
 operation GetPlayers {
 
-  input := with [SortingMixin, FilterMixin] {
+  input :=
+    @scalaImports(["fide.spec.providers.given"])
+    with [SortingMixin, FilterMixin] {
+
     @httpQuery("page")
     page: PageNumber = "1"
+
     @httpQuery("page_size")
-    @range(min: 1, max: 100)
+    @range(max: 100)
     pageSize: PageSize = 30
   }
 
