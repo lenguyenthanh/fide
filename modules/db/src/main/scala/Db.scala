@@ -15,12 +15,6 @@ trait Db:
   def playerById(id: PlayerId): IO[Option[PlayerInfo]]
   def allPlayers(sorting: Sorting, paging: Pagination, filter: PlayerFilter): IO[List[PlayerInfo]]
   def allFederations: IO[List[FederationInfo]]
-  def playersByName(
-      name: String,
-      sorting: Sorting,
-      paging: Pagination,
-      filter: PlayerFilter
-  ): IO[List[PlayerInfo]]
   def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]]
   def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
   def allFederationsSummary(paging: Pagination): IO[List[FederationSummary]]
@@ -63,16 +57,6 @@ object Db:
 
     def allFederations: IO[List[FederationInfo]] =
       postgres.use(_.execute(Sql.allFederations))
-
-    def playersByName(
-        name: String,
-        sorting: Sorting,
-        paging: Pagination,
-        filter: PlayerFilter
-    ): IO[List[PlayerInfo]] =
-      val f = Sql.playersByName(name, sorting, paging, filter)
-      val q = f.fragment.query(Codecs.playerInfo)
-      postgres.use(_.execute(q)(f.argument))
 
     def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]] =
       val f = Sql.playersByIds(ids.size)
@@ -202,10 +186,6 @@ private object Sql:
     allPlayersFragment(Void) |+| filterFragment(filter).fold(void)(where |+| _) |+|
       sortingFragment(sorting) |+| pagingFragment(page)
 
-  def playersByName(name: String, sorting: Sorting, page: Pagination, filter: PlayerFilter): AppliedFragment =
-    val whereQuery = where |+| nameLikeFragment(name) |+| filterFragment(filter).fold(void)(and |+| _)
-    allPlayersFragment(Void) |+| whereQuery |+| sortingFragment(sorting) |+| pagingFragment(page)
-
   def playersByIds(n: Int): Fragment[List[Int]] =
     val ids = int4.values.list(n)
     sql"$allPlayersFragment WHERE p.id IN ($ids)"
@@ -237,6 +217,7 @@ private object Sql:
 
   private def filterFragment(filter: PlayerFilter): Option[AppliedFragment] =
     List(
+      filter.name.map(nameLikeFragment),
       between("standard", filter.standard),
       between("rapid", filter.rapid),
       between("blitz", filter.blitz),
