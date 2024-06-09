@@ -7,7 +7,9 @@ import cats.effect.kernel.Resource
 import cats.syntax.all.*
 import fide.domain.*
 import fide.domain.Models.*
+import fide.types.PositiveInt
 import io.github.arainko.ducktape.*
+import io.github.iltotore.iron.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.noop.NoOpLogger
 import weaver.*
@@ -99,7 +101,7 @@ object DbSuite extends SimpleIOSuite:
       )
 
   val defaultSorting = Sorting(SortBy.Name, Order.Asc)
-  val defaultPage    = Pagination(10, 0)
+  val defaultPage    = Pagination(PositiveInt(1), PositiveInt(30))
 
   test("search playersByName success"):
     resource.use: db =>

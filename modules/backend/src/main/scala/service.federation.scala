@@ -31,7 +31,7 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
       blitzMax: Option[Rating],
       name: Option[String]
   ): IO[GetFederationPlayersByIdOutput] =
-    val paging  = Models.Pagination.fromPageAndSize(page, pageSize)
+    val paging  = Models.Pagination(page, pageSize)
     val sorting = Models.Sorting.fromOption(sortBy.map(_.to[Models.SortBy]), order.map(_.to[Models.Order]))
     val filter = Models.PlayerFilter(
       isActive,
@@ -64,7 +64,7 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
       page: PositiveInt,
       pageSize: PositiveInt
   ): IO[GetFederationsSummaryOutput] =
-    db.allFederationsSummary(Pagination.fromPageAndSize(page, pageSize))
+    db.allFederationsSummary(Pagination(page, pageSize))
       .handleErrorWith: e =>
         error"Error in getFederationsSummary: $e" *>
           IO.raiseError(InternalServerError("Internal server error"))

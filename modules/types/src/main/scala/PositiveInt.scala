@@ -14,6 +14,6 @@ object PositiveInt extends RefinedTypeOps[Int, Positive, PositiveInt]:
 
   extension (self: PositiveInt)
     inline def succ: PositiveInt = PositiveInt.applyUnsafe(self + 1)
-    inline def toInt: Int    = self
+    inline def toInt: Int        = self
     inline def max(other: PositiveInt): PositiveInt =
       if self > other then self else other

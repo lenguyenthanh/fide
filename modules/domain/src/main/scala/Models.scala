@@ -32,20 +32,10 @@ object Models:
       val _order = order.getOrElse(defaultOrder)
       Models.Sorting(_sortBy, _order)
 
-  // start at 1
-  case class Pagination(limit: PositiveInt, offset: Int):
-    def next     = copy(offset = offset + limit.toInt)
-    def nextPage = (offset / limit.toInt) + 2
-
-  object Pagination:
-    val defaultLimit: PositiveInt = PositiveInt(30)
-    val firstPage: PositiveInt    = PositiveInt(1)
-    val defaultOffset         = 0
-    val default               = Pagination(defaultLimit, defaultOffset)
-
-    def fromPageAndSize(page: PositiveInt, size: PositiveInt): Pagination =
-      val offset = page.toInt * size.toInt
-      Pagination(size, offset)
+  case class Pagination(page: PositiveInt, size: PositiveInt):
+    def next: Pagination      = copy(page = page.succ)
+    def nextPage: PositiveInt = page.succ
+    def offset: Int           = (page - 1) * size
 
   case class RatingRange(min: Option[Rating], max: Option[Rating])
   object RatingRange:
