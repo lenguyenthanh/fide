@@ -5,7 +5,7 @@ import cats.syntax.all.*
 import fide.db.Db
 import fide.domain.Models.Pagination
 import fide.domain.{ FederationSummary, Models }
-import fide.spec.{ FederationId as _, PageNumber as _, PageSize as _, Rating as _, * }
+import fide.spec.{ FederationId as _, PageNumber as _, PageSize as _, PlayerId as _, Rating as _, * }
 import fide.types.*
 import io.github.arainko.ducktape.*
 import org.typelevel.log4cats.Logger

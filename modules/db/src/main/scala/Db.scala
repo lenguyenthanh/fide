@@ -101,6 +101,7 @@ private object Codecs:
 
   // copy from https://github.com/Iltotore/iron/blob/main/skunk/src/io.github.iltotore.iron/skunk.scala for skunk 1.0.0
   import io.github.iltotore.iron.*
+  import io.github.iltotore.iron.constraint.all.*
 
   /** Explicit conversion for refining a [[Codec]]. Decodes to the underlying type then checks the constraint.
     *
@@ -125,6 +126,7 @@ private object Codecs:
   val sex: Codec[Sex]                        = `enum`[Sex](_.value, Sex.apply, Type("sex"))
   val ratingCodec: Codec[Rating]             = int4.refined[RatingConstraint].imap(Rating.apply)(_.value)
   val federationIdCodec: Codec[FederationId] = text.refined[NonEmpty].imap(FederationId.apply)(_.value)
+  val playerIdCodec: Codec[PlayerId]         = int4.refined[Positive].imap(PlayerId.apply)(_.value)
 
   val otherTitleArr: Codec[Arr[OtherTitle]] =
     Codec.array(
@@ -136,7 +138,7 @@ private object Codecs:
   val otherTitles: Codec[List[OtherTitle]] = otherTitleArr.opt.imap(_.fold(Nil)(_.toList))(Arr(_*).some)
 
   val insertPlayer: Codec[InsertPlayer] =
-    (int4 *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: ratingCodec.opt *: ratingCodec.opt *: sex.opt *: int4.opt *: bool *: federationIdCodec.opt)
+    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: ratingCodec.opt *: ratingCodec.opt *: sex.opt *: int4.opt *: bool *: federationIdCodec.opt)
       .to[InsertPlayer]
 
   val newFederation: Codec[NewFederation] =
@@ -152,7 +154,7 @@ private object Codecs:
     (federationIdCodec *: text *: int4 *: stats *: stats *: stats).to[FederationSummary]
 
   val playerInfo: Codec[PlayerInfo] =
-    (int4 *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: ratingCodec.opt *: ratingCodec.opt *: sex.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
+    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: ratingCodec.opt *: ratingCodec.opt *: sex.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
       .to[PlayerInfo]
 
 private object Sql:
@@ -178,7 +180,7 @@ private object Sql:
        """.command
 
   lazy val playerById: Query[PlayerId, PlayerInfo] =
-    sql"$allPlayersFragment WHERE p.id = $int4".query(playerInfo)
+    sql"$allPlayersFragment WHERE p.id = $playerIdCodec".query(playerInfo)
 
   lazy val playersByFederationId: Query[FederationId, PlayerInfo] =
     sql"$allPlayersFragment WHERE p.federation_id = $federationIdCodec".query(playerInfo)

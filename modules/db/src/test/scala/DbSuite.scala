@@ -23,7 +23,7 @@ object DbSuite extends SimpleIOSuite:
   private def resource: Resource[IO, Db] = resourceP.map(_._1)
 
   val newPlayer1 = NewPlayer(
-    1,
+    PlayerId(1),
     "John",
     Title.GM.some,
     Title.WGM.some,
@@ -37,7 +37,7 @@ object DbSuite extends SimpleIOSuite:
   )
 
   val newPlayer2 = NewPlayer(
-    2,
+    PlayerId(2),
     "Jane",
     Title.GM.some,
     Title.WGM.some,
@@ -63,7 +63,7 @@ object DbSuite extends SimpleIOSuite:
       .use(_.upsert(newPlayer1, newFederation.some).map(_ => expect(true)))
 
   test("create players success"):
-    val player2 = newPlayer1.copy(name = "Jane", id = 2)
+    val player2 = newPlayer1.copy(name = "Jane", id = PlayerId(2))
     resource
       .use:
         _.upsert(List(newPlayer1 -> newFederation.some, player2 -> none)).map(_ => expect(true))
@@ -72,7 +72,7 @@ object DbSuite extends SimpleIOSuite:
     resource.use: db =>
       for
         _      <- db.upsert(newPlayers)
-        result <- db.playerById(1)
+        result <- db.playerById(PlayerId(1))
         found = result.get
       yield expect(
         found.to[NewPlayer] == newPlayer1 && found.federation.get.to[NewFederation] == newFederation
@@ -82,7 +82,7 @@ object DbSuite extends SimpleIOSuite:
     resource.use: db =>
       for
         _      <- db.upsert(newPlayers)
-        result <- db.playerById(2)
+        result <- db.playerById(PlayerId(2))
         found = result.get
       yield expect(
         found.to[NewPlayer] == newPlayer2 && found.federation.isEmpty
@@ -95,7 +95,7 @@ object DbSuite extends SimpleIOSuite:
       for
         _      <- db.upsert(newPlayer1, newFederation.some)
         _      <- db.upsert(player2, federation2.some)
-        result <- db.playerById(1)
+        result <- db.playerById(PlayerId(1))
         found = result.get
       yield expect(
         found.to[NewPlayer] == player2 && found.federation.get.to[NewFederation] == federation2
@@ -115,7 +115,7 @@ object DbSuite extends SimpleIOSuite:
       )
 
   test("allPlayers with default filter"):
-    val player2 = newPlayer1.copy(id = 2, name = "A")
+    val player2 = newPlayer1.copy(id = PlayerId(2), name = "A")
     resource.use: db =>
       for
         _       <- db.upsert(newPlayer1, none)
@@ -137,7 +137,7 @@ object DbSuite extends SimpleIOSuite:
     resource.use: db =>
       for
         _       <- db.upsert(newPlayers)
-        players <- db.playersByIds(Set(2, 3))
+        players <- db.playersByIds(Set(PlayerId(2), PlayerId(3)))
       yield expect(
         players.length == 1 && players.head.to[NewPlayer] == newPlayer2 && players.head.federation.isEmpty
       )

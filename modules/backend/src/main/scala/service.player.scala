@@ -4,7 +4,7 @@ import cats.effect.*
 import cats.syntax.all.*
 import fide.db.Db
 import fide.domain.Models
-import fide.spec.{ FederationId as _, PageNumber as _, PageSize as _, Rating as _, * }
+import fide.spec.{ FederationId as _, PageNumber as _, PageSize as _, PlayerId as _, Rating as _, * }
 import fide.types.*
 import io.github.arainko.ducktape.*
 import org.typelevel.log4cats.Logger
@@ -53,7 +53,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
         )
 
   override def getPlayerById(id: PlayerId): IO[GetPlayerByIdOutput] =
-    db.playerById(id.value)
+    db.playerById(id)
       .handleErrorWith: e =>
         error"Error in getPlayerById: $id, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
@@ -62,7 +62,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
           _.transform.pure[IO]
 
   override def getPlayerByIds(ids: NonEmptySet[PlayerId]): IO[GetPlayerByIdsOutput] =
-    db.playersByIds(ids.value.map(_.value))
+    db.playersByIds(ids.value)
       .handleErrorWith: e =>
         error"Error in getPlayersByIds: $ids, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
@@ -70,7 +70,6 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       .map(GetPlayerByIdsOutput.apply)
 
 object PlayerTransformers:
-  given Transformer.Derived[Int, PlayerId] = Transformer.Derived.FromFunction(PlayerId.apply)
   given Transformer.Derived[OffsetDateTime, Timestamp] =
     Transformer.Derived.FromFunction(Timestamp.fromOffsetDateTime)
 

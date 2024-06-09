@@ -5,7 +5,7 @@ import cats.effect.IO
 import cats.syntax.all.*
 import fide.db.{ Db, KVStore }
 import fide.domain.*
-import fide.types.{ FederationId, Rating }
+import fide.types.*
 import org.http4s.*
 import org.http4s.client.Client
 import org.http4s.implicits.*
@@ -76,7 +76,7 @@ object Downloader:
     def rating(start: Int, end: Int): Option[Rating] = string(start, end) >>= Rating.fromString
 
     for
-      id   <- number(0, 15)
+      id   <- number(0, 15) >>= PlayerId.option
       name <- string(15, 76).map(_.filterNot(_.isDigit).trim)
       if name.sizeIs > 2
       title        = string(84, 89) >>= Title.apply

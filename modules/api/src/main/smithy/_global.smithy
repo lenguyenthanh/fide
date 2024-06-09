@@ -26,6 +26,15 @@ structure InternalServerError {
   message: String
 }
 
+@trait(selector: "integer")
+@refinement(
+   targetType: "fide.types.PlayerId"
+   providerImport: "fide.spec.providers.given"
+)
+structure PlayerIdFormat {}
+
+@PlayerIdFormat
+@unwrap
 integer PlayerId
 
 @trait(selector: "string")

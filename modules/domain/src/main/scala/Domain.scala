@@ -6,8 +6,6 @@ import fide.types.*
 
 import java.time.OffsetDateTime
 
-type PlayerId = Int
-
 enum Title(val value: String):
   case GM  extends Title("GM")
   case IM  extends Title("IM")

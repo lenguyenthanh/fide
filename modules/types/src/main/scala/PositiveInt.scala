@@ -20,3 +20,6 @@ object PageNumber extends RefinedTypeOps[Int, Positive, PageNumber]:
     inline def toInt: Int       = self
     inline def max(other: PageNumber): PageNumber =
       if self > other then self else other
+
+opaque type PlayerId <: Int = PositiveInt
+object PlayerId extends RefinedTypeOps[Int, Positive, PlayerId]
