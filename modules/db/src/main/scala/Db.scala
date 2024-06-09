@@ -130,6 +130,25 @@ private object Codecs:
     (int4 *: text *: title.opt *: title.opt *: otherTitles *: int4.opt *: int4.opt *: int4.opt *: sex.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
       .to[PlayerInfo]
 
+  // copy from https://github.com/Iltotore/iron/blob/main/skunk/src/io.github.iltotore.iron/skunk.scala for skunk 1.0.0
+  import io.github.iltotore.iron.*
+  /**
+   * Explicit conversion for refining a [[Codec]]. Decodes to the underlying type then checks the constraint.
+   *
+   * @param constraint the [[Constraint]] implementation to test the decoded value
+   */
+  extension [A](codec: Codec[A])
+    inline def refined[C](using inline constraint: Constraint[A, C]): Codec[A :| C] =
+      codec.eimap[A :| C](_.refineEither[C])(_.asInstanceOf[A])
+
+  /**
+   * A [[Codec]] for refined types. Decodes to the underlying type then checks the constraint.
+   *
+   * @param codec      the [[Codec]] of the underlying type
+   * @param constraint the [[Constraint]] implementation to test the decoded value
+   */
+  inline given [A, C](using inline codec: Codec[A], inline constraint: Constraint[A, C]): Codec[A :| C] = codec.refined
+
 private object Sql:
 
   import skunk.codec.all.*
@@ -240,7 +259,7 @@ private object Sql:
 
   private def pagingFragment(page: Pagination): AppliedFragment =
     sql"""
-        LIMIT ${int4} OFFSET ${int4}""".apply(page.limit, page.offset)
+        LIMIT ${int4} OFFSET ${int4}""".apply(page.limit.toInt, page.offset)
 
   private def federationIdFragment(id: FederationId): AppliedFragment =
     sql"""p.federation_id = $text""".apply(id)

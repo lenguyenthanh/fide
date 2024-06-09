@@ -1,6 +1,9 @@
 package fide
 package domain
 
+import fide.types.*
+import io.github.iltotore.iron.*
+
 object Models:
   enum Order(val value: String):
     case Asc  extends Order("ASC")
@@ -30,23 +33,18 @@ object Models:
       Models.Sorting(_sortBy, _order)
 
   // start at 1
-  case class Pagination(limit: Int, offset: Int):
-    def next     = copy(offset = offset + limit)
-    def nextPage = (offset / limit) + 2
+  case class Pagination(limit: PositiveInt, offset: Int):
+    def next     = copy(offset = offset + limit.toInt)
+    def nextPage = (offset / limit.toInt) + 2
 
   object Pagination:
-    val defaultLimit  = 30
-    val firstPage     = 1
-    val defaultOffset = 0
-    val default       = Pagination(defaultLimit, defaultOffset)
+    val defaultLimit: PositiveInt = PositiveInt(30)
+    val firstPage: PositiveInt    = PositiveInt(1)
+    val defaultOffset         = 0
+    val default               = Pagination(defaultLimit, defaultOffset)
 
-    def apply(limit: Option[Int], page: Option[Int]): Pagination =
-      val _limit  = limit.getOrElse(defaultLimit)
-      val _offset = (page.getOrElse(firstPage) - 1) * _limit
-      Pagination(_limit, _offset)
-
-    def fromPageAndSize(page: Int, size: Int): Pagination =
-      val offset = (math.max(firstPage, page) - 1) * size
+    def fromPageAndSize(page: PositiveInt, size: PositiveInt): Pagination =
+      val offset = page.toInt * size.toInt
       Pagination(size, offset)
 
   case class RatingRange(min: Option[Rating], max: Option[Rating])

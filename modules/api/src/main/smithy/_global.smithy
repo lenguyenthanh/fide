@@ -34,14 +34,14 @@ integer Rating
 
 @trait(selector: "string")
 @refinement(
-   targetType: "fide.types.Natural"
+   targetType: "fide.types.PositiveInt"
    providerImport: "fide.spec.providers.given"
 )
 structure PageFormat {}
 
 @trait(selector: "integer")
 @refinement(
-   targetType: "fide.types.Natural"
+   targetType: "fide.types.PositiveInt"
    providerImport: "fide.spec.providers.given"
 )
 structure PageSizeFormat { }

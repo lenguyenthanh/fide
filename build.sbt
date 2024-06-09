@@ -57,7 +57,7 @@ lazy val domain = (project in file("modules/domain"))
   .settings(
     name := "domain",
     commonSettings
-  )
+  ).dependsOn(types)
 
 lazy val db = (project in file("modules/db"))
   .settings(

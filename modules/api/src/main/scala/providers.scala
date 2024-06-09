@@ -6,14 +6,14 @@ import fide.types.*
 import smithy4s.*
 
 object providers:
-  given RefinementProvider[PageFormat, String, Natural] =
-    Refinement.drivenBy(Natural.fromString, _.toString)
+  given RefinementProvider[PageFormat, String, PositiveInt] =
+    Refinement.drivenBy(PositiveInt.fromString, _.toString)
 
-  given RefinementProvider.Simple[smithy.api.Range, Natural] =
-    RefinementProvider.rangeConstraint(x => x: Int)
+  given RefinementProvider.Simple[smithy.api.Range, PositiveInt] =
+    RefinementProvider.rangeConstraint(_.value.toInt)
 
-  given RefinementProvider[PageSizeFormat, Int, Natural] =
-    Refinement.drivenBy(Natural.either, identity)
+  given RefinementProvider[PageSizeFormat, Int, PositiveInt] =
+    Refinement.drivenBy(PositiveInt.either, _.value)
 
   given [A]: RefinementProvider[NonEmptySetFormat, Set[A], NonEmptySet[A]] =
     Refinement.drivenBy[NonEmptySetFormat](

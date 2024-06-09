@@ -18,8 +18,8 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
   import PlayerTransformers.*
 
   override def getPlayers(
-      page: Natural,
-      pageSize: Natural,
+      page: PositiveInt,
+      pageSize: PositiveInt,
       sortBy: Option[SortBy],
       order: Option[Order],
       isActive: Option[Boolean],
