@@ -29,7 +29,15 @@ structure InternalServerError {
 integer PlayerId
 string FederationId
 
-@range(min: 0, max: 4000)
+@trait(selector: "integer")
+@refinement(
+   targetType: "fide.types.Rating"
+   providerImport: "fide.spec.providers.given"
+)
+structure RatingFormat {}
+
+@RatingFormat
+@unwrap
 integer Rating
 
 @trait(selector: "string")

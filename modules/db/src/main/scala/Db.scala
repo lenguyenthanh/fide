@@ -5,6 +5,7 @@ import cats.effect.*
 import cats.syntax.all.*
 import fide.domain.*
 import fide.domain.Models.*
+import fide.types.*
 import org.typelevel.log4cats.Logger
 import skunk.*
 
@@ -98,38 +99,6 @@ private object Codecs:
   import skunk.codec.all.*
   import skunk.data.{ Arr, Type }
 
-  val title: Codec[Title] = `enum`[Title](_.value, Title.apply, Type("title"))
-  val sex: Codec[Sex]     = `enum`[Sex](_.value, Sex.apply, Type("sex"))
-
-  val otherTitleArr: Codec[Arr[OtherTitle]] =
-    Codec.array(
-      _.value,
-      OtherTitle(_).toRight("invalid title"),
-      Type("_other_title", List(Type("other_title")))
-    )
-
-  val otherTitles: Codec[List[OtherTitle]] = otherTitleArr.opt.imap(_.fold(Nil)(_.toList))(Arr(_*).some)
-
-  val insertPlayer: Codec[InsertPlayer] =
-    (int4 *: text *: title.opt *: title.opt *: otherTitles *: int4.opt *: int4.opt *: int4.opt *: sex.opt *: int4.opt *: bool *: text.opt)
-      .to[InsertPlayer]
-
-  val newFederation: Codec[NewFederation] =
-    (text *: text).to[NewFederation]
-
-  val federationInfo: Codec[FederationInfo] =
-    (text *: text).to[FederationInfo]
-
-  val stats: Codec[Stats] =
-    (int4 *: int4 *: int4).to[Stats]
-
-  val federationSummary: Codec[FederationSummary] =
-    (text *: text *: int4 *: stats *: stats *: stats).to[FederationSummary]
-
-  val playerInfo: Codec[PlayerInfo] =
-    (int4 *: text *: title.opt *: title.opt *: otherTitles *: int4.opt *: int4.opt *: int4.opt *: sex.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
-      .to[PlayerInfo]
-
   // copy from https://github.com/Iltotore/iron/blob/main/skunk/src/io.github.iltotore.iron/skunk.scala for skunk 1.0.0
   import io.github.iltotore.iron.*
 
@@ -151,6 +120,39 @@ private object Codecs:
     */
   inline given [A, C](using inline codec: Codec[A], inline constraint: Constraint[A, C]): Codec[A :| C] =
     codec.refined
+
+  val title: Codec[Title]        = `enum`[Title](_.value, Title.apply, Type("title"))
+  val sex: Codec[Sex]            = `enum`[Sex](_.value, Sex.apply, Type("sex"))
+  val ratingCodec: Codec[Rating] = int4.refined[RatingConstraint].imap(Rating.apply)(_.value)
+
+  val otherTitleArr: Codec[Arr[OtherTitle]] =
+    Codec.array(
+      _.value,
+      OtherTitle(_).toRight("invalid title"),
+      Type("_other_title", List(Type("other_title")))
+    )
+
+  val otherTitles: Codec[List[OtherTitle]] = otherTitleArr.opt.imap(_.fold(Nil)(_.toList))(Arr(_*).some)
+
+  val insertPlayer: Codec[InsertPlayer] =
+    (int4 *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: ratingCodec.opt *: ratingCodec.opt *: sex.opt *: int4.opt *: bool *: text.opt)
+      .to[InsertPlayer]
+
+  val newFederation: Codec[NewFederation] =
+    (text *: text).to[NewFederation]
+
+  val federationInfo: Codec[FederationInfo] =
+    (text *: text).to[FederationInfo]
+
+  val stats: Codec[Stats] =
+    (int4 *: int4 *: int4).to[Stats]
+
+  val federationSummary: Codec[FederationSummary] =
+    (text *: text *: int4 *: stats *: stats *: stats).to[FederationSummary]
+
+  val playerInfo: Codec[PlayerInfo] =
+    (int4 *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: ratingCodec.opt *: ratingCodec.opt *: sex.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
+      .to[PlayerInfo]
 
 private object Sql:
 

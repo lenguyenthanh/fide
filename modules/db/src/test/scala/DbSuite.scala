@@ -7,7 +7,7 @@ import cats.effect.kernel.Resource
 import cats.syntax.all.*
 import fide.domain.*
 import fide.domain.Models.*
-import fide.types.PositiveInt
+import fide.types.*
 import io.github.arainko.ducktape.*
 import io.github.iltotore.iron.*
 import org.typelevel.log4cats.Logger
@@ -28,9 +28,9 @@ object DbSuite extends SimpleIOSuite:
     Title.GM.some,
     Title.WGM.some,
     List(OtherTitle.FI, OtherTitle.LSI),
-    2700.some,
-    2700.some,
-    2700.some,
+    Rating(2700).some,
+    Rating(2700).some,
+    Rating(2700).some,
     Sex.Male.some,
     1990.some,
     true
@@ -42,9 +42,9 @@ object DbSuite extends SimpleIOSuite:
     Title.GM.some,
     Title.WGM.some,
     List(OtherTitle.IA, OtherTitle.DI),
-    2700.some,
-    2700.some,
-    2700.some,
+    Rating(2700).some,
+    Rating(2700).some,
+    Rating(2700).some,
     Sex.Female.some,
     1990.some,
     true

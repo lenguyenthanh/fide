@@ -5,8 +5,8 @@ import cats.syntax.all.*
 import fide.db.Db
 import fide.domain.Models.Pagination
 import fide.domain.{ FederationSummary, Models }
-import fide.spec.*
-import fide.types.PositiveInt
+import fide.spec.{ Rating as _, * }
+import fide.types.*
 import io.github.arainko.ducktape.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
@@ -35,9 +35,9 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
     val sorting = Models.Sorting.fromOption(sortBy.map(_.to[Models.SortBy]), order.map(_.to[Models.Order]))
     val filter = Models.PlayerFilter(
       isActive,
-      Models.RatingRange(standardMin.map(_.value), standardMax.map(_.value)),
-      Models.RatingRange(rapidMin.map(_.value), rapidMax.map(_.value)),
-      Models.RatingRange(blitzMin.map(_.value), blitzMax.map(_.value)),
+      Models.RatingRange(standardMin, standardMax),
+      Models.RatingRange(rapidMin, rapidMax),
+      Models.RatingRange(blitzMin, blitzMax),
       id.value.some
     )
     name

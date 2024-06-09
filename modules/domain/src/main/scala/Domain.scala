@@ -2,11 +2,11 @@ package fide
 package domain
 
 import cats.syntax.all.*
+import fide.types.*
 
 import java.time.OffsetDateTime
 
 type PlayerId     = Int
-type Rating       = Int
 type FederationId = String
 
 object FederationId:

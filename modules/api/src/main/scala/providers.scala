@@ -2,7 +2,7 @@ package fide.spec
 
 import cats.syntax.all.*
 import fide.spec.*
-import fide.types.*
+import fide.types.{ NonEmptySet, PositiveInt }
 import smithy4s.*
 
 object providers:
@@ -14,6 +14,9 @@ object providers:
 
   given RefinementProvider[PageSizeFormat, Int, PositiveInt] =
     Refinement.drivenBy(PositiveInt.either, _.value)
+
+  given RefinementProvider[RatingFormat, Int, fide.types.Rating] =
+    Refinement.drivenBy(fide.types.Rating.either, _.value)
 
   given [A]: RefinementProvider[NonEmptySetFormat, Set[A], NonEmptySet[A]] =
     Refinement.drivenBy[NonEmptySetFormat](

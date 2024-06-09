@@ -4,7 +4,7 @@ import cats.effect.*
 import cats.syntax.all.*
 import fide.db.Db
 import fide.domain.Models
-import fide.spec.*
+import fide.spec.{ Rating as _, * }
 import fide.types.*
 import io.github.arainko.ducktape.*
 import org.typelevel.log4cats.Logger
@@ -35,9 +35,9 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
     val sorting = Models.Sorting.fromOption(sortBy.map(_.to[Models.SortBy]), order.map(_.to[Models.Order]))
     val filter = Models.PlayerFilter(
       isActive,
-      Models.RatingRange(standardMin.map(_.value), standardMax.map(_.value)),
-      Models.RatingRange(rapidMin.map(_.value), rapidMax.map(_.value)),
-      Models.RatingRange(blitzMin.map(_.value), blitzMax.map(_.value)),
+      Models.RatingRange(standardMin, standardMax),
+      Models.RatingRange(rapidMin, rapidMax),
+      Models.RatingRange(blitzMin, blitzMax),
       None
     )
     name
@@ -70,7 +70,6 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       .map(GetPlayerByIdsOutput.apply)
 
 object PlayerTransformers:
-  given Transformer.Derived[Int, Rating]          = Transformer.Derived.FromFunction(Rating.apply)
   given Transformer.Derived[String, FederationId] = Transformer.Derived.FromFunction(FederationId.apply)
   given Transformer.Derived[Int, PlayerId]        = Transformer.Derived.FromFunction(PlayerId.apply)
   given Transformer.Derived[OffsetDateTime, Timestamp] =

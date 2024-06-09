@@ -5,6 +5,7 @@ import cats.effect.IO
 import cats.syntax.all.*
 import fide.db.{ Db, KVStore }
 import fide.domain.*
+import fide.types.Rating
 import org.http4s.*
 import org.http4s.client.Client
 import org.http4s.implicits.*
@@ -69,8 +70,11 @@ object Downloader:
       .handleErrorWith(e => error"Error while parsing line: $line, error: $e".as(none))
 
   def parse(line: String): Option[(NewPlayer, Option[NewFederation])] =
-    def string(start: Int, end: Int) = line.substring(start, end).trim.some.filter(_.nonEmpty)
-    def number(start: Int, end: Int) = string(start, end).flatMap(_.toIntOption)
+    def string(start: Int, end: Int): Option[String] = line.substring(start, end).trim.some.filter(_.nonEmpty)
+
+    def number(start: Int, end: Int): Option[Int]    = string(start, end).flatMap(_.toIntOption)
+    def rating(start: Int, end: Int): Option[Rating] = string(start, end) >>= Rating.fromString
+
     for
       id   <- number(0, 15)
       name <- string(15, 76).map(_.filterNot(_.isDigit).trim)
@@ -88,9 +92,9 @@ object Downloader:
       title = title,
       womenTitle = wTitle,
       otherTitles = otherTitles,
-      standard = number(113, 117),
-      rapid = number(126, 132),
-      blitz = number(139, 145),
+      standard = rating(113, 117),
+      rapid = rating(126, 132),
+      blitz = rating(139, 145),
       sex = sex,
       birthYear = year,
       active = inactiveFlag.isEmpty
