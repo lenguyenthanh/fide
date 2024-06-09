@@ -24,7 +24,7 @@ operation GetPlayers {
     page: PageNumber = "1"
 
     @httpQuery("page_size")
-    @range(max: 100)
+    @range(min: 1, max: 100)
     pageSize: PageSize = 30
   }
 
@@ -72,6 +72,7 @@ map PlayerMap {
 }
 
 @uniqueItems
+@length(min: 1, max: 100)
 list SetPlayerIds {
   member: PlayerId
 }

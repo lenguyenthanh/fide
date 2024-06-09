@@ -21,7 +21,7 @@ operation GetFederationsSummary {
     @httpQuery("page")
     page: PageNumber = "1"
     @httpQuery("page_size")
-    @range(max: 100)
+    @range(min: 1, max: 100)
     pageSize: PageSize = 30
   }
 
@@ -62,7 +62,7 @@ operation GetFederationPlayersById {
     @httpQuery("page")
     page: PageNumber = "1"
     @httpQuery("page_size")
-    @range(max: 100)
+    @range(min: 1, max: 100)
     pageSize: PageSize = 30
   }
 
