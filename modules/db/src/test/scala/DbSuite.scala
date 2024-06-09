@@ -7,7 +7,9 @@ import cats.effect.kernel.Resource
 import cats.syntax.all.*
 import fide.domain.*
 import fide.domain.Models.*
+import fide.types.*
 import io.github.arainko.ducktape.*
+import io.github.iltotore.iron.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.noop.NoOpLogger
 import weaver.*
@@ -21,35 +23,36 @@ object DbSuite extends SimpleIOSuite:
   private def resource: Resource[IO, Db] = resourceP.map(_._1)
 
   val newPlayer1 = NewPlayer(
-    1,
+    PlayerId(1),
     "John",
     Title.GM.some,
     Title.WGM.some,
     List(OtherTitle.FI, OtherTitle.LSI),
-    2700.some,
-    2700.some,
-    2700.some,
+    Rating(2700).some,
+    Rating(2700).some,
+    Rating(2700).some,
     Sex.Male.some,
     1990.some,
     true
   )
 
   val newPlayer2 = NewPlayer(
-    2,
+    PlayerId(2),
     "Jane",
     Title.GM.some,
     Title.WGM.some,
     List(OtherTitle.IA, OtherTitle.DI),
-    2700.some,
-    2700.some,
-    2700.some,
+    Rating(2700).some,
+    Rating(2700).some,
+    Rating(2700).some,
     Sex.Female.some,
     1990.some,
     true
   )
 
+  val fedId = FederationId("fide")
   val newFederation = NewFederation(
-    "fide",
+    fedId,
     "FIDE"
   )
 
@@ -60,7 +63,7 @@ object DbSuite extends SimpleIOSuite:
       .use(_.upsert(newPlayer1, newFederation.some).map(_ => expect(true)))
 
   test("create players success"):
-    val player2 = newPlayer1.copy(name = "Jane", id = 2)
+    val player2 = newPlayer1.copy(name = "Jane", id = PlayerId(2))
     resource
       .use:
         _.upsert(List(newPlayer1 -> newFederation.some, player2 -> none)).map(_ => expect(true))
@@ -69,7 +72,7 @@ object DbSuite extends SimpleIOSuite:
     resource.use: db =>
       for
         _      <- db.upsert(newPlayers)
-        result <- db.playerById(1)
+        result <- db.playerById(PlayerId(1))
         found = result.get
       yield expect(
         found.to[NewPlayer] == newPlayer1 && found.federation.get.to[NewFederation] == newFederation
@@ -79,7 +82,7 @@ object DbSuite extends SimpleIOSuite:
     resource.use: db =>
       for
         _      <- db.upsert(newPlayers)
-        result <- db.playerById(2)
+        result <- db.playerById(PlayerId(2))
         found = result.get
       yield expect(
         found.to[NewPlayer] == newPlayer2 && found.federation.isEmpty
@@ -87,19 +90,19 @@ object DbSuite extends SimpleIOSuite:
 
   test("overwriting player success"):
     val player2     = newPlayer1.copy(name = "Jane")
-    val federation2 = NewFederation("Lichess", "lichess")
+    val federation2 = NewFederation(FederationId("Lichess"), "lichess")
     resource.use: db =>
       for
         _      <- db.upsert(newPlayer1, newFederation.some)
         _      <- db.upsert(player2, federation2.some)
-        result <- db.playerById(1)
+        result <- db.playerById(PlayerId(1))
         found = result.get
       yield expect(
         found.to[NewPlayer] == player2 && found.federation.get.to[NewFederation] == federation2
       )
 
   val defaultSorting = Sorting(SortBy.Name, Order.Asc)
-  val defaultPage    = Pagination(10, 0)
+  val defaultPage    = Pagination(PageNumber(1), PageSize(30))
 
   test("search playersByName success"):
     resource.use: db =>
@@ -112,7 +115,7 @@ object DbSuite extends SimpleIOSuite:
       )
 
   test("allPlayers with default filter"):
-    val player2 = newPlayer1.copy(id = 2, name = "A")
+    val player2 = newPlayer1.copy(id = PlayerId(2), name = "A")
     resource.use: db =>
       for
         _       <- db.upsert(newPlayer1, none)
@@ -124,7 +127,7 @@ object DbSuite extends SimpleIOSuite:
     resource.use: db =>
       for
         _       <- db.upsert(newPlayers)
-        players <- db.playersByFederationId("fide")
+        players <- db.playersByFederationId(fedId)
       yield expect(
         players.length == 1 && players.head.to[NewPlayer] == newPlayer1 && players.head.federation.get
           .to[NewFederation] == newFederation
@@ -134,7 +137,7 @@ object DbSuite extends SimpleIOSuite:
     resource.use: db =>
       for
         _       <- db.upsert(newPlayers)
-        players <- db.playersByIds(Set(2, 3))
+        players <- db.playersByIds(Set(PlayerId(2), PlayerId(3)))
       yield expect(
         players.length == 1 && players.head.to[NewPlayer] == newPlayer2 && players.head.federation.isEmpty
       )
@@ -152,5 +155,5 @@ object DbSuite extends SimpleIOSuite:
       for
         _      <- db.upsert(newPlayer1, newFederation.some)
         _      <- kv.put("fide_last_update_key", "2021-01-01")
-        result <- db.federationSummaryById("fide")
+        result <- db.federationSummaryById(fedId)
       yield expect(result.isDefined)

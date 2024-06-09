@@ -26,22 +26,49 @@ structure InternalServerError {
   message: String
 }
 
+@trait(selector: "integer")
+@refinement(
+   targetType: "fide.types.PlayerId"
+   providerImport: "fide.spec.providers.given"
+)
+structure PlayerIdFormat {}
+
+@PlayerIdFormat
+@unwrap
 integer PlayerId
+
+@trait(selector: "string")
+@refinement(
+   targetType: "fide.types.FederationId"
+   providerImport: "fide.spec.providers.given"
+)
+structure FederationIdFormat {}
+
+@unwrap
+@FederationIdFormat
 string FederationId
 
-@range(min: 0, max: 4000)
+@trait(selector: "integer")
+@refinement(
+   targetType: "fide.types.Rating"
+   providerImport: "fide.spec.providers.given"
+)
+structure RatingFormat {}
+
+@RatingFormat
+@unwrap
 integer Rating
 
 @trait(selector: "string")
 @refinement(
-   targetType: "fide.types.Natural"
+   targetType: "fide.types.PageNumber"
    providerImport: "fide.spec.providers.given"
 )
 structure PageFormat {}
 
 @trait(selector: "integer")
 @refinement(
-   targetType: "fide.types.Natural"
+   targetType: "fide.types.PageSize"
    providerImport: "fide.spec.providers.given"
 )
 structure PageSizeFormat { }
