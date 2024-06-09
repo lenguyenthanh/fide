@@ -4,6 +4,7 @@ namespace fide.spec
 
 use alloy#simpleRestJson
 use smithy4s.meta#scalaImports
+use smithy4s.meta#unwrap
 
 @simpleRestJson
 service PlayerService {
@@ -24,7 +25,7 @@ operation GetPlayers {
     page: PageNumber = "1"
 
     @httpQuery("page_size")
-    @range(max: 100)
+    @range(min: 1, max: 100)
     pageSize: PageSize = 30
   }
 
@@ -72,6 +73,9 @@ map PlayerMap {
 }
 
 @uniqueItems
+@length(min: 1, max: 100)
+@nonEmptySetFormat
+@unwrap
 list SetPlayerIds {
   member: PlayerId
 }

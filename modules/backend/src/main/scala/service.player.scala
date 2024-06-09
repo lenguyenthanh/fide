@@ -61,8 +61,8 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
         _.fold(IO.raiseError(PlayerNotFound(id))):
           _.transform.pure[IO]
 
-  override def getPlayerByIds(ids: Set[PlayerId]): IO[GetPlayerByIdsOutput] =
-    db.playersByIds(ids.map(_.value))
+  override def getPlayerByIds(ids: NonEmptySet[PlayerId]): IO[GetPlayerByIdsOutput] =
+    db.playersByIds(ids.value.map(_.value))
       .handleErrorWith: e =>
         error"Error in getPlayersByIds: $ids, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))

@@ -46,6 +46,14 @@ structure PageFormat {}
 )
 structure PageSizeFormat { }
 
+@trait(selector: "list")
+@refinement(
+  targetType: "fide.types.NonEmptySet",
+  providerImport: "fide.spec.providers.given"
+  parameterised: true
+)
+structure nonEmptySetFormat {}
+
 @PageFormat
 @unwrap
 string PageNumber
