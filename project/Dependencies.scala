@@ -31,7 +31,7 @@ object Dependencies {
   val http4sEmberClient = http4s("ember-client")
 
   val skunk          = "org.tpolecat"       %% "skunk-core"                 % "1.0.0-M6"
-  val flyway4s       = "com.github.geirolz" %% "fly4s"                      % "1.0.4"
+  val flyway4s       = "com.github.geirolz" %% "fly4s"                      % "1.0.5"
   val flyway         = "org.flywaydb"        % "flyway-core"                % V.flyway
   val flywayPostgres = "org.flywaydb"        % "flyway-database-postgresql" % V.flyway
   val postgres       = "org.postgresql"      % "postgresql"                 % "42.7.3"
