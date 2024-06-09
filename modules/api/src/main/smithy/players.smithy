@@ -4,6 +4,7 @@ namespace fide.spec
 
 use alloy#simpleRestJson
 use smithy4s.meta#scalaImports
+use smithy4s.meta#unwrap
 
 @simpleRestJson
 service PlayerService {
@@ -73,6 +74,8 @@ map PlayerMap {
 
 @uniqueItems
 @length(min: 1, max: 100)
+@nonEmptySetFormat
+@unwrap
 list SetPlayerIds {
   member: PlayerId
 }
