@@ -5,7 +5,7 @@ import cats.syntax.all.*
 import fide.db.Db
 import fide.domain.Models.Pagination
 import fide.domain.{ FederationSummary, Models }
-import fide.spec.{ FederationId as _, Rating as _, * }
+import fide.spec.{ FederationId as _, PageNumber as _, PageSize as _, Rating as _, * }
 import fide.types.*
 import io.github.arainko.ducktape.*
 import org.typelevel.log4cats.Logger
@@ -18,8 +18,8 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
 
   override def getFederationPlayersById(
       id: FederationId,
-      page: PositiveInt,
-      pageSize: PositiveInt,
+      page: PageNumber,
+      pageSize: PageSize,
       sortBy: Option[SortBy],
       order: Option[Order],
       isActive: Option[Boolean],
@@ -61,8 +61,8 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
         _.fold(IO.raiseError(FederationNotFound(id)))(_.transform.pure)
 
   override def getFederationsSummary(
-      page: PositiveInt,
-      pageSize: PositiveInt
+      page: PageNumber,
+      pageSize: PageSize
   ): IO[GetFederationsSummaryOutput] =
     db.allFederationsSummary(Pagination(page, pageSize))
       .handleErrorWith: e =>

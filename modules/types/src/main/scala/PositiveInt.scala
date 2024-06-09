@@ -4,16 +4,19 @@ import cats.syntax.all.*
 import io.github.iltotore.iron.*
 import io.github.iltotore.iron.constraint.all.*
 
-opaque type PositiveInt <: Int = Int :| Positive
+type PositiveInt = Int :| Positive
 
-object PositiveInt extends RefinedTypeOps[Int, Positive, PositiveInt]:
-  def fromString(value: String): Either[String, PositiveInt] =
-    value.toIntOption.toRight(s"$value is not an int") >>= PositiveInt.either
+opaque type PageSize <: Int = PositiveInt
+object PageSize extends RefinedTypeOps[Int, Positive, PageSize]
 
-  val firstNumber: PositiveInt = 1
+opaque type PageNumber <: Int = PositiveInt
+object PageNumber extends RefinedTypeOps[Int, Positive, PageNumber]:
 
-  extension (self: PositiveInt)
-    inline def succ: PositiveInt = PositiveInt.applyUnsafe(self + 1)
-    inline def toInt: Int        = self
-    inline def max(other: PositiveInt): PositiveInt =
+  def fromString(value: String): Either[String, PageNumber] =
+    value.toIntOption.toRight(s"$value is not an int") >>= PageNumber.either
+
+  extension (self: PageNumber)
+    inline def succ: PageNumber = PageNumber.applyUnsafe(self + 1)
+    inline def toInt: Int       = self
+    inline def max(other: PageNumber): PageNumber =
       if self > other then self else other

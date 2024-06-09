@@ -102,7 +102,7 @@ object DbSuite extends SimpleIOSuite:
       )
 
   val defaultSorting = Sorting(SortBy.Name, Order.Asc)
-  val defaultPage    = Pagination(PositiveInt(1), PositiveInt(30))
+  val defaultPage    = Pagination(PageNumber(1), PageSize(30))
 
   test("search playersByName success"):
     resource.use: db =>

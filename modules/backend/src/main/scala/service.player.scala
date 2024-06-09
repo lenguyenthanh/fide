@@ -4,7 +4,7 @@ import cats.effect.*
 import cats.syntax.all.*
 import fide.db.Db
 import fide.domain.Models
-import fide.spec.{ FederationId as _, Rating as _, * }
+import fide.spec.{ FederationId as _, PageNumber as _, PageSize as _, Rating as _, * }
 import fide.types.*
 import io.github.arainko.ducktape.*
 import org.typelevel.log4cats.Logger
@@ -18,8 +18,8 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
   import PlayerTransformers.*
 
   override def getPlayers(
-      page: PositiveInt,
-      pageSize: PositiveInt,
+      page: PageNumber,
+      pageSize: PageSize,
       sortBy: Option[SortBy],
       order: Option[Order],
       isActive: Option[Boolean],
