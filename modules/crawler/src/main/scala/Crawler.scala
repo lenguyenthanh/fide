@@ -5,7 +5,7 @@ import cats.effect.IO
 import cats.syntax.all.*
 import fide.db.{ Db, KVStore }
 import fide.domain.*
-import fide.types.Rating
+import fide.types.{ FederationId, Rating }
 import org.http4s.*
 import org.http4s.client.Client
 import org.http4s.implicits.*
@@ -85,7 +85,7 @@ object Downloader:
       sex          = string(79, 82) >>= Sex.apply
       year         = number(152, 156).filter(_ > 1000)
       inactiveFlag = string(158, 160)
-      federationId = string(76, 79).map(FederationId.apply)
+      federationId = string(76, 79) >>= FederationId.option
     yield NewPlayer(
       id = id,
       name = name,

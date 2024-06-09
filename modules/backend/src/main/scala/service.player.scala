@@ -4,7 +4,7 @@ import cats.effect.*
 import cats.syntax.all.*
 import fide.db.Db
 import fide.domain.Models
-import fide.spec.{ Rating as _, * }
+import fide.spec.{ FederationId as _, Rating as _, * }
 import fide.types.*
 import io.github.arainko.ducktape.*
 import org.typelevel.log4cats.Logger
@@ -70,8 +70,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       .map(GetPlayerByIdsOutput.apply)
 
 object PlayerTransformers:
-  given Transformer.Derived[String, FederationId] = Transformer.Derived.FromFunction(FederationId.apply)
-  given Transformer.Derived[Int, PlayerId]        = Transformer.Derived.FromFunction(PlayerId.apply)
+  given Transformer.Derived[Int, PlayerId] = Transformer.Derived.FromFunction(PlayerId.apply)
   given Transformer.Derived[OffsetDateTime, Timestamp] =
     Transformer.Derived.FromFunction(Timestamp.fromOffsetDateTime)
 

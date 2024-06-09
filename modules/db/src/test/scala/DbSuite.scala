@@ -50,8 +50,9 @@ object DbSuite extends SimpleIOSuite:
     true
   )
 
+  val fedId = FederationId("fide")
   val newFederation = NewFederation(
-    "fide",
+    fedId,
     "FIDE"
   )
 
@@ -89,7 +90,7 @@ object DbSuite extends SimpleIOSuite:
 
   test("overwriting player success"):
     val player2     = newPlayer1.copy(name = "Jane")
-    val federation2 = NewFederation("Lichess", "lichess")
+    val federation2 = NewFederation(FederationId("Lichess"), "lichess")
     resource.use: db =>
       for
         _      <- db.upsert(newPlayer1, newFederation.some)
@@ -126,7 +127,7 @@ object DbSuite extends SimpleIOSuite:
     resource.use: db =>
       for
         _       <- db.upsert(newPlayers)
-        players <- db.playersByFederationId("fide")
+        players <- db.playersByFederationId(fedId)
       yield expect(
         players.length == 1 && players.head.to[NewPlayer] == newPlayer1 && players.head.federation.get
           .to[NewFederation] == newFederation
@@ -154,5 +155,5 @@ object DbSuite extends SimpleIOSuite:
       for
         _      <- db.upsert(newPlayer1, newFederation.some)
         _      <- kv.put("fide_last_update_key", "2021-01-01")
-        result <- db.federationSummaryById("fide")
+        result <- db.federationSummaryById(fedId)
       yield expect(result.isDefined)

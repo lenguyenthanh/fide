@@ -5,7 +5,7 @@ import cats.syntax.all.*
 import fide.db.Db
 import fide.domain.Models.Pagination
 import fide.domain.{ FederationSummary, Models }
-import fide.spec.{ Rating as _, * }
+import fide.spec.{ FederationId as _, Rating as _, * }
 import fide.types.*
 import io.github.arainko.ducktape.*
 import org.typelevel.log4cats.Logger
@@ -38,7 +38,7 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
       Models.RatingRange(standardMin, standardMax),
       Models.RatingRange(rapidMin, rapidMax),
       Models.RatingRange(blitzMin, blitzMax),
-      id.value.some
+      id.some
     )
     name
       .fold(db.allPlayers(sorting, paging, filter))(db.playersByName(_, sorting, paging, filter))
@@ -53,7 +53,7 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
         )
 
   override def getFederationSummaryById(id: FederationId): IO[GetFederationSummaryByIdOutput] =
-    db.federationSummaryById(id.value)
+    db.federationSummaryById(id)
       .handleErrorWith: e =>
         error"Error in getFederationSummaryById: $id, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
@@ -76,7 +76,6 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
         )
 
 object FederationTransformers:
-  given Transformer.Derived[String, FederationId] = Transformer.Derived.FromFunction(FederationId.apply)
   extension (p: FederationSummary)
     def transform: GetFederationSummaryByIdOutput =
       p.to[GetFederationSummaryByIdOutput]

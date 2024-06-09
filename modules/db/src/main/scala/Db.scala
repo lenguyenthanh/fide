@@ -121,9 +121,10 @@ private object Codecs:
   inline given [A, C](using inline codec: Codec[A], inline constraint: Constraint[A, C]): Codec[A :| C] =
     codec.refined
 
-  val title: Codec[Title]        = `enum`[Title](_.value, Title.apply, Type("title"))
-  val sex: Codec[Sex]            = `enum`[Sex](_.value, Sex.apply, Type("sex"))
-  val ratingCodec: Codec[Rating] = int4.refined[RatingConstraint].imap(Rating.apply)(_.value)
+  val title: Codec[Title]                    = `enum`[Title](_.value, Title.apply, Type("title"))
+  val sex: Codec[Sex]                        = `enum`[Sex](_.value, Sex.apply, Type("sex"))
+  val ratingCodec: Codec[Rating]             = int4.refined[RatingConstraint].imap(Rating.apply)(_.value)
+  val federationIdCodec: Codec[FederationId] = text.refined[NonEmpty].imap(FederationId.apply)(_.value)
 
   val otherTitleArr: Codec[Arr[OtherTitle]] =
     Codec.array(
@@ -135,20 +136,20 @@ private object Codecs:
   val otherTitles: Codec[List[OtherTitle]] = otherTitleArr.opt.imap(_.fold(Nil)(_.toList))(Arr(_*).some)
 
   val insertPlayer: Codec[InsertPlayer] =
-    (int4 *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: ratingCodec.opt *: ratingCodec.opt *: sex.opt *: int4.opt *: bool *: text.opt)
+    (int4 *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: ratingCodec.opt *: ratingCodec.opt *: sex.opt *: int4.opt *: bool *: federationIdCodec.opt)
       .to[InsertPlayer]
 
   val newFederation: Codec[NewFederation] =
-    (text *: text).to[NewFederation]
+    (federationIdCodec *: text).to[NewFederation]
 
   val federationInfo: Codec[FederationInfo] =
-    (text *: text).to[FederationInfo]
+    (federationIdCodec *: text).to[FederationInfo]
 
   val stats: Codec[Stats] =
     (int4 *: int4 *: int4).to[Stats]
 
   val federationSummary: Codec[FederationSummary] =
-    (text *: text *: int4 *: stats *: stats *: stats).to[FederationSummary]
+    (federationIdCodec *: text *: int4 *: stats *: stats *: stats).to[FederationSummary]
 
   val playerInfo: Codec[PlayerInfo] =
     (int4 *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: ratingCodec.opt *: ratingCodec.opt *: sex.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
@@ -180,7 +181,7 @@ private object Sql:
     sql"$allPlayersFragment WHERE p.id = $int4".query(playerInfo)
 
   lazy val playersByFederationId: Query[FederationId, PlayerInfo] =
-    sql"$allPlayersFragment WHERE p.federation_id = $text".query(playerInfo)
+    sql"$allPlayersFragment WHERE p.federation_id = $federationIdCodec".query(playerInfo)
 
   lazy val upsertFederation: Command[NewFederation] =
     sql"$insertIntoFederation VALUES ($newFederation) $onConflictDoNothing".command
@@ -212,7 +213,7 @@ private object Sql:
 
   lazy val federationSummaryById: Query[FederationId, FederationSummary] =
     sql"""$allFederationsSummaryFragment
-        WHERE id = $text""".query(federationSummary)
+        WHERE id = $federationIdCodec""".query(federationSummary)
 
   private val void: AppliedFragment  = sql"".apply(Void)
   private val and: AppliedFragment   = sql"AND ".apply(Void)
@@ -267,7 +268,7 @@ private object Sql:
         LIMIT ${int4} OFFSET ${int4}""".apply(page.size, page.offset)
 
   private def federationIdFragment(id: FederationId): AppliedFragment =
-    sql"""p.federation_id = $text""".apply(id)
+    sql"""p.federation_id = $federationIdCodec""".apply(id)
 
   private def sortingFragment(sorting: Sorting): AppliedFragment =
     val column  = s"p.${sorting.sortBy.value}"

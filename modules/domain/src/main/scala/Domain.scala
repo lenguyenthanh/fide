@@ -6,11 +6,7 @@ import fide.types.*
 
 import java.time.OffsetDateTime
 
-type PlayerId     = Int
-type FederationId = String
-
-object FederationId:
-  def apply(value: String): FederationId = value.toUpperCase
+type PlayerId = Int
 
 enum Title(val value: String):
   case GM  extends Title("GM")
@@ -139,6 +135,7 @@ object Federation:
 
   def nameById(id: FederationId): Option[String] = names.get(id)
 
+  import io.github.iltotore.iron.*
   val names: Map[FederationId, String] = Map(
     FederationId("FID") -> "FIDE",
     FederationId("USA") -> "United States of America",

@@ -18,6 +18,9 @@ object providers:
   given RefinementProvider[RatingFormat, Int, fide.types.Rating] =
     Refinement.drivenBy(fide.types.Rating.either, _.value)
 
+  given RefinementProvider[FederationIdFormat, String, fide.types.FederationId] =
+    Refinement.drivenBy(fide.types.FederationId.either, _.value)
+
   given [A]: RefinementProvider[NonEmptySetFormat, Set[A], NonEmptySet[A]] =
     Refinement.drivenBy[NonEmptySetFormat](
       NonEmptySet.either,
