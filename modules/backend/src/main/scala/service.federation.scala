@@ -34,14 +34,14 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
     val paging  = Models.Pagination(page, pageSize)
     val sorting = Models.Sorting.fromOption(sortBy.map(_.to[Models.SortBy]), order.map(_.to[Models.Order]))
     val filter = Models.PlayerFilter(
+      name,
       isActive,
       Models.RatingRange(standardMin, standardMax),
       Models.RatingRange(rapidMin, rapidMax),
       Models.RatingRange(blitzMin, blitzMax),
       id.some
     )
-    name
-      .fold(db.allPlayers(sorting, paging, filter))(db.playersByName(_, sorting, paging, filter))
+    db.allPlayers(sorting, paging, filter)
       .handleErrorWith: e =>
         error"Error in getPlayers with $filter, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))

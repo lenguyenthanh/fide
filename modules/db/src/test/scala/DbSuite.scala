@@ -108,7 +108,7 @@ object DbSuite extends SimpleIOSuite:
     resource.use: db =>
       for
         _       <- db.upsert(newPlayers)
-        players <- db.playersByName("Jo", defaultSorting, defaultPage, PlayerFilter.default)
+        players <- db.allPlayers(defaultSorting, defaultPage, PlayerFilter.default.copy(name = "jo".some))
       yield expect(
         players.length == 1 && players.head.to[NewPlayer] == newPlayer1 && players.head.federation.get
           .to[NewFederation] == newFederation

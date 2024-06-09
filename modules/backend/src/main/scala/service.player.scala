@@ -34,14 +34,14 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
     val paging  = Models.Pagination(page, pageSize)
     val sorting = Models.Sorting.fromOption(sortBy.map(_.to[Models.SortBy]), order.map(_.to[Models.Order]))
     val filter = Models.PlayerFilter(
+      None,
       isActive,
       Models.RatingRange(standardMin, standardMax),
       Models.RatingRange(rapidMin, rapidMax),
       Models.RatingRange(blitzMin, blitzMax),
       None
     )
-    name
-      .fold(db.allPlayers(sorting, paging, filter))(db.playersByName(_, sorting, paging, filter))
+    db.allPlayers(sorting, paging, filter)
       .handleErrorWith: e =>
         error"Error in getPlayers with $filter, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))

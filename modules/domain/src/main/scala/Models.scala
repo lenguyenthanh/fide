@@ -42,6 +42,7 @@ object Models:
     def empty = RatingRange(None, None)
 
   case class PlayerFilter(
+      name: Option[String],
       isActive: Option[Boolean],
       standard: RatingRange,
       rapid: RatingRange,
@@ -50,7 +51,7 @@ object Models:
   )
 
   object PlayerFilter:
-    val default = PlayerFilter(None, RatingRange.empty, RatingRange.empty, RatingRange.empty, None)
+    val default = PlayerFilter(None, None, RatingRange.empty, RatingRange.empty, RatingRange.empty, None)
 
   enum PostgresStatus:
     case Ok
