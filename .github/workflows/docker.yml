@@ -41,4 +41,4 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Build and push Docker image
-        run: sbt --client backend/Docker/publish
+        run: sbt backend/Docker/publish
