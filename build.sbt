@@ -5,7 +5,7 @@ inThisBuild(
     scalaVersion                           := "3.4.2",
     organization                           := "se.thanh",
     organizationName                       := "Thanh Le",
-    licenses += ("agpl-v3"                 -> url("https://opensource.org/license/agpl-v3")),
+    licenses += ("agpl-v3" -> url("https://opensource.org/license/agpl-v3")),
     semanticdbEnabled                      := true, // for scalafix
     Compile / packageDoc / publishArtifact := false,
     dockerBaseImage                        := "openjdk:21",
@@ -51,13 +51,15 @@ lazy val api = (project in file("modules/api"))
     libraryDependencies ++= Seq(
       "com.disneystreaming.smithy4s" %% "smithy4s-core" % smithy4sVersion.value
     )
-  ).dependsOn(types)
+  )
+  .dependsOn(types)
 
 lazy val domain = (project in file("modules/domain"))
   .settings(
     name := "domain",
     commonSettings
-  ).dependsOn(types)
+  )
+  .dependsOn(types)
 
 lazy val db = (project in file("modules/db"))
   .settings(
