@@ -8,7 +8,7 @@ object Dependencies {
     val flyway     = "10.15.0"
     val fs2        = "3.10.2"
     val http4s     = "0.23.27"
-    val iron       = "2.5.0"
+    val iron       = "2.6.0"
     val gatling    = "3.11.3"
   }
 
