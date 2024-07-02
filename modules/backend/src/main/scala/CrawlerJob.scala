@@ -15,9 +15,12 @@ trait CrawlerJob:
 object CrawlerJob:
   def apply(crawler: Crawler, config: CrawlerJobConfig)(using Logger[IO]): CrawlerJob = new:
     def run(): Resource[IO, Unit] =
-      info"Start crawler job in ${config.delayInSeconds} seconds".*>(crawlWithSleep.foreverM).background.void
+      startCrawler.background.void
+
+    def startCrawler =
+      info"Start crawler job in ${config.delayInSeconds} seconds" *>
+        IO.sleep(config.delayInSeconds.seconds) *>
+        crawlWithSleep.foreverM
 
     def crawlWithSleep =
-      IO.sleep(config.delayInSeconds.seconds) *>
-        crawler.crawl *>
-        IO.sleep(config.intervalInMinutes.minutes)
+      crawler.crawl *> IO.sleep(config.intervalInMinutes.minutes)
