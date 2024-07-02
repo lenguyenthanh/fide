@@ -5,7 +5,7 @@ REMOTE_DIR="/home/fide"
 
 echo "Deploy to server $REMOTE:$REMOTE_DIR"
 
-sbt --client backend/stage
+sbt backend/stage
 
 if [ $? != 0 ]; then
   echo "Deploy canceled"
