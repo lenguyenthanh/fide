@@ -6,7 +6,6 @@ import org.http4s.client.Client
 import org.http4s.headers.`Last-Modified`
 import org.http4s.implicits.*
 import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.syntax.*
 
 trait UpdateChecker:
   def lastUpdate: IO[Option[String]]
@@ -18,7 +17,7 @@ object UpdateChecker:
       client
         .run(request)
         .use(extract.andThen(IO.pure))
-        .handleErrorWith(e => error"Failed to get last update date: $e".as(None))
+        .handleErrorWith(e => Logger[IO].error(e)("Failed to get last update date: $e").as(None))
 
   private val request = Request[IO](
     method = Method.HEAD,
