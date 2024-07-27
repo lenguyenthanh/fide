@@ -39,6 +39,7 @@ object Downloader:
     method = Method.GET,
     uri = downloadUrl
   )
+
   def apply(db: Db, client: Client[IO], config: CrawlerConfig)(using Logger[IO]): Downloader = new:
     def fetchAndSave: IO[Unit] =
       info"Start crawling"
