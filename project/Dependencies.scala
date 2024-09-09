@@ -7,7 +7,7 @@ object Dependencies {
     val ciris      = "3.6.0"
     val flyway     = "10.17.3"
     val fs2        = "3.11.0"
-    val http4s     = "0.23.27"
+    val http4s     = "0.23.28"
     val iron       = "2.6.0"
     val gatling    = "3.11.5"
   }
