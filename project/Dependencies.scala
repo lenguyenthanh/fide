@@ -37,7 +37,7 @@ object Dependencies {
   val postgres       = "org.postgresql"      % "postgresql"                 % "42.7.4"
 
   val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.7.0"
-  val logback  = "ch.qos.logback" % "logback-classic" % "1.5.8"
+  val logback  = "ch.qos.logback" % "logback-classic" % "1.5.12"
 
   val ducktape = "io.github.arainko" %% "ducktape" % "0.2.6"
 
