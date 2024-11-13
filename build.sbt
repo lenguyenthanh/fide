@@ -1,4 +1,5 @@
 import Dependencies.*
+import org.typelevel.scalacoptions.ScalacOptions
 
 inThisBuild(
   Seq(
@@ -14,16 +15,14 @@ inThisBuild(
 )
 
 val commonSettings = Seq(
-  scalacOptions -= "-Xfatal-warnings",
-  scalacOptions ++= Seq(
-    "-source:future",
-    "-rewrite",
-    "-indent",
-    "-explain",
-    "-Wunused:all",
-    "-release:21"
+  tpolecatScalacOptions ++= Set(
+    ScalacOptions.sourceFuture,
+    ScalacOptions.other("-rewrite"),
+    ScalacOptions.other("-indent"),
+    ScalacOptions.explain,
+    ScalacOptions.release("21"),
+    ScalacOptions.other("-Wsafe-init")
   ),
-  javacOptions ++= Seq("--release", "21"),
   libraryDependencies ++= Seq(
     catsCore,
     catsEffect,
