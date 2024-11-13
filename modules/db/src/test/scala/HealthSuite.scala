@@ -4,7 +4,6 @@ package test
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
-import cats.syntax.all.*
 import fide.domain.Models.PostgresStatus
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.noop.NoOpLogger

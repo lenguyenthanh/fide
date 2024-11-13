@@ -1,6 +1,5 @@
 package fide.types
 
-import cats.syntax.all.*
 import io.github.iltotore.iron.*
 import io.github.iltotore.iron.constraint.all.*
 
