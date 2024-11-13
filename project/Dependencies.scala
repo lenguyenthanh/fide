@@ -9,7 +9,7 @@ object Dependencies {
     val fs2        = "3.11.0"
     val http4s     = "0.23.29"
     val iron       = "2.6.0"
-    val gatling    = "3.12.0"
+    val gatling    = "3.13.1"
   }
 
   def http4s(artifact: String) = "org.http4s" %% s"http4s-$artifact" % V.http4s
