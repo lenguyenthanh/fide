@@ -3,7 +3,8 @@
     "sources" : [
         "modules/api/src/main/smithy",
         "modules/api/target/scala-3.4.2/src_managed/main/smithy",
-        "modules/api/target/scala-3.4.3/src_managed/main/smithy"
+        "modules/api/target/scala-3.4.3/src_managed/main/smithy",
+        "modules/api/target/scala-3.5.2/src_managed/main/smithy"
     ],
     "maven" : {
         "dependencies" : [
