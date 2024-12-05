@@ -3,13 +3,15 @@
     "sources" : [
         "modules/api/src/main/smithy",
         "modules/api/target/scala-3.4.2/src_managed/main/smithy",
-        "modules/api/target/scala-3.4.3/src_managed/main/smithy"
+        "modules/api/target/scala-3.4.3/src_managed/main/smithy",
+        "modules/api/target/scala-3.5.2/src_managed/main/smithy"
     ],
     "maven" : {
         "dependencies" : [
             "com.disneystreaming.smithy4s:smithy4s-protocol:0.18.20",
             "com.disneystreaming.alloy:alloy-core:0.3.9",
-            "com.disneystreaming.alloy:alloy-core:0.3.13"
+            "com.disneystreaming.alloy:alloy-core:0.3.13",
+            "com.disneystreaming.smithy4s:smithy4s-protocol:0.18.27"
         ],
         "repositories" : [
         ]
