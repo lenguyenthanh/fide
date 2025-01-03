@@ -21,6 +21,9 @@ jobs:
           java-version: 21
           cache: sbt
 
+      - name: Install sbt
+        uses: sbt/setup-sbt@v1
+
       - name: Build project
         run: sbt compile
 
@@ -38,6 +41,9 @@ jobs:
           java-version: 21
           cache: sbt
 
+      - name: Install sbt
+        uses: sbt/setup-sbt@v1
+        
       - name: Test project
         run: sbt test
 
@@ -55,5 +61,8 @@ jobs:
           java-version: 21
           cache: sbt
 
+      - name: Install sbt
+        uses: sbt/setup-sbt@v1
+        
       - name: Check Formatting
         run: sbt lintCheck
