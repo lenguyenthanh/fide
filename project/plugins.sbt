@@ -1,4 +1,4 @@
-addSbtPlugin("ch.epfl.scala"                % "sbt-scalafix"         % "0.12.1")
+addSbtPlugin("ch.epfl.scala"                % "sbt-scalafix"         % "0.14.0")
 addSbtPlugin("com.disneystreaming.smithy4s" % "smithy4s-sbt-codegen" % "0.18.24")
 addSbtPlugin("com.github.sbt"               % "sbt-native-packager"  % "1.11.0")
 addSbtPlugin("nl.gn0s1s"                    % "sbt-dotenv"           % "3.0.1")
