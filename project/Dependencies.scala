@@ -19,7 +19,7 @@ object Dependencies {
 
   val fs2         = "co.fs2"  %% "fs2-core"           % V.fs2
   val fs2IO       = "co.fs2"  %% "fs2-io"             % V.fs2
-  val fs2Compress = "de.lhns" %% "fs2-compress-zip4j" % "2.2.1"
+  val fs2Compress = "de.lhns" %% "fs2-compress-zip4j" % "2.3.0"
 
   val cirisCore  = "is.cir"             %% "ciris"        % V.ciris
   val cirisHtt4s = "is.cir"             %% "ciris-http4s" % V.ciris
