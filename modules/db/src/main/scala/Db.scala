@@ -103,7 +103,7 @@ private object Codecs:
     * @param constraint
     *   the [[Constraint]] implementation to test the decoded value
     */
-  inline given [A, C](using inline codec: Codec[A], inline constraint: Constraint[A, C]): Codec[A :| C] =
+  inline given [A, C] => (inline codec: Codec[A], inline constraint: Constraint[A, C]) => Codec[A :| C] =
     codec.refined
 
   val title: Codec[Title]                    = `enum`[Title](_.value, Title.apply, Type("title"))
