@@ -198,7 +198,7 @@ private object Sql:
         WHERE id = $federationIdCodec""".query(federationSummary)
 
   private val void: AppliedFragment  = sql"".apply(Void)
-  private val and: AppliedFragment   = sql"AND ".apply(Void)
+  private val and: AppliedFragment   = sql" AND ".apply(Void)
   private val where: AppliedFragment = sql"WHERE ".apply(Void)
 
   private def between(column: String, range: RatingRange): Option[AppliedFragment] =
