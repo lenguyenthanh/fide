@@ -161,6 +161,10 @@ list OtherTitles {
   member: OtherTitle
 }
 
+list Titles {
+  member: Title
+}
+
 enum Order {
   Asc = "asc"
   Desc = "desc"
@@ -200,4 +204,6 @@ structure FilterMixin {
   blitzMax: Rating
   @httpQuery("name")
   name: String
+  @httpQuery("title")
+  titles: Titles
 }

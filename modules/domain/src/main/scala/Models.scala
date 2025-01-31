@@ -47,11 +47,13 @@ object Models:
       standard: RatingRange,
       rapid: RatingRange,
       blitz: RatingRange,
-      federationId: Option[FederationId]
+      federationId: Option[FederationId],
+      titles: Option[List[Title]]
   )
 
   object PlayerFilter:
-    val default = PlayerFilter(None, None, RatingRange.empty, RatingRange.empty, RatingRange.empty, None)
+    val default =
+      PlayerFilter(None, None, RatingRange.empty, RatingRange.empty, RatingRange.empty, None, None)
 
   enum PostgresStatus:
     case Ok
