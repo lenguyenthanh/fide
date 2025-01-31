@@ -32,7 +32,7 @@ object Crawler:
       def fetchAndSave: IO[Unit] =
         info"Start crawling"
           *> downloader.fetch
-            .chunkN(config.chunkSize, true)
+            .chunkN(config.chunkSize)
             .map(_.toList)
             .parEvalMapUnordered(config.concurrentUpsert)(db.upsert)
             .compile

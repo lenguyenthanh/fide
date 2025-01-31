@@ -82,7 +82,8 @@ lazy val crawler = (project in file("modules/crawler"))
     name := "crawler",
     libraryDependencies ++= Seq(
       fs2Compress,
-      http4sClient
+      http4sClient,
+      http4sEmberClient % Test,
     )
   )
   .dependsOn(domain, db)
