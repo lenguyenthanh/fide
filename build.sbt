@@ -108,7 +108,7 @@ lazy val backend = (project in file("modules/backend"))
     Docker / dockerRepository    := Some("ghcr.io")
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
-  .dependsOn(api, domain, db, crawler)
+  .dependsOn(api, domain, full(db), crawler)
 
 lazy val gatling = (project in file("modules/gatling"))
   .settings(name := "gatling")
@@ -126,6 +126,8 @@ lazy val root = project
   .in(file("."))
   .settings(publish := {}, publish / skip := true)
   .aggregate(types, api, domain, db, crawler, backend, gatling)
+
+def full(p: Project) = p % "test->test;compile->compile"
 
 addCommandAlias("lint", "scalafixAll; scalafmtAll")
 addCommandAlias("lintCheck", "; scalafixAll --check ; scalafmtCheckAll")
