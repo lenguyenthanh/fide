@@ -24,7 +24,7 @@ docker compose up -d
 then
 
 ```bash
-sbt backend/run
+export $(cat .env | xargs) && sbt backend/run
 ```
 
 or
