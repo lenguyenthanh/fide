@@ -21,32 +21,41 @@ object Crawler:
 
   def instance(db: Db, store: KVStore, client: Client[IO], config: CrawlerConfig)(using Logger[IO]) =
     val syncer     = Syncer.instance(store, client)
-    val downloader = Downloader(db, client, config)
+    val downloader = Downloader(client)
     new Crawler:
+
       def crawl: IO[Unit] =
         syncer.fetchStatus.flatMap:
           case OutDated(timestamp) =>
-            (downloader.fetchAndSave *> timestamp.traverse_(syncer.saveLastUpdate))
+            (fetchAndSave *> timestamp.traverse_(syncer.saveLastUpdate))
               .handleErrorWith(e => error"Error while crawling: $e")
           case _ => info"Skipping crawling as the data is up to date"
 
+      def fetchAndSave: IO[Unit] =
+        info"Start crawling"
+          *> downloader.fetch
+            .chunkN(config.chunkSize, true)
+            .map(_.toList)
+            .parEvalMapUnordered(config.concurrentUpsert)(db.upsert)
+            .compile
+            .drain
+          *> info"Finished crawling"
+
+type PlayerInfo = (NewPlayer, Option[NewFederation])
 trait Downloader:
-  def fetchAndSave: IO[Unit]
+  def fetch: fs2.Stream[IO, PlayerInfo]
 
 object Downloader:
   val downloadUrl = uri"http://ratings.fide.com/download/players_list.zip"
+
   lazy val request = Request[IO](
     method = Method.GET,
     uri = downloadUrl
   )
 
-  def apply(db: Db, client: Client[IO], config: CrawlerConfig)(using Logger[IO]): Downloader = new:
-    def fetchAndSave: IO[Unit] =
-      info"Start crawling"
-        *> fetch
-        *> info"Finished crawling"
+  def apply(client: Client[IO])(using Logger[IO]): Downloader = new:
 
-    private def fetch: IO[Unit] =
+    def fetch =
       client
         .stream(request)
         .switchMap(_.body)
@@ -54,21 +63,15 @@ object Downloader:
         .through(fs2.text.utf8.decode)
         .through(fs2.text.lines)
         .drop(1) // first line is header
-        .collect:
-          case line if line.trim.nonEmpty => line
         .evalMap(parseLine)
-        .collect:
-          case Some(x) => x
-        .chunkN(config.chunkSize, true)
-        .map(_.toList)
-        .parEvalMapUnordered(config.concurrentUpsert)(db.upsert)
-        .compile
-        .drain
+        .collect { case Some(x) => x }
+
+  def parseLine(line: String)(using Logger[IO]): IO[Option[(NewPlayer, Option[NewFederation])]] =
+    IO(line.trim.nonEmpty)
+      .ifM(parseLine(line), none.pure[IO])
+      .handleErrorWith(e => error"Error while parsing line: $line, error: $e".as(none))
 
   // shamelessly copied (with some minor modificaton) from: https://github.com/lichess-org/lila/blob/8033c4c5a15cf9bb2b36377c3480f3b64074a30f/modules/fide/src/main/FidePlayerSync.scala#L131
-  def parseLine(line: String)(using Logger[IO]): IO[Option[(NewPlayer, Option[NewFederation])]] =
-    parse(line).handleErrorWith(e => error"Error while parsing line: $line, error: $e".as(none))
-
   def parse(line: String)(using Logger[IO]): IO[Option[(NewPlayer, Option[NewFederation])]] =
     def string(start: Int, end: Int): Option[String] = line.substring(start, end).trim.some.filter(_.nonEmpty)
 
