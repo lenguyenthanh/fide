@@ -8,7 +8,7 @@ import fide.domain.OtherTitle
 import org.typelevel.log4cats.Logger
 import weaver.*
 
-object CrawlerTest extends SimpleIOSuite:
+object ParserTest extends SimpleIOSuite:
 
   given Logger[IO] = org.typelevel.log4cats.noop.NoOpLogger[IO]
 
@@ -22,6 +22,7 @@ object CrawlerTest extends SimpleIOSuite:
     val lines = List(
       "8605360        A La, Teng Hua                                               CHN F                                1949  0   40                           1993  wi  ",
       "25021044       Aagney L., Narasimhan                                        IND M                                1606  0   20 1565  0   20 1567  0   20 2000  i   ",
+      "                                                                       ", // whitespaces only line
       "29976634       Aafrin, S F Aja                                              SRI F                                                                       2012  w   ",
       "1478800        Aagaard, Christian                                           DEN M                                                                       1999      "
     )
