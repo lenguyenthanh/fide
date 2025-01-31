@@ -198,7 +198,7 @@ private object Sql:
         WHERE id = $federationIdCodec""".query(federationSummary)
 
   private val void: AppliedFragment  = sql"".apply(Void)
-  private val and: AppliedFragment   = sql"AND ".apply(Void)
+  private val and: AppliedFragment   = sql" AND ".apply(Void)
   private val where: AppliedFragment = sql"WHERE ".apply(Void)
 
   private def between(column: String, range: RatingRange): Option[AppliedFragment] =
@@ -222,13 +222,18 @@ private object Sql:
       between("rapid", filter.rapid),
       between("blitz", filter.blitz),
       filter.isActive.map(filterActive),
-      filter.federationId.map(federationIdFragment)
+      filter.federationId.map(federationIdFragment),
+      filter.titles.map(xs => playersByTitles(xs.size)(xs, xs))
     ).flatten.match
       case Nil => none
       case xs  => xs.intercalate(and).some
 
   private lazy val filterActive: Fragment[Boolean] =
     sql"p.active = $bool"
+
+  def playersByTitles(n: Int): Fragment[(List[Title], List[Title])] =
+    val titles = title.values.list(n)
+    sql"(p.title IN ($titles) OR p.women_title in ($titles))"
 
   private lazy val insertIntoPlayer =
     sql"INSERT INTO players (id, name, title, women_title, other_titles, standard, rapid, blitz, sex, birth_year, active, federation_id)"
