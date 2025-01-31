@@ -20,13 +20,13 @@ trait Crawler:
 object Crawler:
 
   def instance(db: Db, store: KVStore, client: Client[IO], config: CrawlerConfig)(using Logger[IO]) =
-    val syncer  = Syncer.instance(store, client)
-    val crawler = Downloader(db, client, config)
+    val syncer     = Syncer.instance(store, client)
+    val downloader = Downloader(db, client, config)
     new Crawler:
       def crawl: IO[Unit] =
         syncer.fetchStatus.flatMap:
           case OutDated(timestamp) =>
-            (crawler.fetchAndSave *> timestamp.traverse_(syncer.saveLastUpdate))
+            (downloader.fetchAndSave *> timestamp.traverse_(syncer.saveLastUpdate))
               .handleErrorWith(e => error"Error while crawling: $e")
           case _ => info"Skipping crawling as the data is up to date"
 
