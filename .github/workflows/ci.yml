@@ -43,7 +43,7 @@ jobs:
 
       - name: Install sbt
         uses: sbt/setup-sbt@v1
-        
+
       - name: Test project
         run: sbt test
 
@@ -63,6 +63,6 @@ jobs:
 
       - name: Install sbt
         uses: sbt/setup-sbt@v1
-        
+
       - name: Check Formatting
         run: sbt lintCheck
