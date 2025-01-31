@@ -67,16 +67,22 @@ object Downloader:
 
   // shamelessly copied (with some minor modificaton) from: https://github.com/lichess-org/lila/blob/8033c4c5a15cf9bb2b36377c3480f3b64074a30f/modules/fide/src/main/FidePlayerSync.scala#L131
   def parseLine(line: String)(using Logger[IO]): IO[Option[(NewPlayer, Option[NewFederation])]] =
-    IO(parse(line))
-      .handleErrorWith(e => error"Error while parsing line: $line, error: $e".as(none))
+    parse(line).handleErrorWith(e => error"Error while parsing line: $line, error: $e".as(none))
 
-  def parse(line: String): Option[(NewPlayer, Option[NewFederation])] =
+  def parse(line: String)(using Logger[IO]): IO[Option[(NewPlayer, Option[NewFederation])]] =
     def string(start: Int, end: Int): Option[String] = line.substring(start, end).trim.some.filter(_.nonEmpty)
 
     def number(start: Int, end: Int): Option[Int]    = string(start, end).flatMap(_.toIntOption)
     def rating(start: Int, end: Int): Option[Rating] = string(start, end) >>= Rating.fromString
 
-    for
+    def findFed(id: FederationId, playerId: PlayerId): IO[Option[NewFederation]] =
+      Federation
+        .nameById(id)
+        .fold(warn"cannot find federation: $id for player: $playerId" *> none[NewFederation].pure[IO])(name =>
+          NewFederation(id, name).some.pure[IO]
+        )
+
+    val x = for
       id   <- number(0, 15) >>= PlayerId.option
       name <- string(15, 76).map(_.filterNot(_.isDigit).trim)
       if name.sizeIs > 2
@@ -99,7 +105,11 @@ object Downloader:
       sex = sex,
       birthYear = year,
       active = inactiveFlag.isEmpty
-    ) -> federationId.flatMap(id => Federation.nameById(id).map(NewFederation(id, _)))
+    ) -> federationId
+
+    x.traverse:
+      case (player, Some(fedId)) => findFed(fedId, player.id).map(fed => (player, fed))
+      case (player, None)        => (player, none).pure[IO]
 
 object Decompressor:
 
