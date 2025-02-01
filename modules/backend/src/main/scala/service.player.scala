@@ -73,7 +73,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
 
 object PlayerTransformers:
   given Transformer.Derived[OffsetDateTime, Timestamp] =
-    Transformer.Derived.FromFunction(Timestamp.fromOffsetDateTime)
+    Transformer.Derived.FromFunction(x => Timestamp.fromEpochSecond(x.toEpochSecond()))
 
   extension (p: fide.domain.PlayerInfo)
     def transform: GetPlayerByIdOutput =
