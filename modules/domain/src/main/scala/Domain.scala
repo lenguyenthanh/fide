@@ -79,22 +79,8 @@ case class NewPlayer(
     blitz: Option[Rating] = None,
     sex: Option[Sex] = None,
     birthYear: Option[Int] = None,
-    active: Boolean
-)
-
-case class InsertPlayer(
-    id: PlayerId,
-    name: String,
-    title: Option[Title] = None,
-    womenTitle: Option[Title] = None,
-    otherTitles: List[OtherTitle] = Nil,
-    standard: Option[Rating] = None,
-    rapid: Option[Rating] = None,
-    blitz: Option[Rating] = None,
-    sex: Option[Sex] = None,
-    birthYear: Option[Int] = None,
     active: Boolean,
-    federation: Option[FederationId] = None
+    federationId: Option[FederationId] = None
 )
 
 case class NewFederation(

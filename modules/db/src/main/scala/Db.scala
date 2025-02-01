@@ -22,10 +22,8 @@ trait Db:
 
 object Db:
 
-  import io.github.arainko.ducktape.*
   def apply(postgres: Resource[IO, Session[IO]])(using Logger[IO]): Db = new:
-    def upsert(newPlayer: NewPlayer, federation: Option[NewFederation]): IO[Unit] =
-      val player = newPlayer.toInsertPlayer(federation.map(_.id))
+    def upsert(player: NewPlayer, federation: Option[NewFederation]): IO[Unit] =
       postgres.use: s =>
         for
           playerCmd     <- s.prepare(Sql.upsertPlayer)
@@ -36,15 +34,14 @@ object Db:
         yield ()
 
     def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit] =
-      val players = xs.map((p, f) => p.toInsertPlayer(f.map(_.id)))
-      val feds    = xs.flatMap(_._2).distinct
+      val feds = xs.flatMap(_._2).distinct
       postgres.use: s =>
         for
-          playerCmd     <- s.prepare(Sql.upsertPlayers(players.size))
+          playerCmd     <- s.prepare(Sql.upsertPlayers(xs.size))
           federationCmd <- s.prepare(Sql.upsertFederations(feds.size))
           _ <- s.transaction.use: _ =>
             federationCmd.execute(feds) *>
-              playerCmd.execute(players)
+              playerCmd.execute(xs.map(_._1))
         yield ()
 
     def playerById(id: PlayerId): IO[Option[PlayerInfo]] =
@@ -73,10 +70,6 @@ object Db:
 
     def federationSummaryById(id: FederationId): IO[Option[FederationSummary]] =
       postgres.use(_.option(Sql.federationSummaryById)(id))
-
-  extension (p: NewPlayer)
-    def toInsertPlayer(fedId: Option[FederationId]) =
-      p.into[InsertPlayer].transform(Field.const(_.federation, fedId))
 
 private object Codecs:
 
@@ -121,9 +114,9 @@ private object Codecs:
 
   val otherTitles: Codec[List[OtherTitle]] = otherTitleArr.opt.imap(_.fold(Nil)(_.toList))(Arr(_*).some)
 
-  val insertPlayer: Codec[InsertPlayer] =
+  val newPlayer: Codec[NewPlayer] =
     (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: ratingCodec.opt *: ratingCodec.opt *: sex.opt *: int4.opt *: bool *: federationIdCodec.opt)
-      .to[InsertPlayer]
+      .to[NewPlayer]
 
   val newFederation: Codec[NewFederation] =
     (federationIdCodec *: text).to[NewFederation]
@@ -147,16 +140,16 @@ private object Sql:
   import skunk.implicits.*
   import Codecs.*
 
-  val upsertPlayer: Command[InsertPlayer] =
+  val upsertPlayer: Command[NewPlayer] =
     sql"""
         $insertIntoPlayer
-        VALUES ($insertPlayer)
+        VALUES ($newPlayer)
         $onPlayerConflictDoUpdate
        """.command
 
   // TODO use returning
-  def upsertPlayers(n: Int): Command[List[InsertPlayer]] =
-    val players = insertPlayer.values.list(n)
+  def upsertPlayers(n: Int): Command[List[NewPlayer]] =
+    val players = newPlayer.values.list(n)
     sql"""
         $insertIntoPlayer
         VALUES $players
