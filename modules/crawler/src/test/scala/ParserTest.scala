@@ -28,7 +28,18 @@ object ParserTest extends SimpleIOSuite:
     )
     lines
       .traverse(parse)
-      .map(_.flatten.map(_.active))
+      .map(_.flatMap(_.map(_.active)))
       .map(x => expect(x == List(false, false, true, true)))
+
+  test("rating constraints"):
+    val lines = List(
+      "10001492       Ojok, Patrick                                                UGA M             FI,LSI             900  0   20 1932  0   20 1926  0   20 1974      ",
+      "10001492       Ojok, Patrick                                                UGA M             FI,LSI             4002  0   20 1932  0   20 1926  0   20 1974      ",
+      "10001492       Ojok, Patrick                                                UGA M             FI,LSI             2700  0   20 1932  0   20 1926  0   20 1974      "
+    )
+    lines
+      .traverse(parse)
+      .map(_.flatMap(_.flatMap(_.standard)))
+      .map(x => expect(x == List(2700)))
 
   private def parse(s: String) = Downloader.parseLine(s).map(_.map(_._1))
