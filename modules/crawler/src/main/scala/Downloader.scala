@@ -58,6 +58,7 @@ object Downloader:
     def string(start: Int, end: Int): Option[String] = line.substring(start, end).trim.some.filter(_.nonEmpty)
     def number(start: Int, end: Int): Option[Int]    = string(start, end).flatMap(_.toIntOption)
     def rating(start: Int, end: Int): Option[Rating] = string(start, end) >>= Rating.fromString
+    def kFactor(start: Int)                          = number(start, start + 2).filter(_ > 0)
     def playerName(): Option[String]                 = sanitizeName(line.substring(15, 76))
     def playerId(): Option[PlayerId]                 = number(0, 15) >>= PlayerId.option
 
@@ -69,8 +70,11 @@ object Downloader:
         womenTitle = string(89, 94) >>= Title.apply,
         otherTitles = string(94, 109).fold(Nil)(OtherTitle.applyToList),
         standard = rating(113, 117),
+        standardK = kFactor(123),
         rapid = rating(126, 132),
+        rapidK = kFactor(136),
         blitz = rating(139, 145),
+        blitzK = kFactor(149),
         sex = string(79, 82) >>= Sex.apply,
         birthYear = number(152, 156).filter(y => y > 1000 && y < currentYear),
         active = string(158, 160).filter(_.contains("i")).isEmpty,
