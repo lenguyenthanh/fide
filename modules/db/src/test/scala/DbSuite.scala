@@ -40,7 +40,7 @@ object DbSuite extends SimpleIOSuite:
     40.some,
     Rating(2700).some,
     40.some,
-    Sex.Male.some,
+    Gender.Male.some,
     1990.some,
     true,
     fedId.some
@@ -58,7 +58,7 @@ object DbSuite extends SimpleIOSuite:
     40.some,
     Rating(2700).some,
     40.some,
-    Sex.Female.some,
+    Gender.Female.some,
     1990.some,
     true
   )

@@ -48,12 +48,13 @@ object Models:
       rapid: RatingRange,
       blitz: RatingRange,
       federationId: Option[FederationId],
-      titles: Option[List[Title]]
+      titles: Option[List[Title]],
+      gender: Option[Gender]
   )
 
   object PlayerFilter:
     val default =
-      PlayerFilter(None, None, RatingRange.empty, RatingRange.empty, RatingRange.empty, None, None)
+      PlayerFilter(None, None, RatingRange.empty, RatingRange.empty, RatingRange.empty, None, None, None)
 
   enum PostgresStatus:
     case Ok

@@ -100,7 +100,7 @@ private object Codecs:
     codec.refined
 
   val title: Codec[Title]                    = `enum`[Title](_.value, Title.apply, Type("title"))
-  val sex: Codec[Sex]                        = `enum`[Sex](_.value, Sex.apply, Type("sex"))
+  val gender: Codec[Gender]                  = `enum`[Gender](_.value, Gender.apply, Type("sex"))
   val ratingCodec: Codec[Rating]             = int4.refined[RatingConstraint].imap(Rating.apply)(_.value)
   val federationIdCodec: Codec[FederationId] = text.refined[NonEmpty].imap(FederationId.apply)(_.value)
   val playerIdCodec: Codec[PlayerId]         = int4.refined[Positive].imap(PlayerId.apply)(_.value)
@@ -115,7 +115,7 @@ private object Codecs:
   val otherTitles: Codec[List[OtherTitle]] = otherTitleArr.opt.imap(_.fold(Nil)(_.toList))(Arr(_*).some)
 
   val newPlayer: Codec[NewPlayer] =
-    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: sex.opt *: int4.opt *: bool *: federationIdCodec.opt)
+    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: federationIdCodec.opt)
       .to[NewPlayer]
 
   val newFederation: Codec[NewFederation] =
@@ -131,7 +131,7 @@ private object Codecs:
     (federationIdCodec *: text *: int4 *: stats *: stats *: stats).to[FederationSummary]
 
   val playerInfo: Codec[PlayerInfo] =
-    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: sex.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
+    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
       .to[PlayerInfo]
 
 private object Sql:
@@ -216,13 +216,17 @@ private object Sql:
       between("blitz", filter.blitz),
       filter.isActive.map(filterActive),
       filter.federationId.map(federationIdFragment),
-      filter.titles.map(xs => playersByTitles(xs.size)(xs, xs))
+      filter.titles.map(xs => playersByTitles(xs.size)(xs, xs)),
+      filter.gender.map(filterGender)
     ).flatten.match
       case Nil => none
       case xs  => xs.intercalate(and).some
 
   private lazy val filterActive: Fragment[Boolean] =
     sql"p.active = $bool"
+
+  private lazy val filterGender: Fragment[Gender] =
+    sql"p.sex = $gender"
 
   def playersByTitles(n: Int): Fragment[(List[Title], List[Title])] =
     val titles = title.values.list(n)

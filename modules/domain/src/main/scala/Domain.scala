@@ -40,12 +40,12 @@ object OtherTitle:
   def applyToList(value: String): List[OtherTitle] =
     value.split(",").toList.flatMap(apply)
 
-enum Sex(val value: String):
-  case Female extends Sex("F")
-  case Male   extends Sex("M")
+enum Gender(val value: String):
+  case Female extends Gender("F")
+  case Male   extends Gender("M")
 
-object Sex:
-  def apply(value: String): Option[Sex] =
+object Gender:
+  def apply(value: String): Option[Gender] =
     value match
       case "F" => Some(Female)
       case "M" => Some(Male)
@@ -63,7 +63,7 @@ case class PlayerInfo(
     rapidK: Option[Int] = None,
     blitz: Option[Rating] = None,
     blitzK: Option[Int] = None,
-    sex: Option[Sex] = None,
+    gender: Option[Gender] = None,
     birthYear: Option[Int] = None,
     active: Boolean,
     updatedAt: OffsetDateTime,
@@ -83,7 +83,7 @@ case class NewPlayer(
     rapidK: Option[Int] = None,
     blitz: Option[Rating] = None,
     blitzK: Option[Int] = None,
-    sex: Option[Sex] = None,
+    gender: Option[Gender] = None,
     birthYear: Option[Int] = None,
     active: Boolean,
     federationId: Option[FederationId] = None

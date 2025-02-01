@@ -114,7 +114,7 @@ enum OtherTitle {
   LSI = "LSI"
 }
 
-enum Sex {
+enum Gender {
   Female = "F"
   Male = "M"
 }
@@ -143,7 +143,7 @@ structure GetPlayerByIdOutput {
   rapid: Rating
   blitz: Rating
 
-  sex: Sex
+  gender: Gender
   birthYear: Integer
   @required
   active: Boolean
@@ -206,4 +206,6 @@ structure FilterMixin {
   name: String
   @httpQuery("title")
   titles: Titles
+  @httpQuery("gender")
+  gender: Gender
 }

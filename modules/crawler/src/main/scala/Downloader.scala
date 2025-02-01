@@ -75,7 +75,7 @@ object Downloader:
         rapidK = kFactor(136),
         blitz = rating(139, 145),
         blitzK = kFactor(149),
-        sex = string(79, 82) >>= Sex.apply,
+        gender = string(79, 82) >>= Gender.apply,
         birthYear = number(152, 156).filter(y => y > 1000 && y < currentYear),
         active = string(158, 160).filter(_.contains("i")).isEmpty,
         federationId = string(76, 79) >>= FederationId.option

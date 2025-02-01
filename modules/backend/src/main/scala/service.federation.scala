@@ -30,8 +30,10 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
       blitzMin: Option[Rating],
       blitzMax: Option[Rating],
       name: Option[String],
-      titles: Option[List[Title]]
+      titles: Option[List[Title]],
+      gender: Option[Gender]
   ): IO[GetFederationPlayersByIdOutput] =
+
     val paging  = Models.Pagination(page, pageSize)
     val sorting = Models.Sorting.fromOption(sortBy.map(_.to[Models.SortBy]), order.map(_.to[Models.Order]))
     val filter = Models.PlayerFilter(
@@ -41,7 +43,8 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
       Models.RatingRange(rapidMin, rapidMax),
       Models.RatingRange(blitzMin, blitzMax),
       id.some,
-      titles.map(_.map(_.to[domain.Title]))
+      titles.map(_.map(_.to[domain.Title])),
+      gender.map(_.to[domain.Gender])
     )
     db.allPlayers(sorting, paging, filter)
       .handleErrorWith: e =>

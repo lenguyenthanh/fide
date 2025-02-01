@@ -4,7 +4,7 @@ package test
 import cats.syntax.all.*
 import faker.ResourceLoader.Implicits.*
 import fide.domain.Models.*
-import fide.domain.{ Federation, Title }
+import fide.domain.{ Federation, Gender, Title }
 import fide.types.*
 import org.scalacheck.{ Arbitrary, Gen }
 
@@ -86,6 +86,13 @@ object Arbitraries:
       1  -> Gen.listOfN(3, Arbitrary.arbitrary[Title]).map(makeTitles)
     )
 
+  val genGender: Gen[Option[Gender]] =
+    Gen.frequency(
+      20 -> Gen.const(none),
+      2  -> Gen.const(Gender.Male.some),
+      1  -> Gen.const(Gender.Female.some)
+    )
+
   given Arbitrary[(RatingRange, RatingRange, RatingRange)] = Arbitrary:
     for
       standard <- Arbitrary.arbitrary[RatingRange]
@@ -106,6 +113,7 @@ object Arbitraries:
       triple       <- Arbitrary.arbitrary[(RatingRange, RatingRange, RatingRange)]
       federationId <- genFederationId
       titles       <- genTitles
+      gender       <- genGender
     yield PlayerFilter(
       name,
       isActive,
@@ -113,5 +121,6 @@ object Arbitraries:
       triple._2,
       triple._3,
       federationId,
-      titles
+      titles,
+      gender
     )
