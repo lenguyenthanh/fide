@@ -42,4 +42,12 @@ object ParserTest extends SimpleIOSuite:
       .map(_.flatMap(_.flatMap(_.standard)))
       .map(expect.same(_, List(2700)))
 
+  test("sanitize name"):
+    IO:
+      expect.same(Downloader.sanitizeName("Aafrin, S F Aja"), "Aafrin S F Aja".some) &&
+      expect.same(Downloader.sanitizeName("Aafrin, S F Aja"), "Aafrin S F Aja".some) &&
+      expect.same(Downloader.sanitizeName(",alfaifi,Wael ali qasim"), "alfaifi Wael ali qasim".some) &&
+      expect.same(Downloader.sanitizeName("Amar,, Kahtan"), "Amar Kahtan".some) &&
+      expect.same(Downloader.sanitizeName("-,-"), none)
+
   private def parse(s: String) = Downloader.parseLine(s).map(_.map(_._1))
