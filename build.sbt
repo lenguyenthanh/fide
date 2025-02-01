@@ -83,7 +83,7 @@ lazy val crawler = (project in file("modules/crawler"))
     libraryDependencies ++= Seq(
       fs2Compress,
       http4sClient,
-      http4sEmberClient % Test,
+      http4sEmberClient % Test
     )
   )
   .dependsOn(domain, db)
@@ -115,7 +115,7 @@ lazy val gatling = (project in file("modules/gatling"))
   .settings(name := "gatling")
   .enablePlugins(GatlingPlugin)
   .settings(
-    scalacOptions -= "-Xfatal-warnings",
+    tpolecatExcludeOptions ++= Set(ScalacOptions.warnNonUnitStatement),
     libraryDependencies ++= Seq(
       gatlingTestFramework,
       gatlingHighCharts,
