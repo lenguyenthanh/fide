@@ -267,7 +267,8 @@ private object Sql:
         LIMIT ${int4} OFFSET ${int4}""".apply(page.size, page.offset)
 
   private def federationIdFragment(id: FederationId): AppliedFragment =
-    sql"""p.federation_id = $federationIdCodec""".apply(id)
+    if id.value.toLowerCase == "non" then sql"p.federation_id IS NULL".apply(Void)
+    else sql"""p.federation_id = $federationIdCodec""".apply(id)
 
   private def sortingFragment(sorting: Sorting): AppliedFragment =
     val column  = s"p.${sorting.sortBy.value}"
