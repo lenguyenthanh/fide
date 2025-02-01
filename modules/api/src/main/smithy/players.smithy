@@ -27,6 +27,9 @@ operation GetPlayers {
     @httpQuery("page_size")
     @range(min: 1, max: 100)
     pageSize: PageSize = 30
+
+    @httpQuery("federation_id")
+    federationId: FederationId
   }
 
   output := {

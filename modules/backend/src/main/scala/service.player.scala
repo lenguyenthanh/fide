@@ -42,7 +42,8 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       otherTitles: Option[List[OtherTitle]],
       gender: Option[Gender],
       birthYearMin: Option[BirthYear],
-      birthYearMax: Option[BirthYear]
+      birthYearMax: Option[BirthYear],
+      federationId: Option[FederationId]
   ): IO[GetPlayersOutput] =
     val paging  = Models.Pagination(page, pageSize)
     val sorting = Models.Sorting.fromOption(sortBy.map(_.to[Models.SortBy]), order.map(_.to[Models.Order]))
@@ -52,7 +53,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       Models.RatingRange(standardMin, standardMax),
       Models.RatingRange(rapidMin, rapidMax),
       Models.RatingRange(blitzMin, blitzMax),
-      None,
+      federationId,
       titles.map(_.map(_.to[domain.Title])),
       otherTitles.map(_.map(_.to[domain.OtherTitle])),
       gender.map(_.to[domain.Gender]),

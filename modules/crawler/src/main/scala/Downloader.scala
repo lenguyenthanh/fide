@@ -40,18 +40,16 @@ object Downloader:
 
     inline def parse(line: String): IO[Option[(NewPlayer, Option[NewFederation])]] =
       parsePlayer(line).traverse: player =>
-        player.federationId.flatTraverse(findFederation(_, player.id)).map(fed => (player, fed))
+        player.federationId.traverse(findFederation(_, player.id)).map(player -> _)
 
     IO(line.trim.nonEmpty)
       .ifM(parse(line), none.pure[IO])
       .handleErrorWith(e => Logger[IO].error(e)(s"Error while parsing line: $line").as(none))
 
-  def findFederation(id: FederationId, playerId: PlayerId): Logger[IO] ?=> IO[Option[NewFederation]] =
-    if id.value.toLowerCase == "non" then None.pure
-    else
-      Federation.all.get(id) match
-        case None => warn"Unkown federation: $id for player: $playerId".as(NewFederation(id, id.value).some)
-        case Some(name) => NewFederation(id, name).some.pure
+  def findFederation(id: FederationId, playerId: PlayerId): Logger[IO] ?=> IO[NewFederation] =
+    Federation.all.get(id) match
+      case None       => warn"Unkown federation: $id for player: $playerId".as(NewFederation(id, id.value))
+      case Some(name) => NewFederation(id, name).pure
 
   // shamelessly copied (with some minor modificaton) from: https://github.com/lichess-org/lila/blob/8033c4c5a15cf9bb2b36377c3480f3b64074a30f/modules/fide/src/main/FidePlayerSync.scala#L131
   def parsePlayer(line: String): Option[NewPlayer] =
@@ -78,7 +76,7 @@ object Downloader:
         gender = string(79, 82) >>= Gender.apply,
         birthYear = number(152, 156).filter(y => y > 1000 && y < currentYear),
         active = string(158, 160).filter(_.contains("i")).isEmpty,
-        federationId = string(76, 79) >>= FederationId.option
+        federationId = string(76, 79).filter(_ != "NON") >>= FederationId.option
       )
 
   def sanitizeName(name: String): Option[String] =
