@@ -99,9 +99,10 @@ private object Codecs:
   inline given [A, C] => (inline codec: Codec[A], inline constraint: Constraint[A, C]) => Codec[A :| C] =
     codec.refined
 
-  val title: Codec[Title]                    = `enum`[Title](_.value, Title.apply, Type("title"))
-  val gender: Codec[Gender]                  = `enum`[Gender](_.value, Gender.apply, Type("sex"))
-  val ratingCodec: Codec[Rating]             = int4.refined[RatingConstraint].imap(Rating.apply)(_.value)
+  val title: Codec[Title]           = `enum`[Title](_.value, Title.apply, Type("title"))
+  val otherTitle: Codec[OtherTitle] = `enum`[OtherTitle](_.value, OtherTitle.apply, Type("other_title"))
+  val gender: Codec[Gender]         = `enum`[Gender](_.value, Gender.apply, Type("sex"))
+  val ratingCodec: Codec[Rating]    = int4.refined[RatingConstraint].imap(Rating.apply)(_.value)
   val federationIdCodec: Codec[FederationId] = text.refined[NonEmpty].imap(FederationId.apply)(_.value)
   val playerIdCodec: Codec[PlayerId]         = int4.refined[Positive].imap(PlayerId.apply)(_.value)
 
@@ -217,6 +218,7 @@ private object Sql:
       filter.isActive.map(filterActive),
       filter.federationId.map(federationIdFragment),
       filter.titles.map(xs => playersByTitles(xs.size)(xs, xs)),
+      filter.otherTitles.map(xs => playersByOtherTitles(xs.size)(xs)),
       filter.gender.map(filterGender)
     ).flatten.match
       case Nil => none
@@ -231,6 +233,10 @@ private object Sql:
   def playersByTitles(n: Int): Fragment[(List[Title], List[Title])] =
     val titles = title.values.list(n)
     sql"(p.title IN ($titles) OR p.women_title in ($titles))"
+
+  def playersByOtherTitles(n: Int): Fragment[List[OtherTitle]] =
+    val otherTitles = otherTitle.values.list(n)
+    sql"p.other_title IN ($otherTitles)"
 
   private lazy val insertIntoPlayer =
     sql"""INSERT INTO players (id, name, title, women_title, other_titles, standard, standard_kfactor, rapid,

@@ -4,7 +4,7 @@ package test
 import cats.syntax.all.*
 import faker.ResourceLoader.Implicits.*
 import fide.domain.Models.*
-import fide.domain.{ Federation, Gender, Title }
+import fide.domain.{ Federation, Gender, OtherTitle, Title }
 import fide.types.*
 import org.scalacheck.{ Arbitrary, Gen }
 
@@ -39,6 +39,9 @@ object Arbitraries:
 
   given Arbitrary[Title] = Arbitrary:
     Gen.oneOf(Title.values.toSeq)
+
+  given Arbitrary[OtherTitle] = Arbitrary:
+    Gen.oneOf(OtherTitle.values.toSeq)
 
   def genMinRating: Gen[Option[Rating]] =
     Gen.frequency(
@@ -75,7 +78,7 @@ object Arbitraries:
       Arbitrary.arbitrary[faker.name.LastName].map(_.value)
     )
 
-  def makeTitles(titles: List[Title]): Option[List[Title]] =
+  def makeTitles[A](titles: List[A]): Option[List[A]] =
     val setOfTitles = titles.toSet
     if setOfTitles.isEmpty then None
     else setOfTitles.toList.some
@@ -84,6 +87,12 @@ object Arbitraries:
     Gen.frequency(
       30 -> Gen.const(none),
       1  -> Gen.listOfN(3, Arbitrary.arbitrary[Title]).map(makeTitles)
+    )
+
+  val genOtherTitles: Gen[Option[List[OtherTitle]]] =
+    Gen.frequency(
+      50 -> Gen.const(none),
+      1  -> Gen.listOfN(3, Arbitrary.arbitrary[OtherTitle]).map(makeTitles)
     )
 
   val genGender: Gen[Option[Gender]] =
@@ -113,6 +122,7 @@ object Arbitraries:
       triple       <- Arbitrary.arbitrary[(RatingRange, RatingRange, RatingRange)]
       federationId <- genFederationId
       titles       <- genTitles
+      otherTitles  <- genOtherTitles
       gender       <- genGender
     yield PlayerFilter(
       name,
@@ -122,5 +132,6 @@ object Arbitraries:
       triple._3,
       federationId,
       titles,
+      otherTitles,
       gender
     )

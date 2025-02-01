@@ -206,6 +206,8 @@ structure FilterMixin {
   name: String
   @httpQuery("title")
   titles: Titles
+  @httpQuery("other_title")
+  otherTitles: OtherTitles
   @httpQuery("gender")
   gender: Gender
 }
