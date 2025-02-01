@@ -8,6 +8,7 @@ import cats.syntax.all.*
 import com.comcast.ip4s.*
 import fide.db.Db
 import fide.db.test.Containers
+import fide.domain.Federation
 import fide.domain.Models.*
 import fide.types.PlayerId
 import org.typelevel.log4cats.Logger
@@ -45,9 +46,26 @@ object DbIntegrationSuite extends IOSuite with Checkers:
   given Show[PlayerFilter] = Show.fromToString
   given Show[PlayerId]     = Show.fromToString
 
-  test("db.allPlayers"): db =>
+  test("allPlayers & playerById & playersByIds"): db =>
     forall: (sorting: Sorting, paging: Pagination, filter: PlayerFilter) =>
       for
         players  <- db.allPlayers(sorting, paging, filter)
-        players2 <- players.map(_.id).traverse(db.playerById).map(_.flatten)
-      yield expect(players2 == players || players.size <= paging.size.value)
+        players1 <- players.map(_.id).traverse(db.playerById).map(_.flatten)
+        players2 <- players.nonEmpty.pure[IO].ifM(db.playersByIds(players.map(_.id).toSet), Nil.pure[IO])
+      yield expect(
+        players1.toSet == players.toSet && players2.toSet == players.toSet && players.size <= paging.size.value
+      )
+
+  test("allFederationsSummary & federationSummaryById"): db =>
+    forall: (paging: Pagination) =>
+      for
+        federations  <- db.allFederationsSummary(paging)
+        federations1 <- federations.map(_.id).traverse(db.federationSummaryById).map(_.flatten)
+      yield expect(
+        federations1 == federations && federations.size <= paging.size.value
+      )
+
+  test("allFederations"): db =>
+    db.allFederations
+      .map(_.map(_.id).toSet)
+      .map(expect.same(_, Federation.all.keySet))
