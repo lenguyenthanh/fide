@@ -63,7 +63,7 @@ object Downloader:
       otherTitles  = string(94, 109).fold(Nil)(OtherTitle.applyToList)
       sex          = string(79, 82) >>= Sex.apply
       year         = number(152, 156).filter(_ > 1000)
-      inactiveFlag = string(158, 160).filter(_.trim != "w")
+      inactiveFlag = string(158, 160)
       federationId = string(76, 79) >>= FederationId.option
     yield NewPlayer(
       id = id,
@@ -76,7 +76,7 @@ object Downloader:
       blitz = rating(139, 145),
       sex = sex,
       birthYear = year,
-      active = inactiveFlag.isEmpty
+      active = inactiveFlag.isEmpty || inactiveFlag.trim != "w"
     ) -> federationId
 
     x.traverse:
