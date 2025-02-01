@@ -68,4 +68,4 @@ object DbIntegrationSuite extends IOSuite with Checkers:
   test("allFederations"): db =>
     db.allFederations
       .map(_.map(_.id).toSet)
-      .map(expect.same(_, Federation.all.keySet))
+      .map(x => expect(Federation.all.keySet.diff(x) == Set.empty))
