@@ -56,34 +56,33 @@ object Downloader:
   // shamelessly copied (with some minor modificaton) from: https://github.com/lichess-org/lila/blob/8033c4c5a15cf9bb2b36377c3480f3b64074a30f/modules/fide/src/main/FidePlayerSync.scala#L131
   def parsePlayer(line: String): Option[(NewPlayer, Option[FederationId])] =
     def string(start: Int, end: Int): Option[String] = line.substring(start, end).trim.some.filter(_.nonEmpty)
-
     def number(start: Int, end: Int): Option[Int]    = string(start, end).flatMap(_.toIntOption)
     def rating(start: Int, end: Int): Option[Rating] = string(start, end) >>= Rating.fromString
+    def playerName(): Option[String]                 = sanitizeName(line.substring(15, 76))
+    def playerId(): Option[PlayerId]                 = number(0, 15) >>= PlayerId.option
 
-    for
-      id   <- number(0, 15) >>= PlayerId.option
-      name <- string(15, 76).map(_.filterNot(_.isDigit).trim)
-      if name.sizeIs > 2
-      title        = string(84, 89) >>= Title.apply
-      wTitle       = string(89, 94) >>= Title.apply
-      otherTitles  = string(94, 109).fold(Nil)(OtherTitle.applyToList)
-      sex          = string(79, 82) >>= Sex.apply
-      year         = number(152, 156).filter(y => y > 1000 && y < currentYear)
-      inactiveFlag = string(158, 160).filter(_.contains("i"))
-      federationId = string(76, 79) >>= FederationId.option
-    yield NewPlayer(
-      id = id,
-      name = name,
-      title = title,
-      womenTitle = wTitle,
-      otherTitles = otherTitles,
-      standard = rating(113, 117),
-      rapid = rating(126, 132),
-      blitz = rating(139, 145),
-      sex = sex,
-      birthYear = year,
-      active = inactiveFlag.isEmpty
-    ) -> federationId
+    (playerId(), playerName()).mapN: (id, name) =>
+      NewPlayer(
+        id = id,
+        name = name,
+        title = string(84, 89) >>= Title.apply,
+        womenTitle = string(89, 94) >>= Title.apply,
+        otherTitles = string(94, 109).fold(Nil)(OtherTitle.applyToList),
+        standard = rating(113, 117),
+        rapid = rating(126, 132),
+        blitz = rating(139, 145),
+        sex = string(79, 82) >>= Sex.apply,
+        birthYear = number(152, 156).filter(y => y > 1000 && y < currentYear),
+        active = string(158, 160).filter(_.contains("i")).isEmpty
+      ) -> (string(76, 79) >>= FederationId.option)
+
+  def sanitizeName(name: String): Option[String] =
+    name
+      .split("\\W+")
+      .filter(_.nonEmpty)
+      .mkString(" ")
+      .some
+      .filter(_.sizeIs > 2)
 
 object Decompressor:
 
