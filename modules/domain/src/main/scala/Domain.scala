@@ -131,10 +131,12 @@ case class Federation(
 
 object Federation:
 
-  def nameById(id: FederationId): Option[String] = names.get(id)
+  def nameById(id: FederationId): Option[String] =
+    if id.value.toLowerCase == "non" then None
+    else all.get(id).orElse(id.value.some)
 
   import io.github.iltotore.iron.*
-  val names: Map[FederationId, String] = Map(
+  val all: Map[FederationId, String] = Map(
     FederationId("AFG") -> "Afghanistan",
     FederationId("AHO") -> "Netherlands Antilles",
     FederationId("ALB") -> "Albania",

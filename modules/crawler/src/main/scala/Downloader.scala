@@ -16,6 +16,7 @@ trait Downloader:
 
 object Downloader:
   val downloadUrl = uri"http://ratings.fide.com/download/players_list.zip"
+  val currentYear = java.time.Year.now.getValue
 
   lazy val request = Request[IO](
     method = Method.GET,
@@ -33,28 +34,32 @@ object Downloader:
         .through(fs2.text.lines)
         .drop(1) // first line is header
         .evalMap(parseLine)
-        .collect { case Some(x) => x }
+        .unNone
 
-  def parseLine(line: String)(using Logger[IO]): IO[Option[(NewPlayer, Option[NewFederation])]] =
+  def parseLine(line: String): Logger[IO] ?=> IO[Option[(NewPlayer, Option[NewFederation])]] =
+
+    inline def parse(line: String): IO[Option[(NewPlayer, Option[NewFederation])]] =
+      parsePlayer(line).traverse: (player, federationId) =>
+        federationId.flatTraverse(findFederation(_, player.id)).map(fed => (player, fed))
+
     IO(line.trim.nonEmpty)
       .ifM(parse(line), none.pure[IO])
-      .handleErrorWith(e => error"Error while parsing line: $line, error: $e".as(none))
+      .handleErrorWith(e => Logger[IO].error(e)(s"Error while parsing line: $line").as(none))
+
+  def findFederation(id: FederationId, playerId: PlayerId): Logger[IO] ?=> IO[Option[NewFederation]] =
+    Federation.nameById(id) match
+      case None =>
+        warn"cannot find federation: $id for player: $playerId" *> NewFederation(id, id.value).some.pure
+      case Some(name) => NewFederation(id, name).some.pure
 
   // shamelessly copied (with some minor modificaton) from: https://github.com/lichess-org/lila/blob/8033c4c5a15cf9bb2b36377c3480f3b64074a30f/modules/fide/src/main/FidePlayerSync.scala#L131
-  def parse(line: String)(using Logger[IO]): IO[Option[(NewPlayer, Option[NewFederation])]] =
+  def parsePlayer(line: String): Option[(NewPlayer, Option[FederationId])] =
     def string(start: Int, end: Int): Option[String] = line.substring(start, end).trim.some.filter(_.nonEmpty)
 
     def number(start: Int, end: Int): Option[Int]    = string(start, end).flatMap(_.toIntOption)
     def rating(start: Int, end: Int): Option[Rating] = string(start, end) >>= Rating.fromString
 
-    def findFed(id: FederationId, playerId: PlayerId): IO[Option[NewFederation]] =
-      Federation
-        .nameById(id)
-        .fold(warn"cannot find federation: $id for player: $playerId" *> none[NewFederation].pure[IO])(name =>
-          NewFederation(id, name).some.pure[IO]
-        )
-
-    val x = for
+    for
       id   <- number(0, 15) >>= PlayerId.option
       name <- string(15, 76).map(_.filterNot(_.isDigit).trim)
       if name.sizeIs > 2
@@ -62,7 +67,7 @@ object Downloader:
       wTitle       = string(89, 94) >>= Title.apply
       otherTitles  = string(94, 109).fold(Nil)(OtherTitle.applyToList)
       sex          = string(79, 82) >>= Sex.apply
-      year         = number(152, 156).filter(_ > 1000)
+      year         = number(152, 156).filter(y => y > 1000 && y < currentYear)
       inactiveFlag = string(158, 160).filter(_.contains("i"))
       federationId = string(76, 79) >>= FederationId.option
     yield NewPlayer(
@@ -78,10 +83,6 @@ object Downloader:
       birthYear = year,
       active = inactiveFlag.isEmpty
     ) -> federationId
-
-    x.traverse:
-      case (player, Some(fedId)) => findFed(fedId, player.id).map(fed => (player, fed))
-      case (player, None)        => (player, none).pure[IO]
 
 object Decompressor:
 
