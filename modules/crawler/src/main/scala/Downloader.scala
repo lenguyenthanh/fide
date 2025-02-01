@@ -16,6 +16,7 @@ trait Downloader:
 
 object Downloader:
   val downloadUrl = uri"http://ratings.fide.com/download/players_list.zip"
+  val currentYear = java.time.Year.now.getValue
 
   lazy val request = Request[IO](
     method = Method.GET,
@@ -66,7 +67,7 @@ object Downloader:
       wTitle       = string(89, 94) >>= Title.apply
       otherTitles  = string(94, 109).fold(Nil)(OtherTitle.applyToList)
       sex          = string(79, 82) >>= Sex.apply
-      year         = number(152, 156).filter(_ > 1000)
+      year         = number(152, 156).filter(y => y > 1000 && y < currentYear)
       inactiveFlag = string(158, 160).filter(_.contains("i"))
       federationId = string(76, 79) >>= FederationId.option
     yield NewPlayer(
