@@ -16,7 +16,7 @@ object ParserTest extends SimpleIOSuite:
     parse(
       "10001492       Ojok, Patrick                                                UGA M             FI,LSI             1638  0   20 1932  0   20 1926  0   20 1974      "
     ).map(_.get.otherTitles)
-      .map(x => expect(x == List(OtherTitle.FI, OtherTitle.LSI)))
+      .map(expect.same(_, List(OtherTitle.FI, OtherTitle.LSI)))
 
   test("active flag"):
     val lines = List(
@@ -29,7 +29,7 @@ object ParserTest extends SimpleIOSuite:
     lines
       .traverse(parse)
       .map(_.flatMap(_.map(_.active)))
-      .map(x => expect(x == List(false, false, true, true)))
+      .map(expect.same(_, List(false, false, true, true)))
 
   test("rating constraints"):
     val lines = List(
@@ -40,6 +40,6 @@ object ParserTest extends SimpleIOSuite:
     lines
       .traverse(parse)
       .map(_.flatMap(_.flatMap(_.standard)))
-      .map(x => expect(x == List(2700)))
+      .map(expect.same(_, List(2700)))
 
   private def parse(s: String) = Downloader.parseLine(s).map(_.map(_._1))

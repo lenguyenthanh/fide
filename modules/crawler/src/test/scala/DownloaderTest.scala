@@ -24,4 +24,4 @@ object DownloaderTest extends SimpleIOSuite:
           .compile
           .to(Set)
           .map(Federation.all.keySet.diff)
-          .map(x => expect(x == Set.empty))
+          .map(expect.same(_, Set.empty))
