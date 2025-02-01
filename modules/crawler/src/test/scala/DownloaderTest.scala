@@ -23,5 +23,5 @@ object DownloaderTest extends SimpleIOSuite:
           .fold[Set[FederationId]](Set.empty)((acc, x) => acc ++ x.map(_.id))
           .compile
           .last
-          .map(x => Federation.names.keySet.diff(x.get))
+          .map(x => Federation.all.keySet.diff(x.get))
           .map(x => expect(x == Set.empty))

@@ -40,21 +40,31 @@ object Downloader:
       .ifM(parse(line), none.pure[IO])
       .handleErrorWith(e => error"Error while parsing line: $line, error: $e".as(none))
 
-  // shamelessly copied (with some minor modificaton) from: https://github.com/lichess-org/lila/blob/8033c4c5a15cf9bb2b36377c3480f3b64074a30f/modules/fide/src/main/FidePlayerSync.scala#L131
   def parse(line: String)(using Logger[IO]): IO[Option[(NewPlayer, Option[NewFederation])]] =
+    parsePlayer(line).traverse(x => findFederation(x._1, x._2))
+
+  def findFederation(player: NewPlayer, federationId: Option[FederationId])(using
+      Logger[IO]
+  ): IO[(NewPlayer, Option[NewFederation])] =
+    def f(id: FederationId, playerId: PlayerId): IO[Option[NewFederation]] =
+      if id.value.toLowerCase == "non" then None.pure
+      else
+        Federation.all
+          .get(id)
+          .fold(
+            warn"cannot find federation: $id for player: $playerId" *> NewFederation(id, id.value).some.pure
+          )(name => NewFederation(id, name).some.pure)
+
+    federationId.traverse(f(_, player.id)).map(fed => (player, fed.flatten))
+
+  // shamelessly copied (with some minor modificaton) from: https://github.com/lichess-org/lila/blob/8033c4c5a15cf9bb2b36377c3480f3b64074a30f/modules/fide/src/main/FidePlayerSync.scala#L131
+  def parsePlayer(line: String)(using Logger[IO]): Option[(NewPlayer, Option[FederationId])] =
     def string(start: Int, end: Int): Option[String] = line.substring(start, end).trim.some.filter(_.nonEmpty)
 
     def number(start: Int, end: Int): Option[Int]    = string(start, end).flatMap(_.toIntOption)
     def rating(start: Int, end: Int): Option[Rating] = string(start, end) >>= Rating.fromString
 
-    def findFed(id: FederationId, playerId: PlayerId): IO[Option[NewFederation]] =
-      Federation
-        .nameById(id)
-        .fold(warn"cannot find federation: $id for player: $playerId" *> none[NewFederation].pure[IO])(name =>
-          NewFederation(id, name).some.pure[IO]
-        )
-
-    val x = for
+    for
       id   <- number(0, 15) >>= PlayerId.option
       name <- string(15, 76).map(_.filterNot(_.isDigit).trim)
       if name.sizeIs > 2
@@ -78,10 +88,6 @@ object Downloader:
       birthYear = year,
       active = inactiveFlag.isEmpty
     ) -> federationId
-
-    x.traverse:
-      case (player, Some(fedId)) => findFed(fedId, player.id).map(fed => (player, fed))
-      case (player, None)        => (player, none).pure[IO]
 
 object Decompressor:
 
