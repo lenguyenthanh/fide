@@ -33,7 +33,7 @@ object Downloader:
         .through(fs2.text.lines)
         .drop(1) // first line is header
         .evalMap(parseLine)
-        .collect { case Some(x) => x }
+        .unNone
 
   def parseLine(line: String): Logger[IO] ?=> IO[Option[(NewPlayer, Option[NewFederation])]] =
 

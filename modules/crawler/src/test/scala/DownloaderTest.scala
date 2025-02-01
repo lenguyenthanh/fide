@@ -19,9 +19,9 @@ object DownloaderTest extends SimpleIOSuite:
       .build
       .use: client =>
         Downloader(client).fetch
-          .map(x => x._2)
-          .fold[Set[FederationId]](Set.empty)((acc, x) => acc ++ x.map(_.id))
+          .map(x => x._2.map(_.id))
+          .unNone
           .compile
-          .last
-          .map(x => Federation.all.keySet.diff(x.get))
+          .to(Set)
+          .map(Federation.all.keySet.diff)
           .map(x => expect(x == Set.empty))
