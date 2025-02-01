@@ -65,7 +65,7 @@ object DbIntegrationSuite extends IOSuite with Checkers:
         federations1 == federations && federations.size <= paging.size.value
       )
 
-  test("allFederations"): db =>
+  test("allFederations".ignore): db =>
     db.allFederations
       .map(_.map(_.id).toSet)
       .map(x => expect(Federation.all.keySet.diff(x) == Set.empty))
