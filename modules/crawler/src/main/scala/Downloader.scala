@@ -39,8 +39,8 @@ object Downloader:
   def parseLine(line: String): Logger[IO] ?=> IO[Option[(NewPlayer, Option[NewFederation])]] =
 
     inline def parse(line: String): IO[Option[(NewPlayer, Option[NewFederation])]] =
-      parsePlayer(line).traverse: (player, federationId) =>
-        federationId.flatTraverse(findFederation(_, player.id)).map(fed => (player, fed))
+      parsePlayer(line).traverse: player =>
+        player.federationId.flatTraverse(findFederation(_, player.id)).map(fed => (player, fed))
 
     IO(line.trim.nonEmpty)
       .ifM(parse(line), none.pure[IO])
@@ -54,7 +54,7 @@ object Downloader:
         case Some(name) => NewFederation(id, name).some.pure
 
   // shamelessly copied (with some minor modificaton) from: https://github.com/lichess-org/lila/blob/8033c4c5a15cf9bb2b36377c3480f3b64074a30f/modules/fide/src/main/FidePlayerSync.scala#L131
-  def parsePlayer(line: String): Option[(NewPlayer, Option[FederationId])] =
+  def parsePlayer(line: String): Option[NewPlayer] =
     def string(start: Int, end: Int): Option[String] = line.substring(start, end).trim.some.filter(_.nonEmpty)
     def number(start: Int, end: Int): Option[Int]    = string(start, end).flatMap(_.toIntOption)
     def rating(start: Int, end: Int): Option[Rating] = string(start, end) >>= Rating.fromString
@@ -73,8 +73,9 @@ object Downloader:
         blitz = rating(139, 145),
         sex = string(79, 82) >>= Sex.apply,
         birthYear = number(152, 156).filter(y => y > 1000 && y < currentYear),
-        active = string(158, 160).filter(_.contains("i")).isEmpty
-      ) -> (string(76, 79) >>= FederationId.option)
+        active = string(158, 160).filter(_.contains("i")).isEmpty,
+        federationId = string(76, 79) >>= FederationId.option
+      )
 
   def sanitizeName(name: String): Option[String] =
     name
