@@ -216,13 +216,17 @@ private object Sql:
       between("blitz", filter.blitz),
       filter.isActive.map(filterActive),
       filter.federationId.map(federationIdFragment),
-      filter.titles.map(xs => playersByTitles(xs.size)(xs, xs))
+      filter.titles.map(xs => playersByTitles(xs.size)(xs, xs)),
+      filter.gender.map(filterGender)
     ).flatten.match
       case Nil => none
       case xs  => xs.intercalate(and).some
 
   private lazy val filterActive: Fragment[Boolean] =
     sql"p.active = $bool"
+
+  private lazy val filterGender: Fragment[Gender] =
+    sql"p.sex = $gender"
 
   def playersByTitles(n: Int): Fragment[(List[Title], List[Title])] =
     val titles = title.values.list(n)

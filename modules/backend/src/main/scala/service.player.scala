@@ -30,7 +30,8 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       blitzMin: Option[Rating],
       blitzMax: Option[Rating],
       name: Option[String],
-      titles: Option[List[Title]]
+      titles: Option[List[Title]],
+      gender: Option[Gender]
   ): IO[GetPlayersOutput] =
     val paging  = Models.Pagination(page, pageSize)
     val sorting = Models.Sorting.fromOption(sortBy.map(_.to[Models.SortBy]), order.map(_.to[Models.Order]))
@@ -41,7 +42,8 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       Models.RatingRange(rapidMin, rapidMax),
       Models.RatingRange(blitzMin, blitzMax),
       None,
-      titles.map(_.map(_.to[domain.Title]))
+      titles.map(_.map(_.to[domain.Title])),
+      gender.map(_.to[domain.Gender])
     )
     db.allPlayers(sorting, paging, filter)
       .handleErrorWith: e =>
