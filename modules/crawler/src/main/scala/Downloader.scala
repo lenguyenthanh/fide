@@ -47,10 +47,11 @@ object Downloader:
       .handleErrorWith(e => Logger[IO].error(e)(s"Error while parsing line: $line").as(none))
 
   def findFederation(id: FederationId, playerId: PlayerId): Logger[IO] ?=> IO[Option[NewFederation]] =
-    Federation.nameById(id) match
-      case None =>
-        warn"cannot find federation: $id for player: $playerId" *> NewFederation(id, id.value).some.pure
-      case Some(name) => NewFederation(id, name).some.pure
+    if id.value.toLowerCase == "non" then None.pure
+    else
+      Federation.all.get(id) match
+        case None => warn"Unkown federation: $id for player: $playerId".as(NewFederation(id, id.value).some)
+        case Some(name) => NewFederation(id, name).some.pure
 
   // shamelessly copied (with some minor modificaton) from: https://github.com/lichess-org/lila/blob/8033c4c5a15cf9bb2b36377c3480f3b64074a30f/modules/fide/src/main/FidePlayerSync.scala#L131
   def parsePlayer(line: String): Option[(NewPlayer, Option[FederationId])] =
