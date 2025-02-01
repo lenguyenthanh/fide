@@ -35,30 +35,24 @@ object Downloader:
         .evalMap(parseLine)
         .collect { case Some(x) => x }
 
-  def parseLine(line: String)(using Logger[IO]): IO[Option[(NewPlayer, Option[NewFederation])]] =
+  def parseLine(line: String): Logger[IO] ?=> IO[Option[(NewPlayer, Option[NewFederation])]] =
+
+    inline def parse(line: String): IO[Option[(NewPlayer, Option[NewFederation])]] =
+      parsePlayer(line).traverse: (player, federationId) =>
+        federationId.flatTraverse(findFederation(_, player.id)).map(fed => (player, fed))
+
     IO(line.trim.nonEmpty)
       .ifM(parse(line), none.pure[IO])
-      .handleErrorWith(e => error"Error while parsing line: $line, error: $e".as(none))
+      .handleErrorWith(e => Logger[IO].error(e)(s"Error while parsing line: $line").as(none))
 
-  def parse(line: String)(using Logger[IO]): IO[Option[(NewPlayer, Option[NewFederation])]] =
-    parsePlayer(line).traverse(x => findFederation(x._1, x._2))
-
-  def findFederation(player: NewPlayer, federationId: Option[FederationId])(using
-      Logger[IO]
-  ): IO[(NewPlayer, Option[NewFederation])] =
-    def f(id: FederationId, playerId: PlayerId): IO[Option[NewFederation]] =
-      if id.value.toLowerCase == "non" then None.pure
-      else
-        Federation.all
-          .get(id)
-          .fold(
-            warn"cannot find federation: $id for player: $playerId" *> NewFederation(id, id.value).some.pure
-          )(name => NewFederation(id, name).some.pure)
-
-    federationId.traverse(f(_, player.id)).map(fed => (player, fed.flatten))
+  def findFederation(id: FederationId, playerId: PlayerId): Logger[IO] ?=> IO[Option[NewFederation]] =
+    Federation.nameById(id) match
+      case None =>
+        warn"cannot find federation: $id for player: $playerId" *> NewFederation(id, id.value).some.pure
+      case Some(name) => NewFederation(id, name).some.pure
 
   // shamelessly copied (with some minor modificaton) from: https://github.com/lichess-org/lila/blob/8033c4c5a15cf9bb2b36377c3480f3b64074a30f/modules/fide/src/main/FidePlayerSync.scala#L131
-  def parsePlayer(line: String)(using Logger[IO]): Option[(NewPlayer, Option[FederationId])] =
+  def parsePlayer(line: String): Option[(NewPlayer, Option[FederationId])] =
     def string(start: Int, end: Int): Option[String] = line.substring(start, end).trim.some.filter(_.nonEmpty)
 
     def number(start: Int, end: Int): Option[Int]    = string(start, end).flatMap(_.toIntOption)
