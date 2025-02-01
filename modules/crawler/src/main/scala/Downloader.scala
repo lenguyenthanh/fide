@@ -76,7 +76,7 @@ object Downloader:
       blitz = rating(139, 145),
       sex = sex,
       birthYear = year,
-      active = inactiveFlag.isEmpty
+      active = !inactiveFlag.exists(_.contains("i"))
     ) -> federationId
 
     x.traverse:
