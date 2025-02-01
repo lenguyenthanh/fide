@@ -115,7 +115,7 @@ private object Codecs:
   val otherTitles: Codec[List[OtherTitle]] = otherTitleArr.opt.imap(_.fold(Nil)(_.toList))(Arr(_*).some)
 
   val newPlayer: Codec[NewPlayer] =
-    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: ratingCodec.opt *: ratingCodec.opt *: sex.opt *: int4.opt *: bool *: federationIdCodec.opt)
+    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: sex.opt *: int4.opt *: bool *: federationIdCodec.opt)
       .to[NewPlayer]
 
   val newFederation: Codec[NewFederation] =
@@ -131,7 +131,7 @@ private object Codecs:
     (federationIdCodec *: text *: int4 *: stats *: stats *: stats).to[FederationSummary]
 
   val playerInfo: Codec[PlayerInfo] =
-    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: ratingCodec.opt *: ratingCodec.opt *: sex.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
+    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: sex.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
       .to[PlayerInfo]
 
 private object Sql:
@@ -229,13 +229,16 @@ private object Sql:
     sql"(p.title IN ($titles) OR p.women_title in ($titles))"
 
   private lazy val insertIntoPlayer =
-    sql"INSERT INTO players (id, name, title, women_title, other_titles, standard, rapid, blitz, sex, birth_year, active, federation_id)"
+    sql"""INSERT INTO players (id, name, title, women_title, other_titles, standard, standard_kfactor, rapid,
+      rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id)"""
 
   private lazy val onPlayerConflictDoUpdate =
     sql"""
-        ON CONFLICT (id) DO UPDATE SET (name, title, women_title, other_titles, standard, rapid, blitz, sex, birth_year, active, federation_id) =
-        (EXCLUDED.name, EXCLUDED.title, EXCLUDED.women_title, EXCLUDED.other_titles, EXCLUDED.standard, EXCLUDED.rapid, EXCLUDED.blitz, EXCLUDED.sex, EXCLUDED.birth_year, EXCLUDED.active, EXCLUDED.federation_id)
-      """
+        ON CONFLICT (id) DO UPDATE SET (name, title, women_title, other_titles, standard, standard_kfactor, rapid,
+          rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id) =
+        (EXCLUDED.name, EXCLUDED.title, EXCLUDED.women_title, EXCLUDED.other_titles, EXCLUDED.standard,
+          EXCLUDED.standard_kfactor, EXCLUDED.rapid, EXCLUDED.rapid_kfactor, EXCLUDED.blitz, EXCLUDED.blitz_kfactor,
+          EXCLUDED.sex, EXCLUDED.birth_year, EXCLUDED.active, EXCLUDED.federation_id)"""
 
   private val onConflictDoNothing  = sql"ON CONFLICT DO NOTHING"
   private val insertIntoFederation = sql"INSERT INTO federations (id, name)"
@@ -259,7 +262,8 @@ private object Sql:
 
   private lazy val allPlayersFragment: Fragment[Void] =
     sql"""
-        SELECT p.id, p.name, p.title, p.women_title, p.other_titles, p.standard, p.rapid, p.blitz, p.sex, p.birth_year, p.active, p.updated_at, p.created_at, f.id, f.name
+        SELECT p.id, p.name, p.title, p.women_title, p.other_titles, p.standard, p.standard_kfactor, p.rapid,
+        p.rapid_kfactor, p.blitz, p.blitz_kfactor, p.sex, p.birth_year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p LEFT JOIN federations AS f ON p.federation_id = f.id
       """
 
