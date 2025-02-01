@@ -37,6 +37,9 @@ object Arbitraries:
   given Arbitrary[PlayerId] = Arbitrary:
     Gen.posNum[Int].map(PlayerId.applyUnsafe(_))
 
+  given Arbitrary[BirthYear] = Arbitrary:
+    Gen.posNum[Int].map(BirthYear.applyUnsafe(_))
+
   given Arbitrary[Title] = Arbitrary:
     Gen.oneOf(Title.values.toSeq)
 
@@ -62,6 +65,12 @@ object Arbitraries:
       min <- genMinRating
       max <- genMaxRating
     yield RatingRange(min, max)
+
+  lazy val genBirthYear: Gen[Option[BirthYear]] =
+    Gen.frequency(
+      200 -> Gen.const(none),
+      1   -> Gen.choose(1900, 2025).map(BirthYear.option(_))
+    )
 
   given Arbitrary[FederationId] = Arbitrary:
     Gen.oneOf(Federation.all.keys.toSeq)
@@ -124,6 +133,8 @@ object Arbitraries:
       titles       <- genTitles
       otherTitles  <- genOtherTitles
       gender       <- genGender
+      minBirthYear <- genBirthYear
+      maxBirthYear <- genBirthYear
     yield PlayerFilter(
       name,
       isActive,
@@ -133,5 +144,7 @@ object Arbitraries:
       federationId,
       titles,
       otherTitles,
-      gender
+      gender,
+      minBirthYear,
+      maxBirthYear
     )

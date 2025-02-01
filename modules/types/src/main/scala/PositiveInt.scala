@@ -23,3 +23,6 @@ object PageNumber extends RefinedTypeOps[Int, Positive, PageNumber]:
 
 opaque type PlayerId <: Int = PositiveInt
 object PlayerId extends RefinedTypeOps[Int, Positive, PlayerId]
+
+opaque type BirthYear <: Int = PositiveInt
+object BirthYear extends RefinedTypeOps[Int, Positive, BirthYear]

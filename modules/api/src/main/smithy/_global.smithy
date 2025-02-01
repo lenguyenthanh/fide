@@ -37,6 +37,10 @@ structure PlayerIdFormat {}
 @unwrap
 integer PlayerId
 
+@BirthYearFormat
+@unwrap
+integer BirthYear
+
 @trait(selector: "string")
 @refinement(
    targetType: "fide.types.FederationId"
@@ -72,6 +76,13 @@ structure PageFormat {}
    providerImport: "fide.spec.providers.given"
 )
 structure PageSizeFormat { }
+
+@trait(selector: "integer")
+@refinement(
+   targetType: "fide.types.BirthYear"
+   providerImport: "fide.spec.providers.given"
+)
+structure BirthYearFormat { }
 
 @trait(selector: "list")
 @refinement(
@@ -210,4 +221,8 @@ structure FilterMixin {
   otherTitles: OtherTitles
   @httpQuery("gender")
   gender: Gender
+  @httpQuery("birth_year[gte]")
+  birthYearMin: BirthYear
+  @httpQuery("birth_year[lte]")
+  birthYearMax: BirthYear
 }

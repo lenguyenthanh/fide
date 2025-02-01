@@ -50,7 +50,9 @@ object Models:
       federationId: Option[FederationId],
       titles: Option[List[Title]],
       otherTitles: Option[List[OtherTitle]],
-      gender: Option[Gender]
+      gender: Option[Gender],
+      birthYearMin: Option[BirthYear],
+      birthYearMax: Option[BirthYear]
   )
 
   object PlayerFilter:
@@ -61,6 +63,8 @@ object Models:
         RatingRange.empty,
         RatingRange.empty,
         RatingRange.empty,
+        None,
+        None,
         None,
         None,
         None,
