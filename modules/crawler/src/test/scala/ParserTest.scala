@@ -29,6 +29,6 @@ object ParserTest extends SimpleIOSuite:
     lines
       .traverse(parse)
       .map(_.flatten.map(_.active))
-      .map(x => expect(x == List(false, false, false, true)))
+      .map(x => expect(x == List(false, false, true, true)))
 
   private def parse(s: String) = Downloader.parse(s).map(_.map(_._1))
