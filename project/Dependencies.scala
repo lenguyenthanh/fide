@@ -44,11 +44,10 @@ object Dependencies {
   val gatlingTestFramework = "io.gatling"            % "gatling-test-framework"    % V.gatling % Test
   val gatlingHighCharts    = "io.gatling.highcharts" % "gatling-charts-highcharts" % V.gatling % Test
 
-  val testContainers    = "com.dimafeng"        %% "testcontainers-scala-postgresql" % "0.41.8"     % Test
-  val weaver            = "com.disneystreaming" %% "weaver-cats"                     % "0.8.4"      % Test
-  val weaverScalaCheck  = "com.disneystreaming" %% "weaver-scalacheck"               % "0.8.4"      % Test
-  val catsEffectTestKit = "org.typelevel"       %% "cats-effect-testkit"             % V.catsEffect % Test
-  val munit             = "org.scalameta"       %% "munit"                           % "1.0.0-M11"  % Test
-  val munitScalaCheck   = "org.scalameta"       %% "munit-scalacheck"                % "1.0.0-M11"  % Test
-  val scalacheck        = "org.scalacheck"      %% "scalacheck"                      % "1.17.0"     % Test
+  val testContainers    = "com.dimafeng"         %% "testcontainers-scala-postgresql" % "0.41.8"     % Test
+  val weaver            = "com.disneystreaming"  %% "weaver-cats"                     % "0.8.4"      % Test
+  val weaverScalaCheck  = "com.disneystreaming"  %% "weaver-scalacheck"               % "0.8.4"      % Test
+  val catsEffectTestKit = "org.typelevel"        %% "cats-effect-testkit"             % V.catsEffect % Test
+  val scalacheck        = "org.scalacheck"       %% "scalacheck"                      % "1.17.0"     % Test
+  val scalacheckFaker   = "io.github.etspaceman" %% "scalacheck-faker"                % "8.0.6"     % Test
 }
