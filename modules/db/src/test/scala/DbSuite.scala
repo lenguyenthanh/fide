@@ -26,6 +26,8 @@ object DbSuite extends SimpleIOSuite:
     Containers.createResource.map(x => Db(x.postgres) -> KVStore(x.postgres))
   private def resource: Resource[IO, Db] = resourceP.map(_._1)
 
+  val fedId = FederationId("fide")
+
   val newPlayer1 = NewPlayer(
     PlayerId(1),
     "John",
@@ -37,7 +39,8 @@ object DbSuite extends SimpleIOSuite:
     Rating(2700).some,
     Sex.Male.some,
     1990.some,
-    true
+    true,
+    fedId.some
   )
 
   val newPlayer2 = NewPlayer(
@@ -54,7 +57,6 @@ object DbSuite extends SimpleIOSuite:
     true
   )
 
-  val fedId = FederationId("fide")
   val newFederation = NewFederation(
     fedId,
     "FIDE"
@@ -91,8 +93,9 @@ object DbSuite extends SimpleIOSuite:
       yield expect(found.transform == newPlayer2 && found.federation.isEmpty)
 
   test("overwriting player success"):
-    val player2     = newPlayer1.copy(name = "Jane")
-    val federation2 = NewFederation(FederationId("Lichess"), "lichess")
+    val fedId2      = FederationId("lichess")
+    val federation2 = NewFederation(fedId2, "lichess")
+    val player2     = newPlayer1.copy(name = "Jane", federationId = fedId2.some)
     resource.use: db =>
       for
         _      <- db.upsert(newPlayer1, newFederation.some)
@@ -118,7 +121,7 @@ object DbSuite extends SimpleIOSuite:
     val player2 = newPlayer1.copy(id = PlayerId(2), name = "A")
     resource.use: db =>
       for
-        _       <- db.upsert(newPlayer1, none)
+        _       <- db.upsert(newPlayer1, newFederation.some)
         _       <- db.upsert(player2, newFederation.some)
         players <- db.allPlayers(defaultSorting, defaultPage, PlayerFilter.default)
       yield expect(players.length == 2 && players.head.name == "A")
