@@ -234,9 +234,10 @@ private object Sql:
     val titles = title.values.list(n)
     sql"(p.title IN ($titles) OR p.women_title in ($titles))"
 
+  // select * from player where other_titles && array['IA','FA']::other_title[]
   def playersByOtherTitles(n: Int): Fragment[List[OtherTitle]] =
     val otherTitles = otherTitle.values.list(n)
-    sql"p.other_title IN ($otherTitles)"
+    sql"p.other_titles && array[$otherTitles]::other_title[]"
 
   private lazy val insertIntoPlayer =
     sql"""INSERT INTO players (id, name, title, women_title, other_titles, standard, standard_kfactor, rapid,
