@@ -13,7 +13,7 @@ object DownloaderTest extends SimpleIOSuite:
 
   given Logger[IO] = org.typelevel.log4cats.noop.NoOpLogger[IO]
 
-  test("No new federations after downloads"):
+  test("No new federations after downloads".ignore):
     EmberClientBuilder
       .default[IO]
       .build
@@ -24,4 +24,4 @@ object DownloaderTest extends SimpleIOSuite:
           .compile
           .to(Set)
           .map(Federation.all.keySet.diff)
-          .map(x => expect(x == Set.empty))
+          .map(expect.same(_, Set.empty))

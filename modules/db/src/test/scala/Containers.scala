@@ -33,6 +33,10 @@ object Containers:
     ).flatTap(cont => IO(cont.start()))
     Resource.make(start)(cont => IO(cont.stop()))
 
+  def start: Resource[IO, PostgresConfig] =
+    postgresContainer
+      .evalMap(parseConfig)
+
   def createResource: Resource[IO, DbResource] =
     postgresContainer
       .evalMap(parseConfig)

@@ -24,7 +24,7 @@ object KVStoreSuite extends SimpleIOSuite:
       for
         _     <- store.put("key", "value")
         value <- store.get("key")
-      yield expect(value == "value".some)
+      yield expect.same(value, "value".some)
 
   test("put twice will overwrite"):
     resource.use: store =>
@@ -32,7 +32,7 @@ object KVStoreSuite extends SimpleIOSuite:
         _     <- store.put("key", "value")
         _     <- store.put("key", "other value")
         value <- store.get("key")
-      yield expect(value == "other value".some)
+      yield expect.same(value, "other value".some)
 
   test("get unknown key returns none"):
     resource.use: store =>
