@@ -31,6 +31,7 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
       blitzMax: Option[Rating],
       name: Option[String],
       titles: Option[List[Title]],
+      otherTitles: Option[List[OtherTitle]],
       gender: Option[Gender]
   ): IO[GetFederationPlayersByIdOutput] =
 
@@ -44,6 +45,7 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
       Models.RatingRange(blitzMin, blitzMax),
       id.some,
       titles.map(_.map(_.to[domain.Title])),
+      otherTitles.map(_.map(_.to[domain.OtherTitle])),
       gender.map(_.to[domain.Gender])
     )
     db.allPlayers(sorting, paging, filter)

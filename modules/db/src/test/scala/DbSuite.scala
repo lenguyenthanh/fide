@@ -151,6 +151,18 @@ object DbSuite extends SimpleIOSuite:
         players.length == 1 && players.head.transform == newPlayer2 && players.head.federation.isEmpty
       )
 
+  test("query by other_titles succcess"):
+    val player2 = newPlayer1.copy(otherTitles = List(OtherTitle.IA))
+    resource.use: db =>
+      for
+        _ <- db.upsert(player2, newFederation.some)
+        players <- db.allPlayers(
+          defaultSorting,
+          defaultPage,
+          PlayerFilter.default.copy(otherTitles = List(OtherTitle.IA).some)
+        )
+      yield expect(players.length == 1 && players.head.transform == player2)
+
   test("query federation summary success"):
     resourceP.use: (db, kv) =>
       for
