@@ -8,14 +8,17 @@ object providers:
   given RefinementProvider[PageFormat, String, PageNumber] =
     Refinement.drivenBy(PageNumber.fromString, _.toString)
 
-  given RefinementProvider.Simple[smithy.api.Range, fide.types.PageSize] =
+  given RefinementProvider.Simple[smithy.api.Range, PageSize] =
     RefinementProvider.rangeConstraint(_.toInt)
 
-  given RefinementProvider[PageSizeFormat, Int, fide.types.PageSize] =
+  given RefinementProvider[PageSizeFormat, Int, PageSize] =
     Refinement.drivenBy(PageSize.either, _.toInt)
 
   given RefinementProvider[PlayerIdFormat, Int, fide.types.PlayerId] =
     Refinement.drivenBy(fide.types.PlayerId.either, _.value)
+
+  given RefinementProvider[BirthYearFormat, Int, fide.types.BirthYear] =
+    Refinement.drivenBy(fide.types.BirthYear.either, _.value)
 
   given RefinementProvider[RatingFormat, Int, fide.types.Rating] =
     Refinement.drivenBy(fide.types.Rating.either, _.value)
@@ -29,5 +32,5 @@ object providers:
       (b: NonEmptySet[A]) => b.value
     )
 
-  given [A]: RefinementProvider.Simple[smithy.api.Length, fide.types.NonEmptySet[A]] =
+  given [A]: RefinementProvider.Simple[smithy.api.Length, NonEmptySet[A]] =
     RefinementProvider.lengthConstraint(_.value.size)

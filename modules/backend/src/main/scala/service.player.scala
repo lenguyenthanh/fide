@@ -4,7 +4,15 @@ import cats.effect.*
 import cats.syntax.all.*
 import fide.db.Db
 import fide.domain.Models
-import fide.spec.{ FederationId as _, PageNumber as _, PageSize as _, PlayerId as _, Rating as _, * }
+import fide.spec.{
+  BirthYear as _,
+  FederationId as _,
+  PageNumber as _,
+  PageSize as _,
+  PlayerId as _,
+  Rating as _,
+  *
+}
 import fide.types.*
 import io.github.arainko.ducktape.*
 import org.typelevel.log4cats.Logger
@@ -32,7 +40,9 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       name: Option[String],
       titles: Option[List[Title]],
       otherTitles: Option[List[OtherTitle]],
-      gender: Option[Gender]
+      gender: Option[Gender],
+      birthYearMin: Option[BirthYear],
+      birthYearMax: Option[BirthYear]
   ): IO[GetPlayersOutput] =
     val paging  = Models.Pagination(page, pageSize)
     val sorting = Models.Sorting.fromOption(sortBy.map(_.to[Models.SortBy]), order.map(_.to[Models.Order]))
@@ -45,7 +55,9 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       None,
       titles.map(_.map(_.to[domain.Title])),
       otherTitles.map(_.map(_.to[domain.OtherTitle])),
-      gender.map(_.to[domain.Gender])
+      gender.map(_.to[domain.Gender]),
+      birthYearMin,
+      birthYearMax
     )
     db.allPlayers(sorting, paging, filter)
       .handleErrorWith: e =>

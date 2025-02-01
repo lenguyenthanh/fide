@@ -5,7 +5,15 @@ import cats.syntax.all.*
 import fide.db.Db
 import fide.domain.Models.Pagination
 import fide.domain.{ FederationSummary, Models }
-import fide.spec.{ FederationId as _, PageNumber as _, PageSize as _, PlayerId as _, Rating as _, * }
+import fide.spec.{
+  BirthYear as _,
+  FederationId as _,
+  PageNumber as _,
+  PageSize as _,
+  PlayerId as _,
+  Rating as _,
+  *
+}
 import fide.types.*
 import io.github.arainko.ducktape.*
 import org.typelevel.log4cats.Logger
@@ -32,7 +40,9 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
       name: Option[String],
       titles: Option[List[Title]],
       otherTitles: Option[List[OtherTitle]],
-      gender: Option[Gender]
+      gender: Option[Gender],
+      birthYearMin: Option[BirthYear],
+      birthYearMax: Option[BirthYear]
   ): IO[GetFederationPlayersByIdOutput] =
 
     val paging  = Models.Pagination(page, pageSize)
@@ -46,7 +56,9 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
       id.some,
       titles.map(_.map(_.to[domain.Title])),
       otherTitles.map(_.map(_.to[domain.OtherTitle])),
-      gender.map(_.to[domain.Gender])
+      gender.map(_.to[domain.Gender]),
+      birthYearMin,
+      birthYearMax
     )
     db.allPlayers(sorting, paging, filter)
       .handleErrorWith: e =>

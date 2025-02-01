@@ -196,8 +196,11 @@ private object Sql:
   private val where: AppliedFragment = sql"WHERE ".apply(Void)
 
   private def between(column: String, range: RatingRange): Option[AppliedFragment] =
+    between(column, range.min, range.max)
+
+  private def between[A <: Int](column: String, min: Option[A], max: Option[A]): Option[AppliedFragment] =
     val _column = s"p.$column"
-    (range.min, range.max) match
+    (min, max) match
       case (Some(min), Some(max)) =>
         sql"""
             #$_column BETWEEN ${int4} AND ${int4}""".apply(min, max).some
@@ -219,7 +222,8 @@ private object Sql:
       filter.federationId.map(federationIdFragment),
       filter.titles.map(xs => playersByTitles(xs.size)(xs, xs)),
       filter.otherTitles.map(xs => playersByOtherTitles(xs.size)(xs)),
-      filter.gender.map(filterGender)
+      filter.gender.map(filterGender),
+      between("birth_year", filter.birthYearMin, filter.birthYearMax)
     ).flatten.match
       case Nil => none
       case xs  => xs.intercalate(and).some
