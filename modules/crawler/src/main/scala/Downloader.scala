@@ -10,9 +10,8 @@ import org.http4s.implicits.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
 
-type PlayerInfo = (NewPlayer, Option[NewFederation])
 trait Downloader:
-  def fetch: fs2.Stream[IO, PlayerInfo]
+  def fetch: fs2.Stream[IO, (NewPlayer, Option[NewFederation])]
 
 object Downloader:
   val downloadUrl = uri"http://ratings.fide.com/download/players_list.zip"
@@ -41,14 +40,14 @@ object Downloader:
       parsePlayer(line).traverse: player =>
         player.federationId.traverse(findFederation(_, player.id)).map(player -> _)
 
+    def findFederation(id: FederationId, playerId: PlayerId): IO[NewFederation] =
+      Federation.all.get(id) match
+        case None       => warn"Unkown federation: $id for player: $playerId".as(NewFederation(id, id.value))
+        case Some(name) => NewFederation(id, name).pure
+
     IO(line.trim.nonEmpty)
       .ifM(parse(line), none.pure[IO])
       .handleErrorWith(e => Logger[IO].error(e)(s"Error while parsing line: $line").as(none))
-
-  def findFederation(id: FederationId, playerId: PlayerId): Logger[IO] ?=> IO[NewFederation] =
-    Federation.all.get(id) match
-      case None       => warn"Unkown federation: $id for player: $playerId".as(NewFederation(id, id.value))
-      case Some(name) => NewFederation(id, name).pure
 
   // shamelessly copied (with some minor modificaton) from: https://github.com/lichess-org/lila/blob/8033c4c5a15cf9bb2b36377c3480f3b64074a30f/modules/fide/src/main/FidePlayerSync.scala#L131
   def parsePlayer(line: String): Option[NewPlayer] =
