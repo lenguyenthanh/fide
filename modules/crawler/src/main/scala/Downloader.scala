@@ -33,8 +33,7 @@ object Downloader:
         .through(fs2.text.utf8.decode)
         .through(fs2.text.lines)
         .drop(1) // first line is header
-        .evalMap(parseLine)
-        .unNone
+        .evalMapFilter(parseLine)
 
   def parseLine(line: String): Logger[IO] ?=> IO[Option[(NewPlayer, Option[NewFederation])]] =
 
