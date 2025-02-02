@@ -18,6 +18,4 @@ object FederationId:
   def option(value: String): Option[FederationId] =
     either(value).toOption
 
-  extension (str: FederationId)
-    inline def toStr: String                     = str
-    inline def value: IronType[String, NonEmpty] = rtc.value(str)
+  extension (str: FederationId) inline def value: IronType[String, NonEmpty] = rtc.value(str)
