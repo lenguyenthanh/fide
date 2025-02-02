@@ -3,6 +3,7 @@ package crawler
 package test
 
 import cats.effect.IO
+import cats.syntax.all.*
 import fide.domain.Federation
 import fide.types.FederationId
 import org.http4s.ember.client.EmberClientBuilder
@@ -19,8 +20,7 @@ object DownloaderTest extends SimpleIOSuite:
       .build
       .use: client =>
         Downloader(client).fetch
-          .map(x => x._2.map(_.id))
-          .unNone
+          .mapFilter(x => x._2.map(_.id))
           .compile
           .to(Set)
           .map(Federation.all.keySet.diff)
