@@ -5,7 +5,7 @@ object Dependencies {
   object V {
     val catsEffect = "3.5.7"
     val ciris      = "3.7.0"
-    val flyway     = "11.3.0"
+    val flyway     = "11.3.1"
     val fs2        = "3.11.0"
     val http4s     = "0.23.30"
     val iron       = "2.6.0"
@@ -49,5 +49,5 @@ object Dependencies {
   val weaverScalaCheck  = "com.disneystreaming"  %% "weaver-scalacheck"               % "0.8.4"      % Test
   val catsEffectTestKit = "org.typelevel"        %% "cats-effect-testkit"             % V.catsEffect % Test
   val scalacheck        = "org.scalacheck"       %% "scalacheck"                      % "1.17.0"     % Test
-  val scalacheckFaker   = "io.github.etspaceman" %% "scalacheck-faker"                % "8.0.6"     % Test
+  val scalacheckFaker   = "io.github.etspaceman" %% "scalacheck-faker"                % "8.0.6"      % Test
 }
