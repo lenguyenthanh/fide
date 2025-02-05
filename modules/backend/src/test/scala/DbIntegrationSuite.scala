@@ -50,7 +50,7 @@ object DbIntegrationSuite extends IOSuite with Checkers:
     forall: (sorting: Sorting, paging: Pagination, filter: PlayerFilter) =>
       for
         players  <- db.allPlayers(sorting, paging, filter)
-        players1 <- players.map(_.id).traverse(db.playerById).map(_.flatten)
+        players1 <- players.map(_.id).traverseFilter(db.playerById)
         players2 <- players.nonEmpty.pure[IO].ifM(db.playersByIds(players.map(_.id).toSet), Nil.pure[IO])
       yield expect(
         players1.toSet == players.toSet && players2.toSet == players.toSet && players.size <= paging.size.value
@@ -60,7 +60,7 @@ object DbIntegrationSuite extends IOSuite with Checkers:
     forall: (paging: Pagination) =>
       for
         federations  <- db.allFederationsSummary(paging)
-        federations1 <- federations.map(_.id).traverse(db.federationSummaryById).map(_.flatten)
+        federations1 <- federations.map(_.id).traverseFilter(db.federationSummaryById)
       yield expect(
         federations1 == federations && federations.size <= paging.size.value
       )
