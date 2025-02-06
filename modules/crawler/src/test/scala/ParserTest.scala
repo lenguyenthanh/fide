@@ -27,8 +27,8 @@ object ParserTest extends SimpleIOSuite:
       "1478800        Aagaard, Christian                                           DEN M                                                                       1999      "
     )
     lines
-      .traverse(parse)
-      .map(_.flatMap(_.map(_.active)))
+      .traverseFilter(parse)
+      .map(_.map(_.active))
       .map(expect.same(_, List(false, false, true, true)))
 
   test("rating constraints"):
@@ -38,8 +38,8 @@ object ParserTest extends SimpleIOSuite:
       "10001492       Ojok, Patrick                                                UGA M             FI,LSI             2700  0   20 1932  0   20 1926  0   20 1974      "
     )
     lines
-      .traverse(parse)
-      .map(_.flatMap(_.flatMap(_.standard)))
+      .traverseFilter(parse)
+      .map(_.flatMap(_.standard))
       .map(expect.same(_, List(2700)))
 
   test("sanitize name"):
