@@ -213,7 +213,7 @@ private object Sql:
       case (None, None) => none
 
   private def filterFragment(filter: PlayerFilter): Option[AppliedFragment] =
-    List(
+    List.concat(
       filter.name.map(nameLikeFragment),
       between("standard", filter.standard),
       between("rapid", filter.rapid),
@@ -224,7 +224,7 @@ private object Sql:
       filter.otherTitles.map(xs => playersByOtherTitles(xs.size)(xs)),
       filter.gender.map(filterGender),
       between("birth_year", filter.birthYearMin, filter.birthYearMax)
-    ).flatten.match
+    ) match
       case Nil => none
       case xs  => xs.intercalate(and).some
 
