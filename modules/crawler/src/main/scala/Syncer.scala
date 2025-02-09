@@ -34,8 +34,7 @@ object Syncer:
   def apply(store: KVStore, scraper: UpdateChecker)(using Logger[IO]): Syncer = new:
     def fetchStatus: IO[Status] =
       (lastLocalUpdate, scraper.lastUpdate).flatMapN: (local, remote) =>
-        info"last local update: $local, last remote update: $remote" *>
-          IO(Status(local, remote))
+        info"last local update: $local, last remote update: $remote".as(Status(local, remote))
 
     private def lastLocalUpdate: IO[Option[String]] =
       store.get(fideLastUpdateKey)
