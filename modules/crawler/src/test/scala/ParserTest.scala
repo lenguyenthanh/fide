@@ -39,7 +39,7 @@ object ParserTest extends SimpleIOSuite:
     )
     lines
       .traverseFilter(parse)
-      .map(_.flatMap(_.standard))
+      .map(_.mapFilter(_.standard))
       .map(expect.same(_, List(2700)))
 
   test("sanitize name"):

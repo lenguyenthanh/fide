@@ -38,7 +38,7 @@ object OtherTitle:
     OtherTitle.values.find(_.value == value)
 
   def applyToList(value: String): List[OtherTitle] =
-    value.split(",").toList.flatMap(apply)
+    value.split(",").toList.mapFilter(apply)
 
 enum Gender(val value: String):
   case Female extends Gender("F")
