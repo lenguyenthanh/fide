@@ -34,7 +34,7 @@ object Db:
         yield ()
 
     def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit] =
-      val feds = xs.flatMap(_._2).distinct
+      val feds = xs.mapFilter(_._2).distinct
       postgres.use: s =>
         for
           playerCmd     <- s.prepare(Sql.upsertPlayers(xs.size))
