@@ -24,9 +24,7 @@ object Syncer:
     def apply(local: Option[String], remote: Option[String]): Status =
       (local, remote).match
         case (Some(l), Some(r)) if l == r => Status.UpToDate
-        case (Some(l), Some(r))           => Status.OutDated(r.some)
-        case (None, Some(r))              => Status.OutDated(r.some)
-        case (_, None)                    => Status.OutDated(none)
+        case _                            => Status.OutDated(remote)
 
   def instance(store: KVStore, client: Client[IO])(using Logger[IO]): Syncer =
     Syncer(store, UpdateChecker(client))
