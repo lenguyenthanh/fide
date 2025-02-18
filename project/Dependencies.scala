@@ -5,7 +5,7 @@ object Dependencies {
   object V {
     val catsEffect = "3.5.7"
     val ciris      = "3.7.0"
-    val flyway     = "11.3.0"
+    val flyway     = "11.3.2"
     val fs2        = "3.11.0"
     val http4s     = "0.23.30"
     val iron       = "2.6.0"
