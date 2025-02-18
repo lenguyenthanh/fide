@@ -52,7 +52,10 @@ object Models:
       otherTitles: Option[List[OtherTitle]],
       gender: Option[Gender],
       birthYearMin: Option[BirthYear],
-      birthYearMax: Option[BirthYear]
+      birthYearMax: Option[BirthYear],
+      hasTitle: Option[Boolean],
+      hasWomenTitle: Option[Boolean],
+      hasOtherTitle: Option[Boolean]
   )
 
   object PlayerFilter:
@@ -63,6 +66,9 @@ object Models:
         RatingRange.empty,
         RatingRange.empty,
         RatingRange.empty,
+        None,
+        None,
+        None,
         None,
         None,
         None,

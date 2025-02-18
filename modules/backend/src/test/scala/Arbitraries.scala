@@ -126,15 +126,18 @@ object Arbitraries:
 
   given Arbitrary[PlayerFilter] = Arbitrary:
     for
-      name         <- Gen.option(genName) // real name
-      isActive     <- genIsActive
-      triple       <- Arbitrary.arbitrary[(RatingRange, RatingRange, RatingRange)]
-      federationId <- genFederationId
-      titles       <- genTitles
-      otherTitles  <- genOtherTitles
-      gender       <- genGender
-      minBirthYear <- genBirthYear
-      maxBirthYear <- genBirthYear
+      name          <- Gen.option(genName) // real name
+      isActive      <- genIsActive
+      triple        <- Arbitrary.arbitrary[(RatingRange, RatingRange, RatingRange)]
+      federationId  <- genFederationId
+      titles        <- genTitles
+      otherTitles   <- genOtherTitles
+      gender        <- genGender
+      minBirthYear  <- genBirthYear
+      maxBirthYear  <- genBirthYear
+      hasTitle      <- genIsActive
+      hasWomenTitle <- genIsActive
+      hasOtherTitle <- genIsActive
     yield PlayerFilter(
       name,
       isActive,
@@ -146,5 +149,8 @@ object Arbitraries:
       otherTitles,
       gender,
       minBirthYear,
-      maxBirthYear
+      maxBirthYear,
+      hasTitle,
+      hasWomenTitle,
+      hasOtherTitle
     )

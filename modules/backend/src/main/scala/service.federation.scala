@@ -42,7 +42,10 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
       otherTitles: Option[List[OtherTitle]],
       gender: Option[Gender],
       birthYearMin: Option[BirthYear],
-      birthYearMax: Option[BirthYear]
+      birthYearMax: Option[BirthYear],
+      hasTitle: Option[Boolean],
+      hasWomenTitle: Option[Boolean],
+      hasOtherTitle: Option[Boolean]
   ): IO[GetFederationPlayersByIdOutput] =
 
     val paging  = Models.Pagination(page, pageSize)
@@ -58,7 +61,10 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
       otherTitles.map(_.map(_.to[domain.OtherTitle])),
       gender.map(_.to[domain.Gender]),
       birthYearMin,
-      birthYearMax
+      birthYearMax,
+      hasTitle,
+      hasWomenTitle,
+      hasOtherTitle
     )
     db.allPlayers(sorting, paging, filter)
       .handleErrorWith: e =>
