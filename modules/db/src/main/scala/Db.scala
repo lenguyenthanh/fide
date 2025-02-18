@@ -223,7 +223,10 @@ private object Sql:
       filter.titles.map(xs => playersByTitles(xs.size)(xs, xs)),
       filter.otherTitles.map(xs => playersByOtherTitles(xs.size)(xs)),
       filter.gender.map(filterGender),
-      between("birth_year", filter.birthYearMin, filter.birthYearMax)
+      between("birth_year", filter.birthYearMin, filter.birthYearMax),
+      filter.hasTitle.map(hasTitle),
+      filter.hasWomenTitle.map(hasWomenTitle),
+      filter.hasOtherTitle.map(hasOtherTitle)
     ) match
       case Nil => none
       case xs  => xs.intercalate(and).some
@@ -238,6 +241,19 @@ private object Sql:
     val titles = title.values.list(n)
     sql"(p.title IN ($titles) OR p.women_title in ($titles))"
 
+  private def hasTitle: Boolean => AppliedFragment =
+    case true  => sql"p.title IS NOT NULL".apply(Void)
+    case false => sql"p.title IS NULL".apply(Void)
+
+  private def hasWomenTitle: Boolean => AppliedFragment =
+    case true  => sql"p.women_title IS NOT NULL".apply(Void)
+    case false => sql"p.women_title IS NULL".apply(Void)
+
+  private def hasOtherTitle: Boolean => AppliedFragment =
+    case true  => sql"cardinality(p.other_titles) != 0".apply(Void)
+    case false => sql"cardinality(p.other_titles) = 0".apply(Void)
+
+  // https://www.postgresql.org/docs/current/functions-array.html#FUNCTIONS-ARRAY
   // select * from player where other_titles && array['IA','FA']::other_title[]
   def playersByOtherTitles(n: Int): Fragment[List[OtherTitle]] =
     val otherTitles = otherTitle.values.list(n)

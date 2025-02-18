@@ -225,4 +225,10 @@ structure FilterMixin {
   birthYearMin: BirthYear
   @httpQuery("birth_year[lte]")
   birthYearMax: BirthYear
+  @httpQuery("has_title")
+  hasTitle: Boolean
+  @httpQuery("has_women_title")
+  hasWomenTitle: Boolean
+  @httpQuery("has_other_title")
+  hasOtherTitle: Boolean
 }

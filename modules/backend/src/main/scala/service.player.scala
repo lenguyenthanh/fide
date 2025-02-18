@@ -43,8 +43,12 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       gender: Option[Gender],
       birthYearMin: Option[BirthYear],
       birthYearMax: Option[BirthYear],
+      hasTitle: Option[Boolean],
+      hasWomenTitle: Option[Boolean],
+      hasOtherTitle: Option[Boolean],
       federationId: Option[FederationId]
   ): IO[GetPlayersOutput] =
+
     val paging  = Models.Pagination(page, pageSize)
     val sorting = Models.Sorting.fromOption(sortBy.map(_.to[Models.SortBy]), order.map(_.to[Models.Order]))
     val filter = Models.PlayerFilter(
@@ -58,7 +62,10 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       otherTitles.map(_.map(_.to[domain.OtherTitle])),
       gender.map(_.to[domain.Gender]),
       birthYearMin,
-      birthYearMax
+      birthYearMax,
+      hasTitle,
+      hasWomenTitle,
+      hasOtherTitle
     )
     db.allPlayers(sorting, paging, filter)
       .handleErrorWith: e =>
