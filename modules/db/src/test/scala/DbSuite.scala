@@ -132,6 +132,15 @@ object DbSuite extends SimpleIOSuite:
         players <- db.allPlayers(defaultSorting, defaultPage, PlayerFilter.default)
       yield expect(players.length == 2 && players.head.name == "A")
 
+  test("count players with default filter"):
+    val player2 = newPlayer1.copy(id = PlayerId(2), name = "A")
+    resource.use: db =>
+      for
+        _       <- db.upsert(newPlayer1, newFederation.some)
+        _       <- db.upsert(player2, newFederation.some)
+        players <- db.countPlayers(PlayerFilter.default)
+      yield expect(players == 2)
+
   test("search playersByFederationId success"):
     resource.use: db =>
       for
