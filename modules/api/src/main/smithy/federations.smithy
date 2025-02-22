@@ -28,6 +28,8 @@ operation GetFederationsSummary {
   output:= {
     @required
     items: FederationsSummary
+    @required
+    totalResults: Long
     nextPage: PageNumber
   }
 
@@ -69,6 +71,8 @@ operation GetFederationPlayersById {
   output := {
     @required
     items: Players
+    @required
+    totalResults: Long
     nextPage: PageNumber
   }
 

@@ -66,16 +66,12 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
       hasWomenTitle,
       hasOtherTitle
     )
-    db.allPlayers(sorting, paging, filter)
+    (db.allPlayers(sorting, paging, filter).map(_.map(_.transform)), db.countPlayers(filter))
+      .parMapN: (xs, total) =>
+        GetFederationPlayersByIdOutput(xs, total, Option.when(xs.size == pageSize)(page.succ))
       .handleErrorWith: e =>
         error"Error in getPlayers with $filter, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
-      .map(_.map(_.transform))
-      .map: xs =>
-        GetFederationPlayersByIdOutput(
-          xs,
-          Option.when(xs.size == pageSize)(page.succ)
-        )
 
   override def getFederationSummaryById(id: FederationId): IO[GetFederationSummaryByIdOutput] =
     db.federationSummaryById(id)
@@ -89,16 +85,14 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
       page: PageNumber,
       pageSize: PageSize
   ): IO[GetFederationsSummaryOutput] =
-    db.allFederationsSummary(Pagination(page, pageSize))
-      .handleErrorWith: e =>
+    (
+      db.allFederationsSummary(Pagination(page, pageSize)).map(_.map(_.transform)),
+      db.countFederationsSummary
+    ).parMapN: (xs, total) =>
+      GetFederationsSummaryOutput(xs, total, Option.when(xs.size == pageSize)(page.succ))
+    .handleErrorWith: e =>
         error"Error in getFederationsSummary: $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
-      .map(_.map(_.transform))
-      .map: xs =>
-        GetFederationsSummaryOutput(
-          xs,
-          Option.when(xs.size == pageSize)(page.succ)
-        )
 
 object FederationTransformers:
   extension (p: FederationSummary)

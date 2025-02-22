@@ -19,6 +19,8 @@ trait Db:
   def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]]
   def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
   def allFederationsSummary(paging: Pagination): IO[List[FederationSummary]]
+  def countFederationsSummary: IO[Long]
+  def countFederations: IO[Long]
   def federationSummaryById(id: FederationId): IO[Option[FederationSummary]]
 
 object Db:
@@ -73,6 +75,12 @@ object Db:
       val f = Sql.allFederationsSummary(paging)
       val q = f.fragment.query(Codecs.federationSummary)
       postgres.use(_.execute(q)(f.argument))
+
+    def countFederationsSummary: IO[Long] =
+      postgres.use(_.unique(Sql.countFederationsSummary))
+
+    def countFederations: IO[Long] =
+      postgres.use(_.unique(Sql.countFederations))
 
     def federationSummaryById(id: FederationId): IO[Option[FederationSummary]] =
       postgres.use(_.option(Sql.federationSummaryById)(id))
@@ -191,6 +199,12 @@ private object Sql:
       select count(*) from players as p
         """.apply(Void)
     select |+| filterFragment(filter).fold(void)(where |+| _)
+
+  val countFederations: Query[Void, Long] =
+    sql"SELECT count(*) FROM federations".query(codec.all.int8)
+
+  val countFederationsSummary: Query[Void, Long] =
+    sql"SELECT count(*) FROM federations".query(codec.all.int8)
 
   def playersByIds(n: Int): Fragment[List[Int]] =
     val ids = int4.values.list(n)
