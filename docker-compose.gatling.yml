@@ -30,7 +30,7 @@ services:
             memory: 8G
 
   db:
-    image: postgres:16.2-alpine3.19
+    image: postgres:17.4-alpine
     container_name: fide_postgres_gatling
     environment:
       POSTGRES_DB: fide
