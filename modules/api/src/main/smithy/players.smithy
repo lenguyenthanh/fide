@@ -35,6 +35,8 @@ operation GetPlayers {
   output := {
     @required
     items: Players
+    @required
+    totalResults: Long
     nextPage: PageNumber
   }
 

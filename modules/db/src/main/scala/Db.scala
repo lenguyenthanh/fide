@@ -13,11 +13,14 @@ trait Db:
   def upsert(player: NewPlayer, federation: Option[NewFederation]): IO[Unit]
   def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit]
   def playerById(id: PlayerId): IO[Option[PlayerInfo]]
+  def countPlayers(filter: PlayerFilter): IO[Long]
   def allPlayers(sorting: Sorting, paging: Pagination, filter: PlayerFilter): IO[List[PlayerInfo]]
   def allFederations: IO[List[FederationInfo]]
   def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]]
   def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
   def allFederationsSummary(paging: Pagination): IO[List[FederationSummary]]
+  def countFederationsSummary: IO[Long]
+  def countFederations: IO[Long]
   def federationSummaryById(id: FederationId): IO[Option[FederationSummary]]
 
 object Db:
@@ -52,6 +55,11 @@ object Db:
       val q = f.fragment.query(Codecs.playerInfo)
       postgres.use(_.execute(q)(f.argument))
 
+    def countPlayers(filter: PlayerFilter): IO[Long] =
+      val f = Sql.countPlayers(filter)
+      val q = f.fragment.query(codec.all.int8)
+      postgres.use(_.unique(q)(f.argument))
+
     def allFederations: IO[List[FederationInfo]] =
       postgres.use(_.execute(Sql.allFederations))
 
@@ -67,6 +75,12 @@ object Db:
       val f = Sql.allFederationsSummary(paging)
       val q = f.fragment.query(Codecs.federationSummary)
       postgres.use(_.execute(q)(f.argument))
+
+    def countFederationsSummary: IO[Long] =
+      postgres.use(_.unique(Sql.countFederationsSummary))
+
+    def countFederations: IO[Long] =
+      postgres.use(_.unique(Sql.countFederations))
 
     def federationSummaryById(id: FederationId): IO[Option[FederationSummary]] =
       postgres.use(_.option(Sql.federationSummaryById)(id))
@@ -179,6 +193,18 @@ private object Sql:
   def allPlayers(sorting: Sorting, page: Pagination, filter: PlayerFilter): AppliedFragment =
     allPlayersFragment(Void) |+| filterFragment(filter).fold(void)(where |+| _) |+|
       sortingFragment(sorting) |+| pagingFragment(page)
+
+  def countPlayers(filter: PlayerFilter) =
+    val select = sql"""
+      select count(*) from players as p
+        """.apply(Void)
+    select |+| filterFragment(filter).fold(void)(where |+| _)
+
+  val countFederations: Query[Void, Long] =
+    sql"SELECT count(*) FROM federations".query(codec.all.int8)
+
+  val countFederationsSummary: Query[Void, Long] =
+    sql"SELECT count(*) FROM federations".query(codec.all.int8)
 
   def playersByIds(n: Int): Fragment[List[Int]] =
     val ids = int4.values.list(n)

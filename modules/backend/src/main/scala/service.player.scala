@@ -67,16 +67,12 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       hasWomenTitle,
       hasOtherTitle
     )
-    db.allPlayers(sorting, paging, filter)
+    (db.allPlayers(sorting, paging, filter).map(_.map(_.transform)), db.countPlayers(filter))
+      .parMapN: (xs, total) =>
+        GetPlayersOutput(xs, total, Option.when(xs.size == pageSize)(page.succ))
       .handleErrorWith: e =>
         error"Error in getPlayers with $filter, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
-      .map(_.map(_.transform))
-      .map: xs =>
-        GetPlayersOutput(
-          xs,
-          Option.when(xs.size == pageSize)(page.succ)
-        )
 
   override def getPlayerById(id: PlayerId): IO[GetPlayerByIdOutput] =
     db.playerById(id)
