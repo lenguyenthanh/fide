@@ -1,4 +1,5 @@
 import sbt.*
+import smithy4s.codegen.BuildInfo.version as smithy4sVersion
 
 object Dependencies {
 
@@ -13,6 +14,7 @@ object Dependencies {
   }
 
   def http4s(artifact: String) = "org.http4s" %% s"http4s-$artifact" % V.http4s
+  def smithy4s(artifact: String) = "com.disneystreaming.smithy4s" %% s"smithy4s-$artifact" % smithy4sVersion
 
   val catsCore   = "org.typelevel" %% "cats-core"   % "2.13.0"
   val catsEffect = "org.typelevel" %% "cats-effect" % V.catsEffect
@@ -29,6 +31,10 @@ object Dependencies {
   val http4sServer      = http4s("ember-server")
   val http4sClient      = http4s("client")
   val http4sEmberClient = http4s("ember-client")
+
+  val smithy4sCore          = smithy4s("core")
+  val smithy4sHttp4s        = smithy4s("http4s")
+  val smithy4sHttp4sSwagger = smithy4s("http4s-swagger")
 
   val skunk          = "org.tpolecat"       %% "skunk-core"                 % "1.0.0-M10"
   val flyway4s       = "com.github.geirolz" %% "fly4s"                      % "1.0.8"

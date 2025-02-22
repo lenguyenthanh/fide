@@ -48,7 +48,7 @@ lazy val api = (project in file("modules/api"))
     name                     := "api",
     smithy4sWildcardArgument := "?",
     libraryDependencies ++= Seq(
-      "com.disneystreaming.smithy4s" %% "smithy4s-core" % smithy4sVersion.value
+      smithy4sCore,
     )
   )
   .dependsOn(types)
@@ -93,8 +93,8 @@ lazy val backend = (project in file("modules/backend"))
     commonSettings,
     name := "backend",
     libraryDependencies ++= Seq(
-      "com.disneystreaming.smithy4s" %% "smithy4s-http4s"         % smithy4sVersion.value,
-      "com.disneystreaming.smithy4s" %% "smithy4s-http4s-swagger" % smithy4sVersion.value,
+      smithy4sHttp4s,
+      smithy4sHttp4sSwagger,
       http4sServer,
       http4sEmberClient,
       cirisCore,
