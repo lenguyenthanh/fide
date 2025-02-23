@@ -11,6 +11,7 @@ import fide.db.test.Containers
 import fide.domain.Federation
 import fide.domain.Models.*
 import fide.types.PlayerId
+import io.github.iltotore.iron.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.noop.NoOpLogger
 import weaver.*

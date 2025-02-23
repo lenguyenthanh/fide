@@ -99,6 +99,7 @@ lazy val backend = (project in file("modules/backend"))
       http4sEmberClient,
       cirisCore,
       cirisHtt4s,
+      ironCiris,
       logback,
       scalacheckFaker
     ),
