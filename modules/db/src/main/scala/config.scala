@@ -3,6 +3,7 @@ package db
 
 import cats.syntax.all.*
 import com.comcast.ip4s.*
+import fide.types.PositiveInt
 
 case class PostgresConfig(
     host: Host,
@@ -10,7 +11,7 @@ case class PostgresConfig(
     user: String,
     password: String,
     database: String,
-    max: Int,
+    max: PositiveInt,
     schema: String,
     debug: Boolean,
     ssl: Boolean = false

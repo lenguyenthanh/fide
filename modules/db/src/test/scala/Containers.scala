@@ -6,6 +6,7 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import com.comcast.ip4s.*
 import com.dimafeng.testcontainers.PostgreSQLContainer
+import io.github.iltotore.iron.*
 import org.testcontainers.utility.DockerImageName
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.noop.NoOpLogger
