@@ -48,7 +48,7 @@ lazy val api = (project in file("modules/api"))
     name                     := "api",
     smithy4sWildcardArgument := "?",
     libraryDependencies ++= Seq(
-      smithy4sCore,
+      smithy4sCore
     )
   )
   .dependsOn(types)
