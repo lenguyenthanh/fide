@@ -4,13 +4,13 @@ import smithy4s.codegen.BuildInfo.version as smithy4sVersion
 object Dependencies {
 
   object V {
-    val catsEffect = "3.5.7"
+    val catsEffect = "3.6.0"
     val ciris      = "3.7.0"
-    val flyway     = "11.3.4"
-    val fs2        = "3.11.0"
+    val flyway     = "11.4.1"
+    val fs2        = "3.12.0"
     val http4s     = "0.23.30"
     val iron       = "3.0.0"
-    val gatling    = "3.13.3"
+    val gatling    = "3.13.5"
   }
 
   def http4s(artifact: String) = "org.http4s" %% s"http4s-$artifact" % V.http4s
@@ -45,14 +45,14 @@ object Dependencies {
   val postgres       = "org.postgresql"      % "postgresql"                 % "42.7.5"
 
   val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.7.0"
-  val logback  = "ch.qos.logback" % "logback-classic" % "1.5.12"
+  val logback  = "ch.qos.logback" % "logback-classic" % "1.5.18"
 
-  val ducktape = "io.github.arainko" %% "ducktape" % "0.2.7"
+  val ducktape = "io.github.arainko" %% "ducktape" % "0.2.8"
 
   val gatlingTestFramework = "io.gatling"            % "gatling-test-framework"    % V.gatling % Test
   val gatlingHighCharts    = "io.gatling.highcharts" % "gatling-charts-highcharts" % V.gatling % Test
 
-  val testContainers    = "com.dimafeng"         %% "testcontainers-scala-postgresql" % "0.41.8"     % Test
+  val testContainers    = "com.dimafeng"         %% "testcontainers-scala-postgresql" % "0.43.0"     % Test
   val weaver            = "com.disneystreaming"  %% "weaver-cats"                     % "0.8.4"      % Test
   val weaverScalaCheck  = "com.disneystreaming"  %% "weaver-scalacheck"               % "0.8.4"      % Test
   val catsEffectTestKit = "org.typelevel"        %% "cats-effect-testkit"             % V.catsEffect % Test
