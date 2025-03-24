@@ -6,11 +6,11 @@ import io.github.iltotore.iron.constraint.all.*
 
 type PositiveInt = Int :| Positive
 
-opaque type PageSize <: Int = PositiveInt
-object PageSize extends RefinedTypeOps[Int, Positive, PageSize]
+type PageSize = PageSize.T
+object PageSize extends RefinedType[Int, Positive]
 
-opaque type PageNumber <: Int = PositiveInt
-object PageNumber extends RefinedTypeOps[Int, Positive, PageNumber]:
+type PageNumber = PageNumber.T
+object PageNumber extends RefinedType[Int, Positive]:
 
   def fromString(value: String): Either[String, PageNumber] =
     value.toIntOption.toRight(s"$value is not an int") >>= PageNumber.either
@@ -21,8 +21,8 @@ object PageNumber extends RefinedTypeOps[Int, Positive, PageNumber]:
     inline def max(other: PageNumber): PageNumber =
       if self > other then self else other
 
-opaque type PlayerId <: Int = PositiveInt
-object PlayerId extends RefinedTypeOps[Int, Positive, PlayerId]
+type PlayerId = PlayerId.T
+object PlayerId extends RefinedType[Int, Positive]
 
-opaque type BirthYear <: Int = PositiveInt
-object BirthYear extends RefinedTypeOps[Int, Positive, BirthYear]
+type BirthYear = BirthYear.T
+object BirthYear extends RefinedType[Int, Positive]

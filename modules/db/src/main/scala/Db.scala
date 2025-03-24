@@ -90,28 +90,8 @@ private object Codecs:
   import skunk.codec.all.*
   import skunk.data.{ Arr, Type }
 
-  // copy from https://github.com/Iltotore/iron/blob/main/skunk/src/io.github.iltotore.iron/skunk.scala for skunk 1.0.0
-  import io.github.iltotore.iron.*
   import io.github.iltotore.iron.constraint.all.*
-
-  /** Explicit conversion for refining a [[Codec]]. Decodes to the underlying type then checks the constraint.
-    *
-    * @param constraint
-    *   the [[Constraint]] implementation to test the decoded value
-    */
-  extension [A](codec: Codec[A])
-    inline def refined[C](using inline constraint: Constraint[A, C]): Codec[A :| C] =
-      codec.eimap[A :| C](_.refineEither[C])(_.asInstanceOf[A])
-
-  /** A [[Codec]] for refined types. Decodes to the underlying type then checks the constraint.
-    *
-    * @param codec
-    *   the [[Codec]] of the underlying type
-    * @param constraint
-    *   the [[Constraint]] implementation to test the decoded value
-    */
-  inline given [A, C] => (inline codec: Codec[A], inline constraint: Constraint[A, C]) => Codec[A :| C] =
-    codec.refined
+  import io.github.iltotore.iron.skunk.*
 
   val title: Codec[Title]           = `enum`[Title](_.value, Title.apply, Type("title"))
   val otherTitle: Codec[OtherTitle] = `enum`[OtherTitle](_.value, OtherTitle.apply, Type("other_title"))
