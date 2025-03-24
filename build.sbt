@@ -101,7 +101,7 @@ lazy val backend = (project in file("modules/backend"))
       cirisCore,
       cirisHtt4s,
       ironCiris,
-      logback,
+      logback % Runtime,
       scalacheckFaker
     ),
     Compile / run / fork         := true,
