@@ -2,7 +2,6 @@ package fide
 package domain
 
 import fide.types.*
-import io.github.iltotore.iron.*
 
 object Models:
   enum Order(val value: String):

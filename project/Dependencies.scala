@@ -9,7 +9,7 @@ object Dependencies {
     val flyway     = "11.3.4"
     val fs2        = "3.11.0"
     val http4s     = "0.23.30"
-    val iron       = "2.6.0"
+    val iron       = "3.0.0"
     val gatling    = "3.13.3"
   }
 
@@ -25,8 +25,10 @@ object Dependencies {
 
   val cirisCore  = "is.cir"             %% "ciris"        % V.ciris
   val cirisHtt4s = "is.cir"             %% "ciris-http4s" % V.ciris
+
   val iron       = "io.github.iltotore" %% "iron"         % V.iron
   val ironCiris  = "io.github.iltotore" %% "iron-ciris"   % V.iron
+  val ironSkunk = "io.github.iltotore" %% "iron-skunk" % V.iron
 
   val http4sServer      = http4s("ember-server")
   val http4sClient      = http4s("client")

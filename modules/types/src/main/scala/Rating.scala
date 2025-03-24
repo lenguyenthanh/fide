@@ -4,10 +4,9 @@ import cats.syntax.all.*
 import io.github.iltotore.iron.*
 import io.github.iltotore.iron.constraint.all.*
 
-type RatingConstraint     = GreaterEqual[1400] & LessEqual[4000]
-opaque type Rating <: Int = Int :| RatingConstraint
-
-object Rating extends RefinedTypeOps[Int, RatingConstraint, Rating]:
+type RatingConstraint = GreaterEqual[1400] & LessEqual[4000]
+type Rating           = Rating.T
+object Rating extends RefinedType[Int, RatingConstraint]:
   def fromString(value: String): Option[Rating] =
     value.toIntOption >>= Rating.option
 
