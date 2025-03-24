@@ -42,7 +42,7 @@ object Downloader:
 
     def findFederation(id: FederationId, playerId: PlayerId): IO[NewFederation] =
       Federation.all.get(id) match
-        case None       => warn"Unkown federation: $id for player: $playerId".as(NewFederation(id, id.value))
+        case None       => warn"Unknown federation: $id for player: $playerId".as(NewFederation(id, id.value))
         case Some(name) => NewFederation(id, name).pure
 
     IO(line.trim.nonEmpty)
@@ -51,12 +51,15 @@ object Downloader:
 
   // shamelessly copied (with some minor modificaton) from: https://github.com/lichess-org/lila/blob/8033c4c5a15cf9bb2b36377c3480f3b64074a30f/modules/fide/src/main/FidePlayerSync.scala#L131
   def parsePlayer(line: String): Option[NewPlayer] =
-    def string(start: Int, end: Int): Option[String] = line.substring(start, end).trim.some.filter(_.nonEmpty)
-    def number(start: Int, end: Int): Option[Int]    = string(start, end).flatMap(_.toIntOption)
-    def rating(start: Int, end: Int): Option[Rating] = string(start, end) >>= Rating.fromString
-    def kFactor(start: Int)                          = number(start, start + 2).filter(_ > 0)
-    def playerName(): Option[String]                 = sanitizeName(line.substring(15, 76))
-    def playerId(): Option[PlayerId]                 = number(0, 15) >>= PlayerId.option
+    inline def string(start: Int, end: Int): Option[String] =
+      line.substring(start, end).trim.some.filter(_.nonEmpty)
+    inline def number(start: Int, end: Int): Option[Int]    = string(start, end).flatMap(_.toIntOption)
+    inline def rating(start: Int, end: Int): Option[Rating] = string(start, end) >>= Rating.fromString
+    inline def kFactor(start: Int)                          = number(start, start + 2).filter(_ > 0)
+    inline def playerName(): Option[String]                 = sanitizeName(line.substring(15, 76))
+    inline def playerId(): Option[PlayerId]                 = number(0, 15) >>= PlayerId.option
+    inline def federationId(): Option[FederationId] =
+      string(76, 79).map(_.toUpperCase).filter(_ != "NON") >>= FederationId.option
 
     (playerId(), playerName()).mapN: (id, name) =>
       NewPlayer(
@@ -74,7 +77,7 @@ object Downloader:
         gender = string(79, 82) >>= Gender.apply,
         birthYear = number(152, 156).filter(y => y > 1000 && y < currentYear),
         active = string(158, 160).filter(_.contains("i")).isEmpty,
-        federationId = string(76, 79).filter(_ != "NON") >>= FederationId.option
+        federationId = federationId()
       )
 
   def sanitizeName(name: String): Option[String] =
