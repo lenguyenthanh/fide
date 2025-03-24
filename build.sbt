@@ -3,7 +3,7 @@ import org.typelevel.scalacoptions.ScalacOptions
 
 inThisBuild(
   Seq(
-    scalaVersion                           := "3.6.3",
+    scalaVersion                           := "3.6.4",
     organization                           := "se.thanh",
     organizationName                       := "Thanh Le",
     licenses += ("agpl-v3" -> url("https://opensource.org/license/agpl-v3")),
@@ -48,7 +48,7 @@ lazy val api = (project in file("modules/api"))
     name                     := "api",
     smithy4sWildcardArgument := "?",
     libraryDependencies ++= Seq(
-      smithy4sCore,
+      smithy4sCore
     )
   )
   .dependsOn(types)
@@ -101,7 +101,7 @@ lazy val backend = (project in file("modules/backend"))
       cirisCore,
       cirisHtt4s,
       ironCiris,
-      logback,
+      logback % Runtime,
       scalacheckFaker
     ),
     Compile / run / fork         := true,
@@ -132,5 +132,5 @@ lazy val root = project
 
 def full(p: Project) = p % "test->test;compile->compile"
 
-addCommandAlias("lint", "scalafixAll; scalafmtAll")
-addCommandAlias("lintCheck", "; scalafixAll --check ; scalafmtCheckAll")
+addCommandAlias("lint", "scalafixAll; scalafmtAll; scalafmtSbt")
+addCommandAlias("lintCheck", "; scalafixAll --check ; scalafmtCheckAll; scalafmtSbtCheck")
