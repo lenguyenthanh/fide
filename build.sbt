@@ -48,7 +48,7 @@ lazy val api = (project in file("modules/api"))
     name                     := "api",
     smithy4sWildcardArgument := "?",
     libraryDependencies ++= Seq(
-      smithy4sCore,
+      smithy4sCore
     )
   )
   .dependsOn(types)
@@ -132,5 +132,5 @@ lazy val root = project
 
 def full(p: Project) = p % "test->test;compile->compile"
 
-addCommandAlias("lint", "scalafixAll; scalafmtAll")
-addCommandAlias("lintCheck", "; scalafixAll --check ; scalafmtCheckAll")
+addCommandAlias("lint", "scalafixAll; scalafmtAll; scalafmtSbt")
+addCommandAlias("lintCheck", "; scalafixAll --check ; scalafmtCheckAll; scalafmtSbtCheck")

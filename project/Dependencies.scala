@@ -14,6 +14,7 @@ object Dependencies {
   }
 
   def http4s(artifact: String) = "org.http4s" %% s"http4s-$artifact" % V.http4s
+
   def smithy4s(artifact: String) = "com.disneystreaming.smithy4s" %% s"smithy4s-$artifact" % smithy4sVersion
 
   val catsCore   = "org.typelevel" %% "cats-core"   % "2.13.0"
@@ -23,11 +24,11 @@ object Dependencies {
   val fs2IO       = "co.fs2"  %% "fs2-io"             % V.fs2
   val fs2Compress = "de.lhns" %% "fs2-compress-zip4j" % "2.3.0"
 
-  val cirisCore  = "is.cir"             %% "ciris"        % V.ciris
-  val cirisHtt4s = "is.cir"             %% "ciris-http4s" % V.ciris
+  val cirisCore  = "is.cir" %% "ciris"        % V.ciris
+  val cirisHtt4s = "is.cir" %% "ciris-http4s" % V.ciris
 
-  val iron       = "io.github.iltotore" %% "iron"         % V.iron
-  val ironCiris  = "io.github.iltotore" %% "iron-ciris"   % V.iron
+  val iron      = "io.github.iltotore" %% "iron"       % V.iron
+  val ironCiris = "io.github.iltotore" %% "iron-ciris" % V.iron
   val ironSkunk = "io.github.iltotore" %% "iron-skunk" % V.iron
 
   val http4sServer      = http4s("ember-server")
