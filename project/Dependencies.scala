@@ -4,7 +4,7 @@ import smithy4s.codegen.BuildInfo.version as smithy4sVersion
 object Dependencies {
 
   object V {
-    val catsEffect = "3.6.0"
+    val catsEffect = "3.6.1"
     val ciris      = "3.7.0"
     val flyway     = "11.4.1"
     val fs2        = "3.12.0"
