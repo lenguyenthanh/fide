@@ -3,7 +3,7 @@ import org.typelevel.scalacoptions.ScalacOptions
 
 inThisBuild(
   Seq(
-    scalaVersion                           := "3.6.4",
+    scalaVersion                           := "3.7.0",
     organization                           := "se.thanh",
     organizationName                       := "Thanh Le",
     licenses += ("agpl-v3" -> url("https://opensource.org/license/agpl-v3")),
