@@ -4,12 +4,12 @@ import smithy4s.codegen.BuildInfo.version as smithy4sVersion
 object Dependencies {
 
   object V {
-    val catsEffect = "3.6.0"
-    val ciris      = "3.7.0"
-    val flyway     = "11.4.1"
+    val catsEffect = "3.6.1"
+    val ciris      = "3.8.0"
+    val flyway     = "11.7.2"
     val fs2        = "3.12.0"
     val http4s     = "0.23.30"
-    val iron       = "3.0.0"
+    val iron       = "3.0.1"
     val gatling    = "3.13.5"
   }
 
