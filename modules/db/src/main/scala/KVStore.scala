@@ -3,7 +3,6 @@ package db
 
 import cats.effect.*
 import cats.syntax.all.*
-import org.typelevel.log4cats.Logger
 import skunk.*
 
 trait KVStore:
@@ -11,7 +10,7 @@ trait KVStore:
   def get(key: String): IO[Option[String]]
 
 object KVStore:
-  def apply(postgres: Resource[IO, Session[IO]])(using Logger[IO]): KVStore = new:
+  def apply(postgres: Resource[IO, Session[IO]]): KVStore = new:
     def put(key: String, value: String): IO[Unit] =
       postgres.use(_.execute(StoreSql.upsert)((key, value)).void)
 

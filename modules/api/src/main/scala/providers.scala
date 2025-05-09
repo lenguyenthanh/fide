@@ -1,6 +1,5 @@
 package fide.spec
 
-import cats.syntax.all.*
 import fide.types.{ NonEmptySet, PageNumber, PageSize }
 import smithy4s.*
 

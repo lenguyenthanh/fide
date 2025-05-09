@@ -6,7 +6,6 @@ import cats.syntax.all.*
 import fide.domain.*
 import fide.domain.Models.*
 import fide.types.*
-import org.typelevel.log4cats.Logger
 import skunk.*
 
 trait Db:
@@ -25,7 +24,7 @@ trait Db:
 
 object Db:
 
-  def apply(postgres: Resource[IO, Session[IO]])(using Logger[IO]): Db = new:
+  def apply(postgres: Resource[IO, Session[IO]]): Db = new:
     def upsert(player: NewPlayer, federation: Option[NewFederation]): IO[Unit] =
       postgres.use: s =>
         for

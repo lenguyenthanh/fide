@@ -4,8 +4,6 @@ package crawler
 import cats.effect.IO
 import cats.syntax.all.*
 import fide.db.{ Db, KVStore }
-import fide.domain.*
-import org.http4s.*
 import org.http4s.client.Client
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*

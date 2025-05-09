@@ -5,7 +5,6 @@ package test
 import cats.effect.IO
 import cats.syntax.all.*
 import fide.domain.Federation
-import fide.types.FederationId
 import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.log4cats.Logger
 import weaver.*
