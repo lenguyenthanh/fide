@@ -43,7 +43,7 @@ object Dependencies {
   val flyway4s       = "com.github.geirolz" %% "fly4s"                      % "1.0.8"
   val flyway         = "org.flywaydb"        % "flyway-core"                % V.flyway
   val flywayPostgres = "org.flywaydb"        % "flyway-database-postgresql" % V.flyway
-  val postgres       = "org.postgresql"      % "postgresql"                 % "42.7.5"
+  val postgres       = "org.postgresql"      % "postgresql"                 % "42.7.6"
 
   val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.7.0"
   val logback  = "ch.qos.logback" % "logback-classic" % "1.5.18"
