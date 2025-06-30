@@ -17,4 +17,4 @@ object HealthSuite extends SimpleIOSuite:
 
   test("status success"):
     resource
-      .use(_.status.map(x => assert(x == PostgresStatus.Ok)))
+      .use(_.status.map(expect.same(_, PostgresStatus.Ok)))
