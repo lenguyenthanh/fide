@@ -58,5 +58,5 @@ object Dependencies {
   val weaverScalaCheck  = "org.typelevel"        %% "weaver-scalacheck"               % "0.9.1"      % Test
   val catsEffectTestKit = "org.typelevel"        %% "cats-effect-testkit"             % V.catsEffect % Test
   val scalacheck        = "org.scalacheck"       %% "scalacheck"                      % "1.17.0"     % Test
-  val scalacheckFaker   = "io.github.etspaceman" %% "scalacheck-faker"                % "8.0.6"      % Test
+  val scalacheckFaker   = "io.github.etspaceman" %% "scalacheck-faker"                % "9.0.0"      % Test
 }
