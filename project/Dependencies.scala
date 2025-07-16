@@ -39,7 +39,7 @@ object Dependencies {
   val smithy4sHttp4s        = smithy4s("http4s")
   val smithy4sHttp4sSwagger = smithy4s("http4s-swagger")
 
-  val skunk          = "org.tpolecat"       %% "skunk-core"                 % "1.0.0-M10"
+  val skunk          = "org.tpolecat"       %% "skunk-core"                 % "1.0.0-M11"
   val flyway4s       = "com.github.geirolz" %% "fly4s"                      % "1.0.8"
   val flyway         = "org.flywaydb"        % "flyway-core"                % V.flyway
   val flywayPostgres = "org.flywaydb"        % "flyway-database-postgresql" % V.flyway
