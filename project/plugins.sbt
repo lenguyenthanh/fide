@@ -3,5 +3,5 @@ addSbtPlugin("com.disneystreaming.smithy4s" % "smithy4s-sbt-codegen" % "0.18.38"
 addSbtPlugin("com.github.sbt"               % "sbt-native-packager"  % "1.11.1")
 addSbtPlugin("org.scalameta"                % "sbt-scalafmt"         % "2.5.5")
 addSbtPlugin("org.typelevel"                % "sbt-tpolecat"         % "0.5.2")
-addSbtPlugin("io.gatling"                   % "gatling-sbt"          % "4.13.3")
+addSbtPlugin("io.gatling"                   % "gatling-sbt"          % "4.17.0")
 addSbtPlugin("com.github.sbt"               % "sbt-release"          % "1.4.0")
