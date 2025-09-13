@@ -4,12 +4,12 @@ import smithy4s.codegen.BuildInfo.version as smithy4sVersion
 object Dependencies {
 
   object V {
-    val catsEffect = "3.6.1"
-    val ciris      = "3.9.0"
-    val flyway     = "11.10.0"
-    val fs2        = "3.12.0"
+    val catsEffect = "3.6.3"
+    val ciris      = "3.10.0"
+    val flyway     = "11.10.5"
+    val fs2        = "3.12.2"
     val http4s     = "0.23.30"
-    val iron       = "3.0.2"
+    val iron       = "3.2.0"
     val gatling    = "3.14.3"
   }
 
@@ -48,15 +48,15 @@ object Dependencies {
   val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.7.1"
   val logback  = "ch.qos.logback" % "logback-classic" % "1.5.18"
 
-  val ducktape = "io.github.arainko" %% "ducktape" % "0.2.9"
+  val ducktape = "io.github.arainko" %% "ducktape" % "0.2.10"
 
   val gatlingTestFramework = "io.gatling"            % "gatling-test-framework"    % V.gatling % Test
   val gatlingHighCharts    = "io.gatling.highcharts" % "gatling-charts-highcharts" % V.gatling % Test
 
   val testContainers    = "com.dimafeng"         %% "testcontainers-scala-postgresql" % "0.43.0"     % Test
-  val weaver            = "org.typelevel"        %% "weaver-cats"                     % "0.9.1"      % Test
-  val weaverScalaCheck  = "org.typelevel"        %% "weaver-scalacheck"               % "0.9.1"      % Test
+  val weaver            = "org.typelevel"        %% "weaver-cats"                     % "0.9.3"      % Test
+  val weaverScalaCheck  = "org.typelevel"        %% "weaver-scalacheck"               % "0.9.3"      % Test
   val catsEffectTestKit = "org.typelevel"        %% "cats-effect-testkit"             % V.catsEffect % Test
   val scalacheck        = "org.scalacheck"       %% "scalacheck"                      % "1.17.0"     % Test
-  val scalacheckFaker   = "io.github.etspaceman" %% "scalacheck-faker"                % "8.0.6"      % Test
+  val scalacheckFaker   = "io.github.etspaceman" %% "scalacheck-faker"                % "9.0.0"      % Test
 }
