@@ -185,8 +185,8 @@ private object Sql:
   val countFederationsSummary: Query[Void, Long] =
     sql"SELECT count(*) FROM federations".query(codec.all.int8)
 
-  def playersByIds(n: Int): Fragment[List[Int]] =
-    val ids = int4.values.list(n)
+  def playersByIds(n: Int): Fragment[List[PlayerId]] =
+    val ids = playerIdCodec.values.list(n)
     sql"$allPlayersFragment WHERE p.id IN ($ids)"
 
   def allFederationsSummary(paging: Pagination): AppliedFragment =
