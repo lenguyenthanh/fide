@@ -4,7 +4,7 @@
 
 ## How to use
 
-Check [Open API docs](https://fide.lichess.dev/docs/index.html)
+Check [Open API docs](https://fide.serginho.dev/docs/index.html) thanks [@SergioGlorias](https://github.com/SergioGlorias)
 
 ## Development
 
