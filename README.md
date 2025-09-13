@@ -95,7 +95,7 @@ services:
     restart: unless-stopped
 
   db:
-    image: postgres:16.2-alpine3.19
+    image: postgres:17.4-alpine
     environment:
       POSTGRES_DB: fide
       POSTGRES_USER: admin

@@ -10,7 +10,8 @@ inThisBuild(
     semanticdbEnabled                      := true, // for scalafix
     Compile / packageDoc / publishArtifact := false,
     dockerBaseImage                        := "openjdk:21",
-    dockerUpdateLatest                     := true
+    dockerUpdateLatest                     := true,
+    dockerBuildxPlatforms                  := Seq("linux/amd64", "linux/arm64")
   )
 )
 
