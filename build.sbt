@@ -9,7 +9,7 @@ inThisBuild(
     licenses += ("agpl-v3" -> url("https://opensource.org/license/agpl-v3")),
     semanticdbEnabled                      := true, // for scalafix
     Compile / packageDoc / publishArtifact := false,
-    dockerBaseImage                        := "openjdk:21",
+    dockerBaseImage                        := "eclipse-temurin:21-jdk-noble",
     dockerUpdateLatest                     := true,
     dockerBuildxPlatforms                  := Seq("linux/amd64", "linux/arm64")
   )
