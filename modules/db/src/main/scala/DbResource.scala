@@ -3,7 +3,6 @@ package db
 
 import cats.*
 import cats.effect.*
-import cats.syntax.all.*
 import fs2.io.net.Network
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
@@ -26,19 +25,17 @@ object DbResource:
           .flatMap: v =>
             info"Connected to Postgres $v"
 
-    def mkPostgresResource(c: PostgresConfig): SessionPool[IO] =
+    def mkPostgresResource(c: PostgresConfig): Resource[IO, Resource[IO, Session[IO]]] =
       Session
-        .pooled[IO](
-          host = c.host.toString(),
-          port = c.port.value,
-          user = c.user,
-          password = c.password.some,
-          database = c.database,
-          max = c.max,
-          ssl = if c.ssl then SSL.Trusted else SSL.None,
-          strategy = Strategy.SearchPath,
-          parameters = Map("search_path" -> c.schema) ++ Session.DefaultConnectionParameters
-        )
+        .Builder[IO]
+        .withHost(c.host.toString())
+        .withPort(c.port.value)
+        .withUserAndPassword(c.user, c.password)
+        .withDatabase(c.database)
+        .withSSL(if c.ssl then SSL.Trusted else SSL.None)
+        .withTypingStrategy(TypingStrategy.SearchPath)
+        .withConnectionParameters(Map("search_path" -> c.schema) ++ Session.DefaultConnectionParameters)
+        .pooled(c.max)
         .evalTap(checkPostgresConnection)
 
     Flyway

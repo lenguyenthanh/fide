@@ -14,7 +14,7 @@ case class PostgresConfig(
     max: PositiveInt,
     schema: String,
     debug: Boolean,
-    ssl: Boolean = false
+    ssl: Boolean
 ):
 
   def toFlywayConfig: FlywayConfig = FlywayConfig(
