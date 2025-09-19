@@ -1,11 +1,10 @@
 package fide
 package db
 
-import cats.*
 import cats.effect.*
+import cats.syntax.all.*
 import fs2.io.net.Network
 import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.syntax.*
 import skunk.*
 import skunk.codec.text.*
 import skunk.implicits.*
@@ -23,7 +22,7 @@ object DbResource:
         session
           .unique(sql"select version();".query(text))
           .flatMap: v =>
-            info"Connected to Postgres $v"
+            Logger[IO].info(s"Connected to Postgres $v")
 
     def mkPostgresResource(c: PostgresConfig): Resource[IO, Resource[IO, Session[IO]]] =
       Session
@@ -38,7 +37,5 @@ object DbResource:
         .pooled(c.max)
         .evalTap(checkPostgresConnection)
 
-    Flyway
-      .module(postgresConf.toFlywayConfig)
-      .evalTap(_.migrate)
-      .flatMap(_ => mkPostgresResource(postgresConf).map(DbResource(_)))
+    Flyway(postgresConf).migrate.toResource *>
+      mkPostgresResource(postgresConf).map(DbResource(_))

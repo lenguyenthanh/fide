@@ -66,10 +66,7 @@ lazy val db = (project in file("modules/db"))
     name := "db",
     libraryDependencies ++= Seq(
       skunk,
-      postgres,
-      flyway,
-      flywayPostgres,
-      flyway4s,
+      dumpo,
       ducktape,
       testContainers
     )

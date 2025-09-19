@@ -6,7 +6,6 @@ object Dependencies {
   object V {
     val catsEffect = "3.6.3"
     val ciris      = "3.10.0"
-    val flyway     = "11.10.5"
     val fs2        = "3.12.2"
     val http4s     = "0.23.30"
     val iron       = "3.2.0"
@@ -38,11 +37,8 @@ object Dependencies {
   val smithy4sHttp4s        = smithy4s("http4s")
   val smithy4sHttp4sSwagger = smithy4s("http4s-swagger")
 
-  val skunk          = "org.tpolecat"       %% "skunk-core"                 % "1.0.0-M11"
-  val flyway4s       = "com.github.geirolz" %% "fly4s"                      % "1.0.8"
-  val flyway         = "org.flywaydb"        % "flyway-core"                % V.flyway
-  val flywayPostgres = "org.flywaydb"        % "flyway-database-postgresql" % V.flyway
-  val postgres       = "org.postgresql"      % "postgresql"                 % "42.7.7"
+  val skunk = "org.tpolecat" %% "skunk-core" % "1.0.0-M11"
+  val dumpo = "dev.rolang"   %% "dumbo"      % "0.6.0"
 
   val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.7.1"
   val logback  = "ch.qos.logback" % "logback-classic" % "1.5.18"
