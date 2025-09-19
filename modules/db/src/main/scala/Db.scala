@@ -90,7 +90,7 @@ private object Codecs:
   import skunk.data.{ Arr, Type }
 
   import io.github.iltotore.iron.constraint.all.*
-  import io.github.iltotore.iron.skunk.*
+  import fide.db.iron.*
 
   val title: Codec[Title]           = `enum`[Title](_.value, Title.apply, Type("title"))
   val otherTitle: Codec[OtherTitle] = `enum`[OtherTitle](_.value, OtherTitle.apply, Type("other_title"))
