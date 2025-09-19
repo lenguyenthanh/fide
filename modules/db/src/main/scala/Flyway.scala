@@ -12,11 +12,9 @@ trait Flyway:
 
 object Flyway:
 
-  given Logger[IO] => DumboLogger[IO]:
-    override def apply(level: LogLevel, msg: => String): IO[Unit] =
-      level match
-        case LogLevel.Info => Logger[IO].info(msg)
-        case LogLevel.Warn => Logger[IO].warn(msg)
+  given Logger[IO] => DumboLogger[IO] =
+    case (LogLevel.Info, msg) => Logger[IO].info(msg)
+    case (LogLevel.Warn, msg) => Logger[IO].warn(msg)
 
   def apply(config: PostgresConfig)(using Tracer[IO], Logger[IO]): Flyway = new:
     def migrate =
