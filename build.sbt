@@ -66,7 +66,7 @@ lazy val db = (project in file("modules/db"))
     name := "db",
     libraryDependencies ++= Seq(
       skunk,
-      dumpo,
+      dumbo,
       ducktape,
       testContainers
     )
