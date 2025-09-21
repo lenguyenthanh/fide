@@ -9,7 +9,7 @@ use smithy4s.meta#unwrap
 @simpleRestJson
 service PlayerService {
   version: "0.0.1"
-  operations: [GetPlayers, GetPlayerById, GetPlayerByIds, GetPlayerRatingHistory],
+  operations: [GetPlayers, GetPlayerById, GetPlayerByIds, GetPlayerRatingHistory, GetPlayersRatingsByMonth],
 }
 
 @readonly
@@ -110,6 +110,10 @@ operation GetPlayerRatingHistory {
     @httpQuery("limit")
     @range(min: 1, max: 1000)
     limit: Integer
+    
+    @httpQuery("page")
+    @range(min: 1, max: 10000)
+    page: Integer
   }
 
   output := {
@@ -117,6 +121,9 @@ operation GetPlayerRatingHistory {
     playerId: PlayerId
     @required
     history: RatingHistoryEntries
+    @required
+    totalCount: Long
+    nextPage: Integer
   }
 
   errors: [PlayerNotFound, InternalServerError]
@@ -138,7 +145,66 @@ structure RatingHistoryEntryOutput {
   blitzK: Integer
   
   @required
+  year: Integer
+  @required
+  month: Integer
+  @required
   recordedAt: Timestamp
   @required
   createdAt: Timestamp
+}
+
+@readonly
+@http(method: "GET", uri: "/api/players/ratings/{year}/{month}", code: 200)
+operation GetPlayersRatingsByMonth {
+  input := {
+    @httpLabel
+    @required
+    year: Integer
+    
+    @httpLabel
+    @required
+    @range(min: 1, max: 12)
+    month: Integer
+    
+    @httpQuery("limit")
+    @range(min: 1, max: 1000)
+    limit: Integer = 100
+    
+    @httpQuery("page")
+    @range(min: 1, max: 10000)
+    page: Integer = 1
+  }
+
+  output := {
+    @required
+    year: Integer
+    @required
+    month: Integer
+    @required
+    ratings: PlayerMonthlyRatings
+    @required
+    totalCount: Long
+    nextPage: Integer
+  }
+
+  errors: [InternalServerError]
+}
+
+list PlayerMonthlyRatings {
+  member: PlayerMonthlyRating
+}
+
+structure PlayerMonthlyRating {
+  @required
+  playerId: PlayerId
+  @required
+  playerName: String
+  
+  standard: Rating
+  standardK: Integer
+  rapid: Rating
+  rapidK: Integer
+  blitz: Rating
+  blitzK: Integer
 }

@@ -91,18 +91,60 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       .map(_.map(p => p.id.toString -> p.transform).toMap)
       .map(GetPlayerByIdsOutput.apply)
 
-  override def getPlayerRatingHistory(id: PlayerId, limit: Option[Int]): IO[GetPlayerRatingHistoryOutput] =
+  override def getPlayerRatingHistory(
+      id: PlayerId,
+      limit: Option[Int],
+      page: Option[Int]
+  ): IO[GetPlayerRatingHistoryOutput] =
     // First check if player exists
     db.playerById(id)
       .flatMap:
         case None => IO.raiseError(PlayerNotFound(id))
         case Some(_) =>
-          db.ratingHistoryForPlayer(id, limit)
-            .map(_.map(_.transform))
-            .map(history => GetPlayerRatingHistoryOutput(id, history))
-            .handleErrorWith: e =>
+          val pageSize = limit.getOrElse(100)
+          val pageNum  = page.getOrElse(1)
+          val offset   = (pageNum - 1) * pageSize
+
+          (
+            db.ratingHistoryForPlayer(id, Some(pageSize), Some(offset)),
+            db.countRatingHistoryForPlayer(id)
+          ).parMapN: (history, totalCount) =>
+            val nextPage = Option.when(offset + pageSize < totalCount)(pageNum + 1)
+            GetPlayerRatingHistoryOutput(id, history.map(_.transform), totalCount, nextPage)
+          .handleErrorWith: e =>
               error"Error in getPlayerRatingHistory: $id, $e" *>
                 IO.raiseError(InternalServerError("Internal server error"))
+
+  override def getPlayersRatingsByMonth(
+      year: Int,
+      month: Int,
+      limit: Int,
+      page: Int
+  ): IO[GetPlayersRatingsByMonthOutput] =
+    val pageSize = limit
+    val pageNum  = page
+    val offset   = (pageNum - 1) * pageSize
+
+    (
+      db.ratingHistoryForMonth(year, month, Some(pageSize), Some(offset)),
+      db.countRatingHistoryForMonth(year, month)
+    ).parMapN: (ratingsWithPlayers, totalCount) =>
+      val ratings = ratingsWithPlayers.map: (rating, player) =>
+        PlayerMonthlyRating(
+          playerId = rating.playerId,
+          playerName = player.name,
+          standard = rating.standard,
+          standardK = rating.standardK,
+          rapid = rating.rapid,
+          rapidK = rating.rapidK,
+          blitz = rating.blitz,
+          blitzK = rating.blitzK
+        )
+      val nextPage = Option.when(offset + pageSize < totalCount)(pageNum + 1)
+      GetPlayersRatingsByMonthOutput(year, month, ratings, totalCount, nextPage)
+    .handleErrorWith: e =>
+        error"Error in getPlayersRatingsByMonth: $year/$month, $e" *>
+          IO.raiseError(InternalServerError("Internal server error"))
 
 object PlayerTransformers:
   given Transformer.Derived[OffsetDateTime, Timestamp] =

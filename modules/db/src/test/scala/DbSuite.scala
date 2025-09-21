@@ -226,7 +226,9 @@ object DbSuite extends SimpleIOSuite:
           playerId = PlayerId(1),
           standard = Rating(2800).some,
           rapid = Rating(2750).some,
-          blitz = Rating(2700).some
+          blitz = Rating(2700).some,
+          year = 2024,
+          month = 12
         )
         _       <- db.addRatingHistory(manualEntry)
         history <- db.ratingHistoryForPlayer(PlayerId(1))

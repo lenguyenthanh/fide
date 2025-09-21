@@ -342,6 +342,8 @@ case class RatingHistoryEntry(
     rapidK: Option[Int] = None,
     blitz: Option[Rating] = None,
     blitzK: Option[Int] = None,
+    year: Int,
+    month: Int,
     recordedAt: OffsetDateTime,
     createdAt: OffsetDateTime
 )
@@ -354,5 +356,7 @@ case class NewRatingHistoryEntry(
     rapidK: Option[Int] = None,
     blitz: Option[Rating] = None,
     blitzK: Option[Int] = None,
+    year: Int,
+    month: Int,
     recordedAt: Option[OffsetDateTime] = None
 )
