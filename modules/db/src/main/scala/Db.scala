@@ -251,7 +251,7 @@ private object Codecs:
       .to[NewRatingHistoryEntry]
 
   val ratingHistoryEntry: Codec[RatingHistoryEntry] =
-    (int8 *: playerIdCodec *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: int4 *: timestamptz *: timestamptz)
+    (playerIdCodec *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: int4 *: timestamptz *: timestamptz)
       .to[RatingHistoryEntry]
 
 private object Sql:
@@ -466,29 +466,29 @@ private object Sql:
 
   lazy val ratingHistoryByPlayerId: Query[PlayerId *: Int *: EmptyTuple, RatingHistoryEntry] =
     sql"""
-        SELECT id, player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, month, recorded_at, created_at
+        SELECT player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, month, recorded_at, created_at
         FROM rating_history
         WHERE player_id = $playerIdCodec
-        ORDER BY month DESC, id DESC
+        ORDER BY month DESC
         LIMIT ${int4}
        """.query(ratingHistoryEntry)
 
   lazy val ratingHistoryByPlayerIdAll: Query[PlayerId, RatingHistoryEntry] =
     sql"""
-        SELECT id, player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, month, recorded_at, created_at
+        SELECT player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, month, recorded_at, created_at
         FROM rating_history
         WHERE player_id = $playerIdCodec
-        ORDER BY month DESC, id DESC
+        ORDER BY month DESC
        """.query(ratingHistoryEntry)
 
   // New queries for pagination support
   lazy val ratingHistoryByPlayerIdWithOffset
       : Query[PlayerId *: Int *: Int *: EmptyTuple, RatingHistoryEntry] =
     sql"""
-        SELECT id, player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, month, recorded_at, created_at
+        SELECT player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, month, recorded_at, created_at
         FROM rating_history
         WHERE player_id = $playerIdCodec
-        ORDER BY month DESC, id DESC
+        ORDER BY month DESC
         LIMIT ${int4} OFFSET ${int4}
        """.query(ratingHistoryEntry)
 
@@ -502,7 +502,7 @@ private object Sql:
   // New queries for monthly ratings
   lazy val ratingHistoryByMonth: Query[Int *: Int *: Int *: EmptyTuple, (RatingHistoryEntry, PlayerInfo)] =
     sql"""
-        SELECT rh.id, rh.player_id, rh.standard, rh.standard_k, rh.rapid, rh.rapid_k, rh.blitz, rh.blitz_k,
+        SELECT rh.player_id, rh.standard, rh.standard_k, rh.rapid, rh.rapid_k, rh.blitz, rh.blitz_k,
                rh.month, rh.recorded_at, rh.created_at,
                p.id, p.name, p.title, p.women_title, p.other_titles, p.standard, p.standard_kfactor,
                p.rapid, p.rapid_kfactor, p.blitz, p.blitz_kfactor, p.sex, p.birth_year, p.active,

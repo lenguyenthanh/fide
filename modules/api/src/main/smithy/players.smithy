@@ -134,9 +134,6 @@ list RatingHistoryEntries {
 }
 
 structure RatingHistoryEntryOutput {
-  @required
-  id: Long
-  
   standard: Rating
   standardK: Integer
   rapid: Rating

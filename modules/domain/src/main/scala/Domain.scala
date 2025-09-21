@@ -334,7 +334,6 @@ object Federation:
   )
 
 case class RatingHistoryEntry(
-    id: Long,
     playerId: PlayerId,
     standard: Option[Rating] = None,
     standardK: Option[Int] = None,
