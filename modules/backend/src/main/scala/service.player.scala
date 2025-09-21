@@ -118,17 +118,36 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
   override def getPlayersRatingsByMonth(
       year: Int,
       month: Int,
-      limit: Int,
-      page: Int
+      sortBy: Option[SortBy],
+      order: Option[Order],
+      isActive: Option[Boolean],
+      standardMin: Option[Rating],
+      standardMax: Option[Rating],
+      rapidMin: Option[Rating],
+      rapidMax: Option[Rating],
+      blitzMin: Option[Rating],
+      blitzMax: Option[Rating],
+      name: Option[String],
+      titles: Option[List[Title]],
+      otherTitles: Option[List[OtherTitle]],
+      gender: Option[Gender],
+      birthYearMin: Option[BirthYear],
+      birthYearMax: Option[BirthYear],
+      hasTitle: Option[Boolean],
+      hasWomenTitle: Option[Boolean],
+      hasOtherTitle: Option[Boolean],
+      federationId: Option[FederationId],
+      page: PageNumber,
+      pageSize: PageSize
   ): IO[GetPlayersRatingsByMonthOutput] =
-    val pageSize = limit
-    val pageNum  = page
-    val offset   = (pageNum - 1) * pageSize
+    val pageNum  = page.toInt
+    val pageSz   = pageSize
+    val offset   = (pageNum - 1) * pageSz
     // Convert year/month to epoch-based month index
     val monthIndex = (year - 1970) * 12 + (month - 1)
 
     (
-      db.ratingHistoryForMonth(monthIndex, Some(pageSize), Some(offset)),
+      db.ratingHistoryForMonth(monthIndex, Some(pageSz), Some(offset)),
       db.countRatingHistoryForMonth(monthIndex)
     ).parMapN: (ratingsWithPlayers, totalCount) =>
       val ratings = ratingsWithPlayers.map: (rating, player) =>
@@ -142,7 +161,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
           blitz = rating.blitz,
           blitzK = rating.blitzK
         )
-      val nextPage = Option.when(offset + pageSize < totalCount)(pageNum + 1)
+      val nextPage = Option.when(offset + pageSz < totalCount)(PageNumber.unsafeApply((pageNum + 1).toString))
       GetPlayersRatingsByMonthOutput(year, month, ratings, totalCount, nextPage)
     .handleErrorWith: e =>
         error"Error in getPlayersRatingsByMonth: $year/$month, $e" *>

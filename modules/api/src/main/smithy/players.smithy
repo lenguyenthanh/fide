@@ -153,7 +153,9 @@ structure RatingHistoryEntryOutput {
 @readonly
 @http(method: "GET", uri: "/api/players/ratings/{year}/{month}", code: 200)
 operation GetPlayersRatingsByMonth {
-  input := {
+  input := 
+    @scalaImports(["fide.spec.providers.given"])
+    with [SortingMixin, FilterMixin] {
     @httpLabel
     @required
     year: Integer
@@ -163,13 +165,15 @@ operation GetPlayersRatingsByMonth {
     @range(min: 1, max: 12)
     month: Integer
     
-    @httpQuery("limit")
-    @range(min: 1, max: 1000)
-    limit: Integer = 100
-    
     @httpQuery("page")
-    @range(min: 1, max: 10000)
-    page: Integer = 1
+    page: PageNumber = "1"
+
+    @httpQuery("page_size")
+    @range(min: 1, max: 100)
+    pageSize: PageSize = 30
+
+    @httpQuery("federation_id")
+    federationId: FederationId
   }
 
   output := {
@@ -180,8 +184,8 @@ operation GetPlayersRatingsByMonth {
     @required
     ratings: PlayerMonthlyRatings
     @required
-    totalCount: Long
-    nextPage: Integer
+    totalResults: Long
+    nextPage: PageNumber
   }
 
   errors: [InternalServerError]
