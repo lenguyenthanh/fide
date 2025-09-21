@@ -195,7 +195,7 @@ object DbSuite extends SimpleIOSuite:
         _        <- db.upsert(newPlayer1, newFederation.some)
         history1 <- db.ratingHistoryForPlayer(PlayerId(1))
 
-        // Update player with different ratings
+        // Update player with different ratings (this should update the same monthly record)
         updatedPlayer = newPlayer1.copy(
           standard = Rating(2750).some,
           rapid = Rating(2720).some,
@@ -212,27 +212,66 @@ object DbSuite extends SimpleIOSuite:
         history1.head.standard.contains(Rating(2700)),
         history1.head.rapid.contains(Rating(2700)),
         history1.head.blitz.contains(Rating(2700)),
-        history2.length == 2,
+        // With month-based system, updating in same month updates the same record
+        history2.length == 1,
         historyLimited.length == 1,
-        // Most recent entry should be first due to ordering
-        historyLimited.head.standard.contains(Rating(2750))
+        // The record should have the updated ratings
+        historyLimited.head.standard.contains(Rating(2750)),
+        historyLimited.head.rapid.contains(Rating(2720)),
+        historyLimited.head.blitz.contains(Rating(2680))
       )
 
   test("rating history manual entry"):
     resource.use: db =>
       for
         _ <- db.upsert(newPlayer1, newFederation.some)
+        // Use a different month/year to ensure we create a separate entry
         manualEntry = NewRatingHistoryEntry(
           playerId = PlayerId(1),
           standard = Rating(2800).some,
           rapid = Rating(2750).some,
           blitz = Rating(2700).some,
-          year = 2024,
+          year = 2023, // Different year to ensure separate entry
           month = 12
         )
         _       <- db.addRatingHistory(manualEntry)
         history <- db.ratingHistoryForPlayer(PlayerId(1))
       yield expect(
-        history.length == 2 && // One from upsert, one manual
+        history.length == 2 && // One from upsert (current month), one manual (different month/year)
           history.exists(_.standard.contains(Rating(2800)))
+      )
+
+  test("rating history month-based storage"):
+    resource.use: db =>
+      for
+        _ <- db.upsert(newPlayer1, newFederation.some)
+
+        // Add entries for different months
+        entry1 = NewRatingHistoryEntry(
+          playerId = PlayerId(1),
+          standard = Rating(2800).some,
+          rapid = Rating(2750).some,
+          blitz = Rating(2700).some,
+          year = 2024,
+          month = 1
+        )
+        entry2 = NewRatingHistoryEntry(
+          playerId = PlayerId(1),
+          standard = Rating(2820).some,
+          rapid = Rating(2770).some,
+          blitz = Rating(2720).some,
+          year = 2024,
+          month = 2
+        )
+        _ <- db.addRatingHistory(entry1)
+        _ <- db.addRatingHistory(entry2)
+
+        history <- db.ratingHistoryForPlayer(PlayerId(1))
+      yield expect.all(
+        history.length == 3, // Current month + 2 historical months
+        history.exists(h => h.year == 2024 && h.month == 1),
+        history.exists(h => h.year == 2024 && h.month == 2),
+        // Should be ordered by year/month desc
+        history.head.year >= history.last.year,
+        history.head.month >= history.last.month || history.head.year > history.last.year
       )
