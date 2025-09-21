@@ -9,7 +9,7 @@ object Dependencies {
     val fs2        = "3.12.2"
     val http4s     = "0.23.30"
     val iron       = "3.2.0"
-    val gatling    = "3.14.3"
+    val gatling    = "3.14.4"
   }
 
   def http4s(artifact: String) = "org.http4s" %% s"http4s-$artifact" % V.http4s
@@ -49,8 +49,8 @@ object Dependencies {
   val gatlingHighCharts    = "io.gatling.highcharts" % "gatling-charts-highcharts" % V.gatling % Test
 
   val testContainers    = "com.dimafeng"         %% "testcontainers-scala-postgresql" % "0.43.0"     % Test
-  val weaver            = "org.typelevel"        %% "weaver-cats"                     % "0.9.3"      % Test
-  val weaverScalaCheck  = "org.typelevel"        %% "weaver-scalacheck"               % "0.9.3"      % Test
+  val weaver            = "org.typelevel"        %% "weaver-cats"                     % "0.10.1"     % Test
+  val weaverScalaCheck  = "org.typelevel"        %% "weaver-scalacheck"               % "0.10.1"     % Test
   val catsEffectTestKit = "org.typelevel"        %% "cats-effect-testkit"             % V.catsEffect % Test
   val scalacheck        = "org.scalacheck"       %% "scalacheck"                      % "1.17.0"     % Test
   val scalacheckFaker   = "io.github.etspaceman" %% "scalacheck-faker"                % "9.0.0"      % Test
