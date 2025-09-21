@@ -192,18 +192,18 @@ object DbSuite extends SimpleIOSuite:
     resource.use: db =>
       for
         // First, upsert a player (this should automatically record rating history)
-        _             <- db.upsert(newPlayer1, newFederation.some)
-        history1      <- db.ratingHistoryForPlayer(PlayerId(1))
-        
+        _        <- db.upsert(newPlayer1, newFederation.some)
+        history1 <- db.ratingHistoryForPlayer(PlayerId(1))
+
         // Update player with different ratings
         updatedPlayer = newPlayer1.copy(
           standard = Rating(2750).some,
           rapid = Rating(2720).some,
           blitz = Rating(2680).some
         )
-        _             <- db.upsert(updatedPlayer, None)
-        history2      <- db.ratingHistoryForPlayer(PlayerId(1))
-        
+        _        <- db.upsert(updatedPlayer, None)
+        history2 <- db.ratingHistoryForPlayer(PlayerId(1))
+
         // Test with limit
         historyLimited <- db.ratingHistoryForPlayer(PlayerId(1), Some(1))
       yield expect.all(
@@ -221,16 +221,16 @@ object DbSuite extends SimpleIOSuite:
   test("rating history manual entry"):
     resource.use: db =>
       for
-        _             <- db.upsert(newPlayer1, newFederation.some)
-        manualEntry   = NewRatingHistoryEntry(
+        _ <- db.upsert(newPlayer1, newFederation.some)
+        manualEntry = NewRatingHistoryEntry(
           playerId = PlayerId(1),
           standard = Rating(2800).some,
           rapid = Rating(2750).some,
           blitz = Rating(2700).some
         )
-        _             <- db.addRatingHistory(manualEntry)
-        history       <- db.ratingHistoryForPlayer(PlayerId(1))
+        _       <- db.addRatingHistory(manualEntry)
+        history <- db.ratingHistoryForPlayer(PlayerId(1))
       yield expect(
         history.length == 2 && // One from upsert, one manual
-        history.exists(_.standard.contains(Rating(2800)))
+          history.exists(_.standard.contains(Rating(2800)))
       )

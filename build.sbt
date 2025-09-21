@@ -20,7 +20,7 @@ val commonSettings = Seq(
     ScalacOptions.other("-rewrite"),
     ScalacOptions.other("-indent"),
     ScalacOptions.explain,
-    ScalacOptions.release("17"),
+    ScalacOptions.release("21"),
     ScalacOptions.other("-Wsafe-init")
   ),
   libraryDependencies ++= Seq(

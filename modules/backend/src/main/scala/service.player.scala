@@ -93,15 +93,16 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
 
   override def getPlayerRatingHistory(id: PlayerId, limit: Option[Int]): IO[GetPlayerRatingHistoryOutput] =
     // First check if player exists
-    db.playerById(id).flatMap:
-      case None => IO.raiseError(PlayerNotFound(id))
-      case Some(_) =>
-        db.ratingHistoryForPlayer(id, limit)
-          .map(_.map(_.transform))
-          .map(history => GetPlayerRatingHistoryOutput(id, history))
-          .handleErrorWith: e =>
-            error"Error in getPlayerRatingHistory: $id, $e" *>
-              IO.raiseError(InternalServerError("Internal server error"))
+    db.playerById(id)
+      .flatMap:
+        case None => IO.raiseError(PlayerNotFound(id))
+        case Some(_) =>
+          db.ratingHistoryForPlayer(id, limit)
+            .map(_.map(_.transform))
+            .map(history => GetPlayerRatingHistoryOutput(id, history))
+            .handleErrorWith: e =>
+              error"Error in getPlayerRatingHistory: $id, $e" *>
+                IO.raiseError(InternalServerError("Internal server error"))
 
 object PlayerTransformers:
   given Transformer.Derived[OffsetDateTime, Timestamp] =

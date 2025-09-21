@@ -23,9 +23,3 @@ CREATE INDEX rating_history_player_recorded_idx ON rating_history(player_id, rec
 CREATE INDEX rating_history_standard_idx ON rating_history(standard) WHERE standard IS NOT NULL;
 CREATE INDEX rating_history_rapid_idx ON rating_history(rapid) WHERE rapid IS NOT NULL;
 CREATE INDEX rating_history_blitz_idx ON rating_history(blitz) WHERE blitz IS NOT NULL;
-
--- Add trigger to automatically set created_at
-CREATE TRIGGER set_rating_history_created_at
-BEFORE INSERT ON rating_history
-FOR EACH ROW
-EXECUTE PROCEDURE set_updated_at();
