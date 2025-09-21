@@ -232,7 +232,7 @@ object DbSuite extends SimpleIOSuite:
           standard = Rating(2800).some,
           rapid = Rating(2750).some,
           blitz = Rating(2700).some,
-          month = 647 // December 2023 (epoch-based month index)
+          month = 647 // December 2023: (2023-1970)*12 + (12-1) = 53*12 + 11 = 647
         )
         _       <- db.addRatingHistory(manualEntry)
         history <- db.ratingHistoryForPlayer(PlayerId(1))
