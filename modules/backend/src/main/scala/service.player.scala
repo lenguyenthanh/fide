@@ -128,8 +128,8 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
     val monthIndex = (year - 1970) * 12 + (month - 1)
 
     (
-      db.ratingHistoryForMonth(year, monthIndex, Some(pageSize), Some(offset)),
-      db.countRatingHistoryForMonth(year, monthIndex)
+      db.ratingHistoryForMonth(monthIndex, Some(pageSize), Some(offset)),
+      db.countRatingHistoryForMonth(monthIndex)
     ).parMapN: (ratingsWithPlayers, totalCount) =>
       val ratings = ratingsWithPlayers.map: (rating, player) =>
         PlayerMonthlyRating(
@@ -164,4 +164,8 @@ object PlayerTransformers:
 
   extension (r: fide.domain.RatingHistoryEntry)
     def transform: RatingHistoryEntryOutput =
-      r.into[RatingHistoryEntryOutput].transform()
+      r.into[RatingHistoryEntryOutput]
+        .transform(
+          Field.computed(_.year, entry => Some(entry.year)),
+          Field.const(_.month, r.month)
+        )

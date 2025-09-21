@@ -30,12 +30,11 @@ trait Db:
   ): IO[List[RatingHistoryEntry]]
   def countRatingHistoryForPlayer(playerId: PlayerId): IO[Long]
   def ratingHistoryForMonth(
-      year: Int,
       monthIndex: Int,
       limit: Option[Int] = None,
       offset: Option[Int] = None
   ): IO[List[(RatingHistoryEntry, PlayerInfo)]]
-  def countRatingHistoryForMonth(year: Int, monthIndex: Int): IO[Long]
+  def countRatingHistoryForMonth(monthIndex: Int): IO[Long]
 
 object Db:
 
@@ -63,7 +62,6 @@ object Db:
                 rapidK = player.rapidK,
                 blitz = player.blitz,
                 blitzK = player.blitzK,
-                year = now.getYear,
                 month = monthIndex,
                 recordedAt = Some(now)
               )
@@ -91,7 +89,6 @@ object Db:
             rapidK = player.rapidK,
             blitz = player.blitz,
             blitzK = player.blitzK,
-            year = now.getYear,
             month = monthIndex,
             recordedAt = Some(now)
           )
@@ -193,7 +190,6 @@ object Db:
       postgres.use(_.unique(Sql.countRatingHistoryByPlayerId)(playerId))
 
     def ratingHistoryForMonth(
-        year: Int,
         monthIndex: Int,
         limit: Option[Int] = None,
         offset: Option[Int] = None
@@ -201,10 +197,10 @@ object Db:
       postgres.use: s =>
         val lim = limit.getOrElse(100)
         val off = offset.getOrElse(0)
-        s.execute(Sql.ratingHistoryByMonth)(year, monthIndex, lim, off)
+        s.execute(Sql.ratingHistoryByMonth)(monthIndex, lim, off)
 
-    def countRatingHistoryForMonth(year: Int, monthIndex: Int): IO[Long] =
-      postgres.use(_.unique(Sql.countRatingHistoryByMonth)(year, monthIndex))
+    def countRatingHistoryForMonth(monthIndex: Int): IO[Long] =
+      postgres.use(_.unique(Sql.countRatingHistoryByMonth)(monthIndex))
 
 private object Codecs:
 
@@ -251,11 +247,11 @@ private object Codecs:
       .to[PlayerInfo]
 
   val newRatingHistoryEntry: Codec[NewRatingHistoryEntry] =
-    (playerIdCodec *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: int4 *: int4 *: timestamptz.opt)
+    (playerIdCodec *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: int4 *: timestamptz.opt)
       .to[NewRatingHistoryEntry]
 
   val ratingHistoryEntry: Codec[RatingHistoryEntry] =
-    (int8 *: playerIdCodec *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: int4 *: int4 *: timestamptz *: timestamptz)
+    (int8 *: playerIdCodec *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: int4 *: timestamptz *: timestamptz)
       .to[RatingHistoryEntry]
 
 private object Sql:
@@ -441,9 +437,9 @@ private object Sql:
 
   val insertRatingHistory: Command[NewRatingHistoryEntry] =
     sql"""
-        INSERT INTO rating_history (player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, year, month, recorded_at)
+        INSERT INTO rating_history (player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, month, recorded_at)
         VALUES ($newRatingHistoryEntry)
-        ON CONFLICT (player_id, year, month) DO UPDATE SET
+        ON CONFLICT (player_id, month) DO UPDATE SET
         standard = EXCLUDED.standard,
         standard_k = EXCLUDED.standard_k,
         rapid = EXCLUDED.rapid,
@@ -456,9 +452,9 @@ private object Sql:
   def insertRatingHistoryBatch(n: Int): Command[List[NewRatingHistoryEntry]] =
     val entries = newRatingHistoryEntry.values.list(n)
     sql"""
-        INSERT INTO rating_history (player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, year, month, recorded_at)
+        INSERT INTO rating_history (player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, month, recorded_at)
         VALUES $entries
-        ON CONFLICT (player_id, year, month) DO UPDATE SET
+        ON CONFLICT (player_id, month) DO UPDATE SET
         standard = EXCLUDED.standard,
         standard_k = EXCLUDED.standard_k,
         rapid = EXCLUDED.rapid,
@@ -470,29 +466,29 @@ private object Sql:
 
   lazy val ratingHistoryByPlayerId: Query[PlayerId *: Int *: EmptyTuple, RatingHistoryEntry] =
     sql"""
-        SELECT id, player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, year, month, recorded_at, created_at
+        SELECT id, player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, month, recorded_at, created_at
         FROM rating_history
         WHERE player_id = $playerIdCodec
-        ORDER BY year DESC, month DESC, id DESC
+        ORDER BY month DESC, id DESC
         LIMIT ${int4}
        """.query(ratingHistoryEntry)
 
   lazy val ratingHistoryByPlayerIdAll: Query[PlayerId, RatingHistoryEntry] =
     sql"""
-        SELECT id, player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, year, month, recorded_at, created_at
+        SELECT id, player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, month, recorded_at, created_at
         FROM rating_history
         WHERE player_id = $playerIdCodec
-        ORDER BY year DESC, month DESC, id DESC
+        ORDER BY month DESC, id DESC
        """.query(ratingHistoryEntry)
 
   // New queries for pagination support
   lazy val ratingHistoryByPlayerIdWithOffset
       : Query[PlayerId *: Int *: Int *: EmptyTuple, RatingHistoryEntry] =
     sql"""
-        SELECT id, player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, year, month, recorded_at, created_at
+        SELECT id, player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, month, recorded_at, created_at
         FROM rating_history
         WHERE player_id = $playerIdCodec
-        ORDER BY year DESC, month DESC, id DESC
+        ORDER BY month DESC, id DESC
         LIMIT ${int4} OFFSET ${int4}
        """.query(ratingHistoryEntry)
 
@@ -504,25 +500,24 @@ private object Sql:
        """.query(int8)
 
   // New queries for monthly ratings
-  lazy val ratingHistoryByMonth
-      : Query[Int *: Int *: Int *: Int *: EmptyTuple, (RatingHistoryEntry, PlayerInfo)] =
+  lazy val ratingHistoryByMonth: Query[Int *: Int *: Int *: EmptyTuple, (RatingHistoryEntry, PlayerInfo)] =
     sql"""
-        SELECT rh.id, rh.player_id, rh.standard, rh.standard_k, rh.rapid, rh.rapid_k, rh.blitz, rh.blitz_k, 
-               rh.year, rh.month, rh.recorded_at, rh.created_at,
-               p.id, p.name, p.title, p.women_title, p.other_titles, p.standard, p.standard_kfactor, 
-               p.rapid, p.rapid_kfactor, p.blitz, p.blitz_kfactor, p.sex, p.birth_year, p.active, 
+        SELECT rh.id, rh.player_id, rh.standard, rh.standard_k, rh.rapid, rh.rapid_k, rh.blitz, rh.blitz_k,
+               rh.month, rh.recorded_at, rh.created_at,
+               p.id, p.name, p.title, p.women_title, p.other_titles, p.standard, p.standard_kfactor,
+               p.rapid, p.rapid_kfactor, p.blitz, p.blitz_kfactor, p.sex, p.birth_year, p.active,
                p.updated_at, p.created_at, f.id, f.name
         FROM rating_history rh
         JOIN players p ON rh.player_id = p.id
         LEFT JOIN federations f ON p.federation_id = f.id
-        WHERE rh.year = ${int4} AND rh.month = ${int4}
+        WHERE rh.month = ${int4}
         ORDER BY rh.player_id
         LIMIT ${int4} OFFSET ${int4}
        """.query(ratingHistoryEntry *: playerInfo)
 
-  lazy val countRatingHistoryByMonth: Query[Int *: Int *: EmptyTuple, Long] =
+  lazy val countRatingHistoryByMonth: Query[Int, Long] =
     sql"""
         SELECT COUNT(*)
         FROM rating_history
-        WHERE year = ${int4} AND month = ${int4}
+        WHERE month = ${int4}
        """.query(int8)

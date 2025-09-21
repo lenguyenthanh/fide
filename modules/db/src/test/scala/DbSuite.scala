@@ -232,8 +232,7 @@ object DbSuite extends SimpleIOSuite:
           standard = Rating(2800).some,
           rapid = Rating(2750).some,
           blitz = Rating(2700).some,
-          year = 2023, // Different year to ensure separate entry
-          month = 647  // December 2023 (epoch-based month index)
+          month = 647 // December 2023 (epoch-based month index)
         )
         _       <- db.addRatingHistory(manualEntry)
         history <- db.ratingHistoryForPlayer(PlayerId(1))
@@ -255,7 +254,6 @@ object DbSuite extends SimpleIOSuite:
           standard = Rating(2800).some,
           rapid = Rating(2750).some,
           blitz = Rating(2700).some,
-          year = 2024,
           month = 648 // January 2024
         )
         entry2 = NewRatingHistoryEntry(
@@ -263,7 +261,6 @@ object DbSuite extends SimpleIOSuite:
           standard = Rating(2820).some,
           rapid = Rating(2770).some,
           blitz = Rating(2720).some,
-          year = 2024,
           month = 649 // February 2024
         )
         _ <- db.addRatingHistory(entry1)
@@ -271,9 +268,9 @@ object DbSuite extends SimpleIOSuite:
 
         history <- db.ratingHistoryForPlayer(PlayerId(1))
       yield expect.all(
-        history.length == 3,                                   // Current month + 2 historical months
-        history.exists(h => h.year == 2024 && h.month == 648), // January 2024
-        history.exists(h => h.year == 2024 && h.month == 649), // February 2024
+        history.length == 3,                 // Current month + 2 historical months
+        history.exists(h => h.month == 648), // January 2024
+        history.exists(h => h.month == 649), // February 2024
         // Should be ordered by month desc (higher month index first)
         history.head.month >= history.last.month
       )

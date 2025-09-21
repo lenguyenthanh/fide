@@ -342,11 +342,14 @@ case class RatingHistoryEntry(
     rapidK: Option[Int] = None,
     blitz: Option[Rating] = None,
     blitzK: Option[Int] = None,
-    year: Int,
-    month: Int,
+    month: Int, // Epoch-based month index: (year - 1970) * 12 + (month - 1)
     recordedAt: OffsetDateTime,
     createdAt: OffsetDateTime
-)
+):
+  // Derived year from epoch-based month index
+  def year: Int = 1970 + month / 12
+  // Derived calendar month (1-12)
+  def calendarMonth: Int = (month % 12) + 1
 
 case class NewRatingHistoryEntry(
     playerId: PlayerId,
@@ -356,7 +359,10 @@ case class NewRatingHistoryEntry(
     rapidK: Option[Int] = None,
     blitz: Option[Rating] = None,
     blitzK: Option[Int] = None,
-    year: Int,
-    month: Int,
+    month: Int, // Epoch-based month index: (year - 1970) * 12 + (month - 1)
     recordedAt: Option[OffsetDateTime] = None
-)
+):
+  // Derived year from epoch-based month index
+  def year: Int = 1970 + month / 12
+  // Derived calendar month (1-12)
+  def calendarMonth: Int = (month % 12) + 1

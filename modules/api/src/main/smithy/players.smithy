@@ -144,10 +144,9 @@ structure RatingHistoryEntryOutput {
   blitz: Rating
   blitzK: Integer
   
+  year: Integer      // Derived from epoch-based month index
   @required
-  year: Integer
-  @required
-  month: Integer
+  month: Integer     // Epoch-based month index: (year - 1970) * 12 + (month - 1)
   @required
   recordedAt: Timestamp
   @required
