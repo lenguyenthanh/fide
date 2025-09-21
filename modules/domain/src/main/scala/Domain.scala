@@ -332,3 +332,27 @@ object Federation:
     FederationId("ZAM") -> "Zambia",
     FederationId("ZIM") -> "Zimbabwe"
   )
+
+case class RatingHistoryEntry(
+    id: Long,
+    playerId: PlayerId,
+    standard: Option[Rating] = None,
+    standardK: Option[Int] = None,
+    rapid: Option[Rating] = None,
+    rapidK: Option[Int] = None,
+    blitz: Option[Rating] = None,
+    blitzK: Option[Int] = None,
+    recordedAt: OffsetDateTime,
+    createdAt: OffsetDateTime
+)
+
+case class NewRatingHistoryEntry(
+    playerId: PlayerId,
+    standard: Option[Rating] = None,
+    standardK: Option[Int] = None,
+    rapid: Option[Rating] = None,
+    rapidK: Option[Int] = None,
+    blitz: Option[Rating] = None,
+    blitzK: Option[Int] = None,
+    recordedAt: Option[OffsetDateTime] = None
+)

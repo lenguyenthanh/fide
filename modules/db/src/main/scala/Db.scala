@@ -21,6 +21,9 @@ trait Db:
   def countFederationsSummary: IO[Long]
   def countFederations: IO[Long]
   def federationSummaryById(id: FederationId): IO[Option[FederationSummary]]
+  def addRatingHistory(entry: NewRatingHistoryEntry): IO[Unit]
+  def addRatingHistoryBatch(entries: List[NewRatingHistoryEntry]): IO[Unit]
+  def ratingHistoryForPlayer(playerId: PlayerId, limit: Option[Int] = None): IO[List[RatingHistoryEntry]]
 
 object Db:
 
@@ -30,20 +33,56 @@ object Db:
         for
           playerCmd     <- s.prepare(Sql.upsertPlayer)
           federationCmd <- s.prepare(Sql.upsertFederation)
+          historyCmd    <- s.prepare(Sql.insertRatingHistory)
           _ <- s.transaction.use: _ =>
-            federation.traverse(federationCmd.execute) *>
-              playerCmd.execute(player)
+            for
+              _ <- federation.traverse(federationCmd.execute)
+              _ <- playerCmd.execute(player)
+              // Record rating history if player has any ratings
+              historyEntry = NewRatingHistoryEntry(
+                playerId = player.id,
+                standard = player.standard,
+                standardK = player.standardK,
+                rapid = player.rapid,
+                rapidK = player.rapidK,
+                blitz = player.blitz,
+                blitzK = player.blitzK
+              )
+              _ <- if historyEntry.standard.isDefined || historyEntry.rapid.isDefined || historyEntry.blitz.isDefined
+                   then historyCmd.execute(historyEntry)
+                   else IO.unit
+            yield ()
         yield ()
 
     def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit] =
       val feds = xs.mapFilter(_._2).distinct
+      val players = xs.map(_._1)
+      val historyEntries = players.flatMap: player =>
+        val entry = NewRatingHistoryEntry(
+          playerId = player.id,
+          standard = player.standard,
+          standardK = player.standardK,
+          rapid = player.rapid,
+          rapidK = player.rapidK,
+          blitz = player.blitz,
+          blitzK = player.blitzK
+        )
+        // Only include entry if player has at least one rating
+        Option.when(entry.standard.isDefined || entry.rapid.isDefined || entry.blitz.isDefined)(entry)
+      
       postgres.use: s =>
         for
-          playerCmd     <- s.prepare(Sql.upsertPlayers(xs.size))
+          playerCmd     <- s.prepare(Sql.upsertPlayers(players.size))
           federationCmd <- s.prepare(Sql.upsertFederations(feds.size))
+          historyCmd    <- if historyEntries.nonEmpty then s.prepare(Sql.insertRatingHistoryBatch(historyEntries.size)) else IO.pure(null)
           _ <- s.transaction.use: _ =>
-            federationCmd.execute(feds) *>
-              playerCmd.execute(xs.map(_._1))
+            for
+              _ <- federationCmd.execute(feds)
+              _ <- playerCmd.execute(players)
+              _ <- if historyEntries.nonEmpty && historyCmd != null
+                   then historyCmd.execute(historyEntries)
+                   else IO.unit
+            yield ()
         yield ()
 
     def playerById(id: PlayerId): IO[Option[PlayerInfo]] =
@@ -83,6 +122,30 @@ object Db:
 
     def federationSummaryById(id: FederationId): IO[Option[FederationSummary]] =
       postgres.use(_.option(Sql.federationSummaryById)(id))
+
+    def addRatingHistory(entry: NewRatingHistoryEntry): IO[Unit] =
+      postgres.use: s =>
+        for
+          cmd <- s.prepare(Sql.insertRatingHistory)
+          _   <- cmd.execute(entry.copy(recordedAt = entry.recordedAt.orElse(Some(java.time.OffsetDateTime.now))))
+        yield ()
+
+    def addRatingHistoryBatch(entries: List[NewRatingHistoryEntry]): IO[Unit] =
+      postgres.use: s =>
+        for
+          cmd <- s.prepare(Sql.insertRatingHistoryBatch(entries.size))
+          now = java.time.OffsetDateTime.now
+          entriesWithTime = entries.map(entry => entry.copy(recordedAt = entry.recordedAt.orElse(Some(now))))
+          _ <- cmd.execute(entriesWithTime)
+        yield ()
+
+    def ratingHistoryForPlayer(playerId: PlayerId, limit: Option[Int] = None): IO[List[RatingHistoryEntry]] =
+      postgres.use: s =>
+        limit match
+          case Some(lim) =>
+            s.execute(Sql.ratingHistoryByPlayerId)(playerId, lim)
+          case None =>
+            s.execute(Sql.ratingHistoryByPlayerIdAll)(playerId)
 
 private object Codecs:
 
@@ -127,6 +190,14 @@ private object Codecs:
   val playerInfo: Codec[PlayerInfo] =
     (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
       .to[PlayerInfo]
+
+  val newRatingHistoryEntry: Codec[NewRatingHistoryEntry] =
+    (playerIdCodec *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: timestamptz.opt)
+      .to[NewRatingHistoryEntry]
+
+  val ratingHistoryEntry: Codec[RatingHistoryEntry] =
+    (int8 *: playerIdCodec *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: timestamptz *: timestamptz)
+      .to[RatingHistoryEntry]
 
 private object Sql:
 
@@ -308,3 +379,33 @@ private object Sql:
     sql"""
         SELECT id, name, players, avg_top_standard_rank, standard_players, coalesce(avg_top_standard, 0), avg_top_rapid_rank, rapid_players, coalesce(avg_top_rapid, 0), avg_top_blitz_rank, blitz_players, coalesce(avg_top_blitz, 0)
         FROM federations_summary"""
+
+  val insertRatingHistory: Command[NewRatingHistoryEntry] =
+    sql"""
+        INSERT INTO rating_history (player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, recorded_at)
+        VALUES ($newRatingHistoryEntry)
+       """.command
+
+  def insertRatingHistoryBatch(n: Int): Command[List[NewRatingHistoryEntry]] =
+    val entries = newRatingHistoryEntry.values.list(n)
+    sql"""
+        INSERT INTO rating_history (player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, recorded_at)
+        VALUES $entries
+       """.command
+
+  lazy val ratingHistoryByPlayerId: Query[PlayerId *: Int *: EmptyTuple, RatingHistoryEntry] =
+    sql"""
+        SELECT id, player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, recorded_at, created_at
+        FROM rating_history
+        WHERE player_id = $playerIdCodec
+        ORDER BY recorded_at DESC, id DESC
+        LIMIT ${int4}
+       """.query(ratingHistoryEntry)
+
+  lazy val ratingHistoryByPlayerIdAll: Query[PlayerId, RatingHistoryEntry] =
+    sql"""
+        SELECT id, player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, recorded_at, created_at
+        FROM rating_history
+        WHERE player_id = $playerIdCodec
+        ORDER BY recorded_at DESC, id DESC
+       """.query(ratingHistoryEntry)

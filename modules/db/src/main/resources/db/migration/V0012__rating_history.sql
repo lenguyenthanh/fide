@@ -1,0 +1,31 @@
+-- Create table to store historical rating data for players
+CREATE TABLE IF NOT EXISTS rating_history
+(
+    id              BIGSERIAL PRIMARY KEY,
+    player_id       INTEGER NOT NULL,
+    standard        INTEGER,
+    standard_k      INTEGER,
+    rapid           INTEGER,
+    rapid_k         INTEGER,
+    blitz           INTEGER,
+    blitz_k         INTEGER,
+    recorded_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
+);
+
+-- Create indexes for efficient queries
+CREATE INDEX rating_history_player_id_idx ON rating_history(player_id);
+CREATE INDEX rating_history_recorded_at_idx ON rating_history(recorded_at);
+CREATE INDEX rating_history_player_recorded_idx ON rating_history(player_id, recorded_at);
+
+-- Create composite indexes for rating searches
+CREATE INDEX rating_history_standard_idx ON rating_history(standard) WHERE standard IS NOT NULL;
+CREATE INDEX rating_history_rapid_idx ON rating_history(rapid) WHERE rapid IS NOT NULL;
+CREATE INDEX rating_history_blitz_idx ON rating_history(blitz) WHERE blitz IS NOT NULL;
+
+-- Add trigger to automatically set created_at
+CREATE TRIGGER set_rating_history_created_at
+BEFORE INSERT ON rating_history
+FOR EACH ROW
+EXECUTE PROCEDURE set_updated_at();

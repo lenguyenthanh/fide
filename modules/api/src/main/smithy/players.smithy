@@ -9,7 +9,7 @@ use smithy4s.meta#unwrap
 @simpleRestJson
 service PlayerService {
   version: "0.0.1"
-  operations: [GetPlayers, GetPlayerById, GetPlayerByIds],
+  operations: [GetPlayers, GetPlayerById, GetPlayerByIds, GetPlayerRatingHistory],
 }
 
 @readonly
@@ -97,4 +97,48 @@ structure PlayerNotFound {
 structure TooManyIds {
   @required
   message: String
+}
+
+@readonly
+@http(method: "GET", uri: "/api/players/{id}/rating-history", code: 200)
+operation GetPlayerRatingHistory {
+  input := {
+    @httpLabel
+    @required
+    id: PlayerId
+    
+    @httpQuery("limit")
+    @range(min: 1, max: 1000)
+    limit: Integer
+  }
+
+  output := {
+    @required
+    playerId: PlayerId
+    @required
+    history: RatingHistoryEntries
+  }
+
+  errors: [PlayerNotFound, InternalServerError]
+}
+
+list RatingHistoryEntries {
+  member: RatingHistoryEntryOutput
+}
+
+structure RatingHistoryEntryOutput {
+  @required
+  id: Long
+  
+  standard: Rating
+  standardK: Integer
+  rapid: Rating
+  rapidK: Integer
+  blitz: Rating
+  blitzK: Integer
+  
+  @required
+  recordedAt: Timestamp
+  @required
+  createdAt: Timestamp
 }
