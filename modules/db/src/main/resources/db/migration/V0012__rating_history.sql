@@ -9,15 +9,18 @@ CREATE TABLE IF NOT EXISTS rating_history
     rapid_k         INTEGER,
     blitz           INTEGER,
     blitz_k         INTEGER,
+    year            INTEGER NOT NULL,
+    month           INTEGER NOT NULL,
     recorded_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
+    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+    UNIQUE (player_id, year, month)
 );
 
 -- Create indexes for efficient queries
 CREATE INDEX rating_history_player_id_idx ON rating_history(player_id);
-CREATE INDEX rating_history_recorded_at_idx ON rating_history(recorded_at);
-CREATE INDEX rating_history_player_recorded_idx ON rating_history(player_id, recorded_at);
+CREATE INDEX rating_history_year_month_idx ON rating_history(year, month);
+CREATE INDEX rating_history_player_year_month_idx ON rating_history(player_id, year, month);
 
 -- Create composite indexes for rating searches
 CREATE INDEX rating_history_standard_idx ON rating_history(standard) WHERE standard IS NOT NULL;

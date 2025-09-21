@@ -51,7 +51,8 @@ object Db:
               _ <- federation.traverse(federationCmd.execute)
               _ <- playerCmd.execute(player)
               // Record rating history if player has any ratings
-              now = java.time.OffsetDateTime.now
+              instant <- IO.realTimeInstant
+              now = instant.atOffset(java.time.ZoneOffset.UTC)
               historyEntry = NewRatingHistoryEntry(
                 playerId = player.id,
                 standard = player.standard,
@@ -74,40 +75,42 @@ object Db:
     def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit] =
       val feds    = xs.mapFilter(_._2).distinct
       val players = xs.map(_._1)
-      val historyEntries = players.flatMap: player =>
-        val now = java.time.OffsetDateTime.now
-        val entry = NewRatingHistoryEntry(
-          playerId = player.id,
-          standard = player.standard,
-          standardK = player.standardK,
-          rapid = player.rapid,
-          rapidK = player.rapidK,
-          blitz = player.blitz,
-          blitzK = player.blitzK,
-          year = now.getYear,
-          month = now.getMonthValue,
-          recordedAt = Some(now)
-        )
-        // Only include entry if player has at least one rating
-        Option.when(entry.standard.isDefined || entry.rapid.isDefined || entry.blitz.isDefined)(entry)
 
-      postgres.use: s =>
-        for
-          playerCmd     <- s.prepare(Sql.upsertPlayers(players.size))
-          federationCmd <- s.prepare(Sql.upsertFederations(feds.size))
-          historyCmd <-
-            if historyEntries.nonEmpty then s.prepare(Sql.insertRatingHistoryBatch(historyEntries.size))
-            else IO.pure(null)
-          _ <- s.transaction.use: _ =>
-            for
-              _ <- federationCmd.execute(feds)
-              _ <- playerCmd.execute(players)
-              _ <-
-                if historyEntries.nonEmpty && historyCmd != null
-                then historyCmd.execute(historyEntries)
-                else IO.unit
-            yield ()
-        yield ()
+      IO.realTimeInstant.flatMap: instant =>
+        val now = instant.atOffset(java.time.ZoneOffset.UTC)
+        val historyEntries = players.flatMap: player =>
+          val entry = NewRatingHistoryEntry(
+            playerId = player.id,
+            standard = player.standard,
+            standardK = player.standardK,
+            rapid = player.rapid,
+            rapidK = player.rapidK,
+            blitz = player.blitz,
+            blitzK = player.blitzK,
+            year = now.getYear,
+            month = now.getMonthValue,
+            recordedAt = Some(now)
+          )
+          // Only include entry if player has at least one rating
+          Option.when(entry.standard.isDefined || entry.rapid.isDefined || entry.blitz.isDefined)(entry)
+
+        postgres.use: s =>
+          for
+            playerCmd     <- s.prepare(Sql.upsertPlayers(players.size))
+            federationCmd <- s.prepare(Sql.upsertFederations(feds.size))
+            historyCmd <-
+              if historyEntries.nonEmpty then s.prepare(Sql.insertRatingHistoryBatch(historyEntries.size))
+              else IO.pure(null)
+            _ <- s.transaction.use: _ =>
+              for
+                _ <- federationCmd.execute(feds)
+                _ <- playerCmd.execute(players)
+                _ <-
+                  if historyEntries.nonEmpty && historyCmd != null
+                  then historyCmd.execute(historyEntries)
+                  else IO.unit
+              yield ()
+          yield ()
 
     def playerById(id: PlayerId): IO[Option[PlayerInfo]] =
       postgres.use(_.option(Sql.playerById)(id))
@@ -150,17 +153,20 @@ object Db:
     def addRatingHistory(entry: NewRatingHistoryEntry): IO[Unit] =
       postgres.use: s =>
         for
-          cmd <- s.prepare(Sql.insertRatingHistory)
+          cmd     <- s.prepare(Sql.insertRatingHistory)
+          instant <- IO.realTimeInstant
+          now = instant.atOffset(java.time.ZoneOffset.UTC)
           _ <- cmd.execute(
-            entry.copy(recordedAt = entry.recordedAt.orElse(Some(java.time.OffsetDateTime.now)))
+            entry.copy(recordedAt = entry.recordedAt.orElse(Some(now)))
           )
         yield ()
 
     def addRatingHistoryBatch(entries: List[NewRatingHistoryEntry]): IO[Unit] =
       postgres.use: s =>
         for
-          cmd <- s.prepare(Sql.insertRatingHistoryBatch(entries.size))
-          now             = java.time.OffsetDateTime.now
+          cmd     <- s.prepare(Sql.insertRatingHistoryBatch(entries.size))
+          instant <- IO.realTimeInstant
+          now             = instant.atOffset(java.time.ZoneOffset.UTC)
           entriesWithTime = entries.map(entry => entry.copy(recordedAt = entry.recordedAt.orElse(Some(now))))
           _ <- cmd.execute(entriesWithTime)
         yield ()
