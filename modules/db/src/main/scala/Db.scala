@@ -31,11 +31,11 @@ trait Db:
   def countRatingHistoryForPlayer(playerId: PlayerId): IO[Long]
   def ratingHistoryForMonth(
       year: Int,
-      month: Int,
+      monthIndex: Int,
       limit: Option[Int] = None,
       offset: Option[Int] = None
   ): IO[List[(RatingHistoryEntry, PlayerInfo)]]
-  def countRatingHistoryForMonth(year: Int, month: Int): IO[Long]
+  def countRatingHistoryForMonth(year: Int, monthIndex: Int): IO[Long]
 
 object Db:
 
@@ -53,6 +53,8 @@ object Db:
               // Record rating history if player has any ratings
               instant <- IO.realTimeInstant
               now = instant.atOffset(java.time.ZoneOffset.UTC)
+              // Calculate month index from epoch (months since January 1970)
+              monthIndex = (now.getYear - 1970) * 12 + (now.getMonthValue - 1)
               historyEntry = NewRatingHistoryEntry(
                 playerId = player.id,
                 standard = player.standard,
@@ -62,7 +64,7 @@ object Db:
                 blitz = player.blitz,
                 blitzK = player.blitzK,
                 year = now.getYear,
-                month = now.getMonthValue,
+                month = monthIndex,
                 recordedAt = Some(now)
               )
               _ <-
@@ -78,6 +80,8 @@ object Db:
 
       IO.realTimeInstant.flatMap: instant =>
         val now = instant.atOffset(java.time.ZoneOffset.UTC)
+        // Calculate month index from epoch (months since January 1970)
+        val monthIndex = (now.getYear - 1970) * 12 + (now.getMonthValue - 1)
         val historyEntries = players.flatMap: player =>
           val entry = NewRatingHistoryEntry(
             playerId = player.id,
@@ -88,7 +92,7 @@ object Db:
             blitz = player.blitz,
             blitzK = player.blitzK,
             year = now.getYear,
-            month = now.getMonthValue,
+            month = monthIndex,
             recordedAt = Some(now)
           )
           // Only include entry if player has at least one rating
@@ -190,17 +194,17 @@ object Db:
 
     def ratingHistoryForMonth(
         year: Int,
-        month: Int,
+        monthIndex: Int,
         limit: Option[Int] = None,
         offset: Option[Int] = None
     ): IO[List[(RatingHistoryEntry, PlayerInfo)]] =
       postgres.use: s =>
         val lim = limit.getOrElse(100)
         val off = offset.getOrElse(0)
-        s.execute(Sql.ratingHistoryByMonth)(year, month, lim, off)
+        s.execute(Sql.ratingHistoryByMonth)(year, monthIndex, lim, off)
 
-    def countRatingHistoryForMonth(year: Int, month: Int): IO[Long] =
-      postgres.use(_.unique(Sql.countRatingHistoryByMonth)(year, month))
+    def countRatingHistoryForMonth(year: Int, monthIndex: Int): IO[Long] =
+      postgres.use(_.unique(Sql.countRatingHistoryByMonth)(year, monthIndex))
 
 private object Codecs:
 

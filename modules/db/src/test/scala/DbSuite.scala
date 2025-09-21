@@ -226,13 +226,14 @@ object DbSuite extends SimpleIOSuite:
       for
         _ <- db.upsert(newPlayer1, newFederation.some)
         // Use a different month/year to ensure we create a separate entry
+        // December 2023 = (2023 - 1970) * 12 + 11 = 647
         manualEntry = NewRatingHistoryEntry(
           playerId = PlayerId(1),
           standard = Rating(2800).some,
           rapid = Rating(2750).some,
           blitz = Rating(2700).some,
           year = 2023, // Different year to ensure separate entry
-          month = 12
+          month = 647  // December 2023 (epoch-based month index)
         )
         _       <- db.addRatingHistory(manualEntry)
         history <- db.ratingHistoryForPlayer(PlayerId(1))
@@ -246,14 +247,16 @@ object DbSuite extends SimpleIOSuite:
       for
         _ <- db.upsert(newPlayer1, newFederation.some)
 
-        // Add entries for different months
+        // Add entries for different months (using epoch-based month index)
+        // January 2024 = (2024 - 1970) * 12 + 0 = 648
+        // February 2024 = (2024 - 1970) * 12 + 1 = 649
         entry1 = NewRatingHistoryEntry(
           playerId = PlayerId(1),
           standard = Rating(2800).some,
           rapid = Rating(2750).some,
           blitz = Rating(2700).some,
           year = 2024,
-          month = 1
+          month = 648 // January 2024
         )
         entry2 = NewRatingHistoryEntry(
           playerId = PlayerId(1),
@@ -261,17 +264,16 @@ object DbSuite extends SimpleIOSuite:
           rapid = Rating(2770).some,
           blitz = Rating(2720).some,
           year = 2024,
-          month = 2
+          month = 649 // February 2024
         )
         _ <- db.addRatingHistory(entry1)
         _ <- db.addRatingHistory(entry2)
 
         history <- db.ratingHistoryForPlayer(PlayerId(1))
       yield expect.all(
-        history.length == 3, // Current month + 2 historical months
-        history.exists(h => h.year == 2024 && h.month == 1),
-        history.exists(h => h.year == 2024 && h.month == 2),
-        // Should be ordered by year/month desc
-        history.head.year >= history.last.year,
-        history.head.month >= history.last.month || history.head.year > history.last.year
+        history.length == 3,                                   // Current month + 2 historical months
+        history.exists(h => h.year == 2024 && h.month == 648), // January 2024
+        history.exists(h => h.year == 2024 && h.month == 649), // February 2024
+        // Should be ordered by month desc (higher month index first)
+        history.head.month >= history.last.month
       )

@@ -124,10 +124,12 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
     val pageSize = limit
     val pageNum  = page
     val offset   = (pageNum - 1) * pageSize
+    // Convert year/month to epoch-based month index
+    val monthIndex = (year - 1970) * 12 + (month - 1)
 
     (
-      db.ratingHistoryForMonth(year, month, Some(pageSize), Some(offset)),
-      db.countRatingHistoryForMonth(year, month)
+      db.ratingHistoryForMonth(year, monthIndex, Some(pageSize), Some(offset)),
+      db.countRatingHistoryForMonth(year, monthIndex)
     ).parMapN: (ratingsWithPlayers, totalCount) =>
       val ratings = ratingsWithPlayers.map: (rating, player) =>
         PlayerMonthlyRating(
