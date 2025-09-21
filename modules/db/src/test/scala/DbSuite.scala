@@ -187,3 +187,50 @@ object DbSuite extends SimpleIOSuite:
         _      <- kv.put("fide_last_update_key", "2021-01-01")
         result <- db.federationSummaryById(fedId)
       yield expect(result.isDefined)
+
+  test("rating history recording and retrieval"):
+    resource.use: db =>
+      for
+        // First, upsert a player (this should automatically record rating history)
+        _             <- db.upsert(newPlayer1, newFederation.some)
+        history1      <- db.ratingHistoryForPlayer(PlayerId(1))
+        
+        // Update player with different ratings
+        updatedPlayer = newPlayer1.copy(
+          standard = Rating(2750).some,
+          rapid = Rating(2720).some,
+          blitz = Rating(2680).some
+        )
+        _             <- db.upsert(updatedPlayer, None)
+        history2      <- db.ratingHistoryForPlayer(PlayerId(1))
+        
+        // Test with limit
+        historyLimited <- db.ratingHistoryForPlayer(PlayerId(1), Some(1))
+      yield expect.all(
+        history1.length == 1,
+        history1.head.playerId == PlayerId(1),
+        history1.head.standard.contains(Rating(2700)),
+        history1.head.rapid.contains(Rating(2700)),
+        history1.head.blitz.contains(Rating(2700)),
+        history2.length == 2,
+        historyLimited.length == 1,
+        // Most recent entry should be first due to ordering
+        historyLimited.head.standard.contains(Rating(2750))
+      )
+
+  test("rating history manual entry"):
+    resource.use: db =>
+      for
+        _             <- db.upsert(newPlayer1, newFederation.some)
+        manualEntry   = NewRatingHistoryEntry(
+          playerId = PlayerId(1),
+          standard = Rating(2800).some,
+          rapid = Rating(2750).some,
+          blitz = Rating(2700).some
+        )
+        _             <- db.addRatingHistory(manualEntry)
+        history       <- db.ratingHistoryForPlayer(PlayerId(1))
+      yield expect(
+        history.length == 2 && // One from upsert, one manual
+        history.exists(_.standard.contains(Rating(2800)))
+      )
