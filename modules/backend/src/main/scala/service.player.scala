@@ -161,15 +161,8 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
           blitz = rating.blitz,
           blitzK = rating.blitzK
         )
-      // Use safe PageNumber creation to avoid unsafe operations
-      val nextPageNum = pageNum + 1
-      val nextPage = Option.when(offset + pageSz < totalCount) {
-        PageNumber.option(nextPageNum.toString) match {
-          case Some(page) => page
-          case None => PageNumber.option("1").get // This should never fail for valid page numbers
-        }
-      }
-      GetPlayersRatingsByMonthOutput(year, month, ratings, totalCount, nextPage)
+      GetPlayersRatingsByMonthOutput(year, month, ratings, totalCount, 
+        Option.when(ratings.size == pageSize)(page.succ))
     .handleErrorWith: e =>
         error"Error in getPlayersRatingsByMonth: $year/$month, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
