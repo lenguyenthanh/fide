@@ -106,11 +106,11 @@ operation GetPlayerRatingHistory {
     @httpLabel
     @required
     id: PlayerId
-    
+
     @httpQuery("limit")
     @range(min: 1, max: 1000)
     limit: Integer
-    
+
     @httpQuery("page")
     @range(min: 1, max: 10000)
     page: Integer
@@ -140,7 +140,7 @@ structure RatingHistoryEntryOutput {
   rapidK: Integer
   blitz: Rating
   blitzK: Integer
-  
+
   year: Integer      // Derived from epoch-based month index
   @required
   month: Integer     // Epoch-based month index: (year - 1970) * 12 + (month - 1)
@@ -153,18 +153,19 @@ structure RatingHistoryEntryOutput {
 @readonly
 @http(method: "GET", uri: "/api/players/ratings/{year}/{month}", code: 200)
 operation GetPlayersRatingsByMonth {
-  input := 
+  input :=
     @scalaImports(["fide.spec.providers.given"])
     with [SortingMixin, FilterMixin] {
     @httpLabel
     @required
+    // todo 1970 -> current year
     year: Integer
-    
+
     @httpLabel
     @required
     @range(min: 1, max: 12)
     month: Integer
-    
+
     @httpQuery("page")
     page: PageNumber = "1"
 
@@ -200,7 +201,7 @@ structure PlayerMonthlyRating {
   playerId: PlayerId
   @required
   playerName: String
-  
+
   standard: Rating
   standardK: Integer
   rapid: Rating

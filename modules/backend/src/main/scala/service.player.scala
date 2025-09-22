@@ -118,6 +118,8 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
   override def getPlayersRatingsByMonth(
       year: Int,
       month: Int,
+      page: PageNumber,
+      pageSize: PageSize,
       sortBy: Option[SortBy],
       order: Option[Order],
       isActive: Option[Boolean],
@@ -136,13 +138,11 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
       hasTitle: Option[Boolean],
       hasWomenTitle: Option[Boolean],
       hasOtherTitle: Option[Boolean],
-      federationId: Option[FederationId],
-      page: PageNumber,
-      pageSize: PageSize
+      federationId: Option[FederationId]
   ): IO[GetPlayersRatingsByMonthOutput] =
-    val pageNum  = page.toInt
-    val pageSz   = pageSize
-    val offset   = (pageNum - 1) * pageSz
+    val pageNum = page.toInt
+    val pageSz  = pageSize
+    val offset  = (pageNum - 1) * pageSz
     // Convert year/month to epoch-based month index
     val monthIndex = (year - 1970) * 12 + (month - 1)
 
@@ -161,8 +161,13 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
           blitz = rating.blitz,
           blitzK = rating.blitzK
         )
-      GetPlayersRatingsByMonthOutput(year, month, ratings, totalCount, 
-        Option.when(ratings.size == pageSize)(page.succ))
+      GetPlayersRatingsByMonthOutput(
+        year,
+        month,
+        ratings,
+        totalCount,
+        Option.when(ratings.size == pageSize)(page.succ)
+      )
     .handleErrorWith: e =>
         error"Error in getPlayersRatingsByMonth: $year/$month, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
