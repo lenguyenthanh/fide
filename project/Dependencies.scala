@@ -41,7 +41,7 @@ object Dependencies {
   val dumbo = "dev.rolang"   %% "dumbo"      % "0.6.0"
 
   val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.7.1"
-  val logback  = "ch.qos.logback" % "logback-classic" % "1.5.18"
+  val logback  = "ch.qos.logback" % "logback-classic" % "1.5.20"
 
   val ducktape = "io.github.arainko" %% "ducktape" % "0.2.10"
 
