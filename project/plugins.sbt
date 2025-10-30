@@ -1,7 +1,7 @@
 addSbtPlugin("ch.epfl.scala"                % "sbt-scalafix"         % "0.14.3")
 addSbtPlugin("com.disneystreaming.smithy4s" % "smithy4s-sbt-codegen" % "0.18.42")
 addSbtPlugin("com.github.sbt"               % "sbt-native-packager"  % "1.11.3")
-addSbtPlugin("org.scalameta"                % "sbt-scalafmt"         % "2.5.5")
+addSbtPlugin("org.scalameta"                % "sbt-scalafmt"         % "2.5.6")
 addSbtPlugin("org.typelevel"                % "sbt-tpolecat"         % "0.5.2")
 addSbtPlugin("io.gatling"                   % "gatling-sbt"          % "4.17.4")
 addSbtPlugin("com.github.sbt"               % "sbt-release"          % "1.4.0")
