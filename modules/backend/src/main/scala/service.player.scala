@@ -51,7 +51,7 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
 
     val paging  = Models.Pagination(page, pageSize)
     val sorting = Models.Sorting.fromOption(sortBy.map(_.to[Models.SortBy]), order.map(_.to[Models.Order]))
-    val filter = Models.PlayerFilter(
+    val filter  = Models.PlayerFilter(
       name,
       isActive,
       Models.RatingRange(standardMin, standardMax),

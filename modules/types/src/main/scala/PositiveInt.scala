@@ -16,8 +16,8 @@ object PageNumber extends RefinedSubtype[Int, Positive]:
     value.toIntOption.toRight(s"$value is not an int") >>= PageNumber.either
 
   extension (self: PageNumber)
-    inline def succ: PageNumber = PageNumber.applyUnsafe(self.value + 1)
-    inline def toInt: Int       = self.value
+    inline def succ: PageNumber                   = PageNumber.applyUnsafe(self.value + 1)
+    inline def toInt: Int                         = self.value
     inline def max(other: PageNumber): PageNumber =
       if self.value > other.value then self else other
 

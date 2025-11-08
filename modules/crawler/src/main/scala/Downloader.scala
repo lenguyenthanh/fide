@@ -58,7 +58,7 @@ object Downloader:
     inline def kFactor(start: Int)                          = number(start, start + 2).filter(_ > 0)
     inline def playerName(): Option[String]                 = sanitizeName(line.substring(15, 76))
     inline def playerId(): Option[PlayerId]                 = number(0, 15) >>= PlayerId.option
-    inline def federationId(): Option[FederationId] =
+    inline def federationId(): Option[FederationId]         =
       string(76, 79).map(_.toUpperCase).filter(_ != "NON") >>= FederationId.option
 
     (playerId(), playerName()).mapN: (id, name) =>

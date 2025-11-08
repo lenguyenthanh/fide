@@ -50,7 +50,7 @@ class FederationServiceImpl(db: Db)(using Logger[IO]) extends FederationService[
 
     val paging  = Models.Pagination(page, pageSize)
     val sorting = Models.Sorting.fromOption(sortBy.map(_.to[Models.SortBy]), order.map(_.to[Models.Order]))
-    val filter = Models.PlayerFilter(
+    val filter  = Models.PlayerFilter(
       name,
       isActive,
       Models.RatingRange(standardMin, standardMax),

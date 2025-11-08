@@ -31,8 +31,8 @@ case class AppConfig(
 case class HttpServerConfig(host: Host, port: Port, shutdownTimeout: PositiveInt)
 
 object HttpServerConfig:
-  private def host = env("HTTP_HOST").or(prop("http.host")).as[Host].default(ip"0.0.0.0")
-  private def port = env("HTTP_PORT").or(prop("http.port")).as[Port].default(port"9669")
+  private def host            = env("HTTP_HOST").or(prop("http.host")).as[Host].default(ip"0.0.0.0")
+  private def port            = env("HTTP_PORT").or(prop("http.port")).as[Port].default(port"9669")
   private def shutdownTimeout =
     env("HTTP_SHUTDOWN_TIMEOUT").or(prop("http.shutdown.timeout")).as[PositiveInt].default(30)
   def config = (host, port, shutdownTimeout).parMapN(HttpServerConfig.apply)
