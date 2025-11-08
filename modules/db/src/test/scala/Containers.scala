@@ -13,7 +13,7 @@ import org.typelevel.log4cats.noop.NoOpLogger
 
 object Containers:
 
-  given Logger[IO] = NoOpLogger[IO]
+  given Logger[IO]                                                       = NoOpLogger[IO]
   private def parseConfig(cont: PostgreSQLContainer): IO[PostgresConfig] =
     IO:
       val jdbcUrl = java.net.URI.create(cont.jdbcUrl.substring(5))

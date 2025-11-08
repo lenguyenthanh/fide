@@ -21,9 +21,9 @@ object Models:
   )
 
   object Sorting:
-    def default = Sorting(SortBy.Name, Order.Desc)
+    def default                                                           = Sorting(SortBy.Name, Order.Desc)
     def fromOption(sortBy: Option[SortBy], order: Option[Order]): Sorting =
-      val _sortBy = sortBy.getOrElse(Models.SortBy.Name)
+      val _sortBy      = sortBy.getOrElse(Models.SortBy.Name)
       val defaultOrder =
         _sortBy match
           case Models.SortBy.Name => Models.Order.Asc
