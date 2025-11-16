@@ -21,6 +21,20 @@ trait Db:
   def countFederationsSummary: IO[Long]
   def countFederations: IO[Long]
   def federationSummaryById(id: FederationId): IO[Option[FederationSummary]]
+  def addRatingHistory(entry: NewRatingHistoryEntry): IO[Unit]
+  def addRatingHistoryBatch(entries: List[NewRatingHistoryEntry]): IO[Unit]
+  def ratingHistoryForPlayer(
+      playerId: PlayerId,
+      limit: Option[Int] = None,
+      offset: Option[Int] = None
+  ): IO[List[RatingHistoryEntry]]
+  def countRatingHistoryForPlayer(playerId: PlayerId): IO[Long]
+  def ratingHistoryForMonth(
+      monthIndex: Int,
+      limit: Option[Int] = None,
+      offset: Option[Int] = None
+  ): IO[List[(RatingHistoryEntry, PlayerInfo)]]
+  def countRatingHistoryForMonth(monthIndex: Int): IO[Long]
 
 object Db:
 
@@ -30,21 +44,74 @@ object Db:
         for
           playerCmd     <- s.prepare(Sql.upsertPlayer)
           federationCmd <- s.prepare(Sql.upsertFederation)
+          historyCmd    <- s.prepare(Sql.insertRatingHistory)
           _ <- s.transaction.use: _ =>
-            federation.traverse(federationCmd.execute) *>
-              playerCmd.execute(player)
+            for
+              _ <- federation.traverse(federationCmd.execute)
+              _ <- playerCmd.execute(player)
+              // Record rating history if player has any ratings
+              instant <- IO.realTimeInstant
+              now = instant.atOffset(java.time.ZoneOffset.UTC)
+              // Calculate month index from epoch (months since January 1970)
+              monthIndex = (now.getYear - 1970) * 12 + (now.getMonthValue - 1)
+              historyEntry = NewRatingHistoryEntry(
+                playerId = player.id,
+                standard = player.standard,
+                standardK = player.standardK,
+                rapid = player.rapid,
+                rapidK = player.rapidK,
+                blitz = player.blitz,
+                blitzK = player.blitzK,
+                month = monthIndex,
+                recordedAt = Some(now)
+              )
+              _ <-
+                if historyEntry.standard.isDefined || historyEntry.rapid.isDefined || historyEntry.blitz.isDefined
+                then historyCmd.execute(historyEntry)
+                else IO.unit
+            yield ()
         yield ()
 
     def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit] =
-      val feds = xs.mapFilter(_._2).distinct
-      postgres.use: s =>
-        for
-          playerCmd     <- s.prepare(Sql.upsertPlayers(xs.size))
-          federationCmd <- s.prepare(Sql.upsertFederations(feds.size))
-          _ <- s.transaction.use: _ =>
-            federationCmd.execute(feds) *>
-              playerCmd.execute(xs.map(_._1))
-        yield ()
+      val feds    = xs.mapFilter(_._2).distinct
+      val players = xs.map(_._1)
+
+      IO.realTimeInstant.flatMap: instant =>
+        val now = instant.atOffset(java.time.ZoneOffset.UTC)
+        // Calculate month index from epoch (months since January 1970)
+        val monthIndex = (now.getYear - 1970) * 12 + (now.getMonthValue - 1)
+        val historyEntries = players.flatMap: player =>
+          val entry = NewRatingHistoryEntry(
+            playerId = player.id,
+            standard = player.standard,
+            standardK = player.standardK,
+            rapid = player.rapid,
+            rapidK = player.rapidK,
+            blitz = player.blitz,
+            blitzK = player.blitzK,
+            month = monthIndex,
+            recordedAt = Some(now)
+          )
+          // Only include entry if player has at least one rating
+          Option.when(entry.standard.isDefined || entry.rapid.isDefined || entry.blitz.isDefined)(entry)
+
+        postgres.use: s =>
+          for
+            playerCmd     <- s.prepare(Sql.upsertPlayers(players.size))
+            federationCmd <- s.prepare(Sql.upsertFederations(feds.size))
+            historyCmd <-
+              if historyEntries.nonEmpty then s.prepare(Sql.insertRatingHistoryBatch(historyEntries.size))
+              else IO.pure(null)
+            _ <- s.transaction.use: _ =>
+              for
+                _ <- federationCmd.execute(feds)
+                _ <- playerCmd.execute(players)
+                _ <-
+                  if historyEntries.nonEmpty && historyCmd != null
+                  then historyCmd.execute(historyEntries)
+                  else IO.unit
+              yield ()
+          yield ()
 
     def playerById(id: PlayerId): IO[Option[PlayerInfo]] =
       postgres.use(_.option(Sql.playerById)(id))
@@ -83,6 +150,57 @@ object Db:
 
     def federationSummaryById(id: FederationId): IO[Option[FederationSummary]] =
       postgres.use(_.option(Sql.federationSummaryById)(id))
+
+    def addRatingHistory(entry: NewRatingHistoryEntry): IO[Unit] =
+      postgres.use: s =>
+        for
+          cmd     <- s.prepare(Sql.insertRatingHistory)
+          instant <- IO.realTimeInstant
+          now = instant.atOffset(java.time.ZoneOffset.UTC)
+          _ <- cmd.execute(
+            entry.copy(recordedAt = entry.recordedAt.orElse(Some(now)))
+          )
+        yield ()
+
+    def addRatingHistoryBatch(entries: List[NewRatingHistoryEntry]): IO[Unit] =
+      postgres.use: s =>
+        for
+          cmd     <- s.prepare(Sql.insertRatingHistoryBatch(entries.size))
+          instant <- IO.realTimeInstant
+          now             = instant.atOffset(java.time.ZoneOffset.UTC)
+          entriesWithTime = entries.map(entry => entry.copy(recordedAt = entry.recordedAt.orElse(Some(now))))
+          _ <- cmd.execute(entriesWithTime)
+        yield ()
+
+    def ratingHistoryForPlayer(
+        playerId: PlayerId,
+        limit: Option[Int] = None,
+        offset: Option[Int] = None
+    ): IO[List[RatingHistoryEntry]] =
+      postgres.use: s =>
+        (limit, offset) match
+          case (Some(lim), Some(off)) =>
+            s.execute(Sql.ratingHistoryByPlayerIdWithOffset)(playerId, lim, off)
+          case (Some(lim), None) =>
+            s.execute(Sql.ratingHistoryByPlayerId)(playerId, lim)
+          case _ =>
+            s.execute(Sql.ratingHistoryByPlayerIdAll)(playerId)
+
+    def countRatingHistoryForPlayer(playerId: PlayerId): IO[Long] =
+      postgres.use(_.unique(Sql.countRatingHistoryByPlayerId)(playerId))
+
+    def ratingHistoryForMonth(
+        monthIndex: Int,
+        limit: Option[Int] = None,
+        offset: Option[Int] = None
+    ): IO[List[(RatingHistoryEntry, PlayerInfo)]] =
+      postgres.use: s =>
+        val lim = limit.getOrElse(100)
+        val off = offset.getOrElse(0)
+        s.execute(Sql.ratingHistoryByMonth)(monthIndex, lim, off)
+
+    def countRatingHistoryForMonth(monthIndex: Int): IO[Long] =
+      postgres.use(_.unique(Sql.countRatingHistoryByMonth)(monthIndex))
 
 private object Codecs:
 
@@ -127,6 +245,14 @@ private object Codecs:
   val playerInfo: Codec[PlayerInfo] =
     (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
       .to[PlayerInfo]
+
+  val newRatingHistoryEntry: Codec[NewRatingHistoryEntry] =
+    (playerIdCodec *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: int4 *: timestamptz.opt)
+      .to[NewRatingHistoryEntry]
+
+  val ratingHistoryEntry: Codec[RatingHistoryEntry] =
+    (playerIdCodec *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: int4 *: timestamptz *: timestamptz)
+      .to[RatingHistoryEntry]
 
 private object Sql:
 
@@ -308,3 +434,90 @@ private object Sql:
     sql"""
         SELECT id, name, players, avg_top_standard_rank, standard_players, coalesce(avg_top_standard, 0), avg_top_rapid_rank, rapid_players, coalesce(avg_top_rapid, 0), avg_top_blitz_rank, blitz_players, coalesce(avg_top_blitz, 0)
         FROM federations_summary"""
+
+  val insertRatingHistory: Command[NewRatingHistoryEntry] =
+    sql"""
+        INSERT INTO rating_history (player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, month, recorded_at)
+        VALUES ($newRatingHistoryEntry)
+        ON CONFLICT (player_id, month) DO UPDATE SET
+        standard = EXCLUDED.standard,
+        standard_k = EXCLUDED.standard_k,
+        rapid = EXCLUDED.rapid,
+        rapid_k = EXCLUDED.rapid_k,
+        blitz = EXCLUDED.blitz,
+        blitz_k = EXCLUDED.blitz_k,
+        recorded_at = EXCLUDED.recorded_at
+       """.command
+
+  def insertRatingHistoryBatch(n: Int): Command[List[NewRatingHistoryEntry]] =
+    val entries = newRatingHistoryEntry.values.list(n)
+    sql"""
+        INSERT INTO rating_history (player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, month, recorded_at)
+        VALUES $entries
+        ON CONFLICT (player_id, month) DO UPDATE SET
+        standard = EXCLUDED.standard,
+        standard_k = EXCLUDED.standard_k,
+        rapid = EXCLUDED.rapid,
+        rapid_k = EXCLUDED.rapid_k,
+        blitz = EXCLUDED.blitz,
+        blitz_k = EXCLUDED.blitz_k,
+        recorded_at = EXCLUDED.recorded_at
+       """.command
+
+  lazy val ratingHistoryByPlayerId: Query[PlayerId *: Int *: EmptyTuple, RatingHistoryEntry] =
+    sql"""
+        SELECT player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, month, recorded_at, created_at
+        FROM rating_history
+        WHERE player_id = $playerIdCodec
+        ORDER BY month DESC
+        LIMIT ${int4}
+       """.query(ratingHistoryEntry)
+
+  lazy val ratingHistoryByPlayerIdAll: Query[PlayerId, RatingHistoryEntry] =
+    sql"""
+        SELECT player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, month, recorded_at, created_at
+        FROM rating_history
+        WHERE player_id = $playerIdCodec
+        ORDER BY month DESC
+       """.query(ratingHistoryEntry)
+
+  // New queries for pagination support
+  lazy val ratingHistoryByPlayerIdWithOffset
+      : Query[PlayerId *: Int *: Int *: EmptyTuple, RatingHistoryEntry] =
+    sql"""
+        SELECT player_id, standard, standard_k, rapid, rapid_k, blitz, blitz_k, month, recorded_at, created_at
+        FROM rating_history
+        WHERE player_id = $playerIdCodec
+        ORDER BY month DESC
+        LIMIT ${int4} OFFSET ${int4}
+       """.query(ratingHistoryEntry)
+
+  lazy val countRatingHistoryByPlayerId: Query[PlayerId, Long] =
+    sql"""
+        SELECT COUNT(*)
+        FROM rating_history
+        WHERE player_id = $playerIdCodec
+       """.query(int8)
+
+  // New queries for monthly ratings
+  lazy val ratingHistoryByMonth: Query[Int *: Int *: Int *: EmptyTuple, (RatingHistoryEntry, PlayerInfo)] =
+    sql"""
+        SELECT rh.player_id, rh.standard, rh.standard_k, rh.rapid, rh.rapid_k, rh.blitz, rh.blitz_k,
+               rh.month, rh.recorded_at, rh.created_at,
+               p.id, p.name, p.title, p.women_title, p.other_titles, p.standard, p.standard_kfactor,
+               p.rapid, p.rapid_kfactor, p.blitz, p.blitz_kfactor, p.sex, p.birth_year, p.active,
+               p.updated_at, p.created_at, f.id, f.name
+        FROM rating_history rh
+        JOIN players p ON rh.player_id = p.id
+        LEFT JOIN federations f ON p.federation_id = f.id
+        WHERE rh.month = ${int4}
+        ORDER BY rh.player_id
+        LIMIT ${int4} OFFSET ${int4}
+       """.query(ratingHistoryEntry *: playerInfo)
+
+  lazy val countRatingHistoryByMonth: Query[Int, Long] =
+    sql"""
+        SELECT COUNT(*)
+        FROM rating_history
+        WHERE month = ${int4}
+       """.query(int8)

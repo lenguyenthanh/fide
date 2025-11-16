@@ -187,3 +187,90 @@ object DbSuite extends SimpleIOSuite:
         _      <- kv.put("fide_last_update_key", "2021-01-01")
         result <- db.federationSummaryById(fedId)
       yield expect(result.isDefined)
+
+  test("rating history recording and retrieval"):
+    resource.use: db =>
+      for
+        // First, upsert a player (this should automatically record rating history)
+        _        <- db.upsert(newPlayer1, newFederation.some)
+        history1 <- db.ratingHistoryForPlayer(PlayerId(1))
+
+        // Update player with different ratings (this should update the same monthly record)
+        updatedPlayer = newPlayer1.copy(
+          standard = Rating(2750).some,
+          rapid = Rating(2720).some,
+          blitz = Rating(2680).some
+        )
+        _        <- db.upsert(updatedPlayer, None)
+        history2 <- db.ratingHistoryForPlayer(PlayerId(1))
+
+        // Test with limit
+        historyLimited <- db.ratingHistoryForPlayer(PlayerId(1), Some(1))
+      yield expect.all(
+        history1.length == 1,
+        history1.head.playerId == PlayerId(1),
+        history1.head.standard.contains(Rating(2700)),
+        history1.head.rapid.contains(Rating(2700)),
+        history1.head.blitz.contains(Rating(2700)),
+        // With month-based system, updating in same month updates the same record
+        history2.length == 1,
+        historyLimited.length == 1,
+        // The record should have the updated ratings
+        historyLimited.head.standard.contains(Rating(2750)),
+        historyLimited.head.rapid.contains(Rating(2720)),
+        historyLimited.head.blitz.contains(Rating(2680))
+      )
+
+  test("rating history manual entry"):
+    resource.use: db =>
+      for
+        _ <- db.upsert(newPlayer1, newFederation.some)
+        // Use a different month/year to ensure we create a separate entry
+        // December 2023 = (2023 - 1970) * 12 + 11 = 647
+        manualEntry = NewRatingHistoryEntry(
+          playerId = PlayerId(1),
+          standard = Rating(2800).some,
+          rapid = Rating(2750).some,
+          blitz = Rating(2700).some,
+          month = 647 // December 2023: (2023-1970)*12 + (12-1) = 53*12 + 11 = 647
+        )
+        _       <- db.addRatingHistory(manualEntry)
+        history <- db.ratingHistoryForPlayer(PlayerId(1))
+      yield expect(
+        history.length == 2 && // One from upsert (current month), one manual (different month/year)
+          history.exists(_.standard.contains(Rating(2800)))
+      )
+
+  test("rating history month-based storage"):
+    resource.use: db =>
+      for
+        _ <- db.upsert(newPlayer1, newFederation.some)
+
+        // Add entries for different months (using epoch-based month index)
+        // January 2024 = (2024 - 1970) * 12 + 0 = 648
+        // February 2024 = (2024 - 1970) * 12 + 1 = 649
+        entry1 = NewRatingHistoryEntry(
+          playerId = PlayerId(1),
+          standard = Rating(2800).some,
+          rapid = Rating(2750).some,
+          blitz = Rating(2700).some,
+          month = 648 // January 2024
+        )
+        entry2 = NewRatingHistoryEntry(
+          playerId = PlayerId(1),
+          standard = Rating(2820).some,
+          rapid = Rating(2770).some,
+          blitz = Rating(2720).some,
+          month = 649 // February 2024
+        )
+        _ <- db.addRatingHistory(entry1)
+        _ <- db.addRatingHistory(entry2)
+
+        history <- db.ratingHistoryForPlayer(PlayerId(1))
+      yield expect.all(
+        history.length == 3,                 // Current month + 2 historical months
+        history.exists(h => h.month == 648), // January 2024
+        history.exists(h => h.month == 649), // February 2024
+        // Should be ordered by month desc (higher month index first)
+        history.head.month >= history.last.month
+      )

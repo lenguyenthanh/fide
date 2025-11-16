@@ -9,7 +9,7 @@ use smithy4s.meta#unwrap
 @simpleRestJson
 service PlayerService {
   version: "0.0.1"
-  operations: [GetPlayers, GetPlayerById, GetPlayerByIds],
+  operations: [GetPlayers, GetPlayerById, GetPlayerByIds, GetPlayerRatingHistory, GetPlayersRatingsByMonth],
 }
 
 @readonly
@@ -97,4 +97,115 @@ structure PlayerNotFound {
 structure TooManyIds {
   @required
   message: String
+}
+
+@readonly
+@http(method: "GET", uri: "/api/players/{id}/rating-history", code: 200)
+operation GetPlayerRatingHistory {
+  input := {
+    @httpLabel
+    @required
+    id: PlayerId
+
+    @httpQuery("limit")
+    @range(min: 1, max: 1000)
+    limit: Integer
+
+    @httpQuery("page")
+    @range(min: 1, max: 10000)
+    page: Integer
+  }
+
+  output := {
+    @required
+    playerId: PlayerId
+    @required
+    history: RatingHistoryEntries
+    @required
+    totalCount: Long
+    nextPage: Integer
+  }
+
+  errors: [PlayerNotFound, InternalServerError]
+}
+
+list RatingHistoryEntries {
+  member: RatingHistoryEntryOutput
+}
+
+structure RatingHistoryEntryOutput {
+  standard: Rating
+  standardK: Integer
+  rapid: Rating
+  rapidK: Integer
+  blitz: Rating
+  blitzK: Integer
+
+  year: Integer      // Derived from epoch-based month index
+  @required
+  month: Integer     // Epoch-based month index: (year - 1970) * 12 + (month - 1)
+  @required
+  recordedAt: Timestamp
+  @required
+  createdAt: Timestamp
+}
+
+@readonly
+@http(method: "GET", uri: "/api/players/ratings/{year}/{month}", code: 200)
+operation GetPlayersRatingsByMonth {
+  input :=
+    @scalaImports(["fide.spec.providers.given"])
+    with [SortingMixin, FilterMixin] {
+    @httpLabel
+    @required
+    // todo 1970 -> current year
+    year: Integer
+
+    @httpLabel
+    @required
+    @range(min: 1, max: 12)
+    month: Integer
+
+    @httpQuery("page")
+    page: PageNumber = "1"
+
+    @httpQuery("page_size")
+    @range(min: 1, max: 100)
+    pageSize: PageSize = 30
+
+    @httpQuery("federation_id")
+    federationId: FederationId
+  }
+
+  output := {
+    @required
+    year: Integer
+    @required
+    month: Integer
+    @required
+    ratings: PlayerMonthlyRatings
+    @required
+    totalResults: Long
+    nextPage: PageNumber
+  }
+
+  errors: [InternalServerError]
+}
+
+list PlayerMonthlyRatings {
+  member: PlayerMonthlyRating
+}
+
+structure PlayerMonthlyRating {
+  @required
+  playerId: PlayerId
+  @required
+  playerName: String
+
+  standard: Rating
+  standardK: Integer
+  rapid: Rating
+  rapidK: Integer
+  blitz: Rating
+  blitzK: Integer
 }
