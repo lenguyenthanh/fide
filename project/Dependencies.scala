@@ -37,20 +37,20 @@ object Dependencies {
   val smithy4sHttp4s        = smithy4s("http4s")
   val smithy4sHttp4sSwagger = smithy4s("http4s-swagger")
 
-  val skunk = "org.tpolecat" %% "skunk-core" % "1.0.0-M11"
-  val dumbo = "dev.rolang"   %% "dumbo"      % "0.6.0"
+  val skunk = "org.tpolecat" %% "skunk-core" % "1.0.0-M12"
+  val dumbo = "dev.rolang"   %% "dumbo"      % "0.6.1"
 
   val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.7.1"
-  val logback  = "ch.qos.logback" % "logback-classic" % "1.5.20"
+  val logback  = "ch.qos.logback" % "logback-classic" % "1.5.21"
 
-  val ducktape = "io.github.arainko" %% "ducktape" % "0.2.10"
+  val ducktape = "io.github.arainko" %% "ducktape" % "0.2.11"
 
   val gatlingTestFramework = "io.gatling"            % "gatling-test-framework"    % V.gatling % Test
   val gatlingHighCharts    = "io.gatling.highcharts" % "gatling-charts-highcharts" % V.gatling % Test
 
-  val testContainers    = "com.dimafeng"         %% "testcontainers-scala-postgresql" % "0.43.6"     % Test
-  val weaver            = "org.typelevel"        %% "weaver-cats"                     % "0.10.1"     % Test
-  val weaverScalaCheck  = "org.typelevel"        %% "weaver-scalacheck"               % "0.10.1"     % Test
+  val testContainers    = "com.dimafeng"         %% "testcontainers-scala-postgresql" % "0.44.0"     % Test
+  val weaver            = "org.typelevel"        %% "weaver-cats"                     % "0.11.2"     % Test
+  val weaverScalaCheck  = "org.typelevel"        %% "weaver-scalacheck"               % "0.11.2"     % Test
   val catsEffectTestKit = "org.typelevel"        %% "cats-effect-testkit"             % V.catsEffect % Test
   val scalacheck        = "org.scalacheck"       %% "scalacheck"                      % "1.17.0"     % Test
   val scalacheckFaker   = "io.github.etspaceman" %% "scalacheck-faker"                % "9.0.2"      % Test
