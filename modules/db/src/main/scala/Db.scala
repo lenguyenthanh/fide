@@ -30,7 +30,7 @@ object Db:
         for
           playerCmd     <- s.prepare(Sql.upsertPlayer)
           federationCmd <- s.prepare(Sql.upsertFederation)
-          _ <- s.transaction.use: _ =>
+          _             <- s.transaction.use: _ =>
             federation.traverse(federationCmd.execute) *>
               playerCmd.execute(player)
         yield ()
@@ -41,7 +41,7 @@ object Db:
         for
           playerCmd     <- s.prepare(Sql.upsertPlayers(xs.size))
           federationCmd <- s.prepare(Sql.upsertFederations(feds.size))
-          _ <- s.transaction.use: _ =>
+          _             <- s.transaction.use: _ =>
             federationCmd.execute(feds) *>
               playerCmd.execute(xs.map(_._1))
         yield ()
