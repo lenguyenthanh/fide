@@ -164,7 +164,7 @@ object DbSuite extends SimpleIOSuite:
     val player2 = newPlayer1.copy(otherTitles = List(OtherTitle.IA))
     resource.use: db =>
       for
-        _ <- db.upsert(player2, newFederation.some)
+        _       <- db.upsert(player2, newFederation.some)
         players <- db.allPlayers(
           defaultSorting,
           defaultPage,
