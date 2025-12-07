@@ -14,7 +14,7 @@ Check [Open API docs](https://fide.serginho.dev/docs/index.html) thanks [@Sergio
 
 ### Run
 
-Also requires JDK 21 with [sbt](https://www.scala-sbt.org/1.x/docs/Setup.html)
+Also requires JDK 25 with [sbt](https://www.scala-sbt.org/1.x/docs/Setup.html)
 
 ```bash
 cp .env.example .env

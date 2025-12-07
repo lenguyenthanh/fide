@@ -9,7 +9,7 @@ inThisBuild(
     licenses += ("agpl-v3" -> url("https://opensource.org/license/agpl-v3")),
     semanticdbEnabled                      := true, // for scalafix
     Compile / packageDoc / publishArtifact := false,
-    dockerBaseImage                        := "eclipse-temurin:21-jdk-noble",
+    dockerBaseImage                        := "eclipse-temurin:25-jdk-noble",
     dockerUpdateLatest                     := true,
     dockerBuildxPlatforms                  := Seq("linux/amd64", "linux/arm64")
   )
@@ -20,7 +20,7 @@ val commonSettings = Seq(
     ScalacOptions.other("-rewrite"),
     ScalacOptions.other("-indent"),
     ScalacOptions.explain,
-    ScalacOptions.release("21"),
+    ScalacOptions.release("25"),
     ScalacOptions.other("-Wsafe-init")
   ),
   libraryDependencies ++= Seq(
