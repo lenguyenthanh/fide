@@ -48,7 +48,7 @@ object Dependencies {
   val gatlingTestFramework = "io.gatling"            % "gatling-test-framework"    % V.gatling % Test
   val gatlingHighCharts    = "io.gatling.highcharts" % "gatling-charts-highcharts" % V.gatling % Test
 
-  val testContainers    = "com.dimafeng"         %% "testcontainers-scala-postgresql" % "0.44.0"     % Test
+  val testContainers    = "com.dimafeng"         %% "testcontainers-scala-postgresql" % "0.44.1"     % Test
   val weaver            = "org.typelevel"        %% "weaver-cats"                     % "0.11.2"     % Test
   val weaverScalaCheck  = "org.typelevel"        %% "weaver-scalacheck"               % "0.11.2"     % Test
   val catsEffectTestKit = "org.typelevel"        %% "cats-effect-testkit"             % V.catsEffect % Test
