@@ -5,10 +5,10 @@ object Dependencies {
 
   object V {
     val catsEffect = "3.6.3"
-    val ciris      = "3.11.1"
+    val ciris      = "3.12.0"
     val fs2        = "3.12.2"
     val http4s     = "0.23.33"
-    val iron       = "3.2.1"
+    val iron       = "3.2.2"
     val gatling    = "3.14.9"
   }
 
@@ -41,16 +41,16 @@ object Dependencies {
   val dumbo = "dev.rolang"   %% "dumbo"      % "0.6.1"
 
   val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.7.1"
-  val logback  = "ch.qos.logback" % "logback-classic" % "1.5.21"
+  val logback  = "ch.qos.logback" % "logback-classic" % "1.5.23"
 
   val ducktape = "io.github.arainko" %% "ducktape" % "0.2.11"
 
   val gatlingTestFramework = "io.gatling"            % "gatling-test-framework"    % V.gatling % Test
   val gatlingHighCharts    = "io.gatling.highcharts" % "gatling-charts-highcharts" % V.gatling % Test
 
-  val testContainers    = "com.dimafeng"         %% "testcontainers-scala-postgresql" % "0.44.0"     % Test
-  val weaver            = "org.typelevel"        %% "weaver-cats"                     % "0.11.2"     % Test
-  val weaverScalaCheck  = "org.typelevel"        %% "weaver-scalacheck"               % "0.11.2"     % Test
+  val testContainers    = "com.dimafeng"         %% "testcontainers-scala-postgresql" % "0.44.1"     % Test
+  val weaver            = "org.typelevel"        %% "weaver-cats"                     % "0.11.3"     % Test
+  val weaverScalaCheck  = "org.typelevel"        %% "weaver-scalacheck"               % "0.11.3"     % Test
   val catsEffectTestKit = "org.typelevel"        %% "cats-effect-testkit"             % V.catsEffect % Test
   val scalacheck        = "org.scalacheck"       %% "scalacheck"                      % "1.17.0"     % Test
   val scalacheckFaker   = "io.github.etspaceman" %% "scalacheck-faker"                % "9.0.2"      % Test
