@@ -4,6 +4,7 @@ package crawler
 import cats.effect.IO
 import cats.syntax.all.*
 import fide.db.{ Db, KVStore }
+import fide.domain.{ Federation, NewFederation }
 import org.http4s.client.Client
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
@@ -29,10 +30,15 @@ object Crawler:
 
       def fetchAndSave: IO[Unit] =
         info"Start crawling"
+          *> upsertAllFederations
           *> downloader.fetch
             .chunkN(config.chunkSize)
             .map(_.toList)
-            .parEvalMapUnordered(config.concurrentUpsert)(xs => db.upsert(xs))
+            .parEvalMapUnordered(config.concurrentUpsert)(db.upsert)
             .compile
             .drain
           *> info"Finished crawling"
+
+      def upsertAllFederations: IO[Unit] =
+        val feds = Federation.all.toList.map((id, name) => NewFederation(id, name))
+        db.upsertFederations(feds) *> info"Upserted ${feds.size} federations"

@@ -98,25 +98,33 @@ object DbSuite extends SimpleIOSuite:
   )
 
   val newPlayers = List(
-    (newInfo1, newHistory1, newFederation.some),
-    (newInfo2, newHistory2, none)
+    (newInfo1, newHistory1),
+    (newInfo2, newHistory2)
   )
+
+  // Helper to upsert federation before player data
+  extension (db: Db)
+    def upsertWithFed(info: NewPlayerInfo, history: NewPlayerHistory, fed: NewFederation): IO[Unit] =
+      db.upsertFederations(List(fed)) *> db.upsert(info, history)
+    def upsertWithFeds(xs: List[(NewPlayerInfo, NewPlayerHistory)], feds: List[NewFederation]): IO[Unit] =
+      db.upsertFederations(feds) *> db.upsert(xs)
 
   test("create player success"):
     resource
-      .use(_.upsert(newInfo1, newHistory1, newFederation.some).map(_ => expect(true)))
+      .use(_.upsertWithFed(newInfo1, newHistory1, newFederation).map(_ => expect(true)))
 
   test("create players success"):
     val info2    = newInfo1.copy(name = "Jane", id = PlayerId(2))
     val history2 = newHistory1.copy(playerId = PlayerId(2), federationId = none)
     resource
       .use:
-        _.upsert(List((newInfo1, newHistory1, newFederation.some), (info2, history2, none))).map(_ => expect(true))
+        _.upsertWithFeds(List((newInfo1, newHistory1), (info2, history2)), List(newFederation))
+          .map(_ => expect(true))
 
   test("create and query player success"):
     resource.use: db =>
       for
-        _      <- db.upsert(newPlayers)
+        _      <- db.upsertWithFeds(newPlayers, List(newFederation))
         result <- db.playerById(PlayerId(1))
         found = result.get
       yield expect(
@@ -127,7 +135,7 @@ object DbSuite extends SimpleIOSuite:
   test("create and query player without federation success"):
     resource.use: db =>
       for
-        _      <- db.upsert(newPlayers)
+        _      <- db.upsertWithFeds(newPlayers, List(newFederation))
         result <- db.playerById(PlayerId(2))
         found = result.get
       yield expect(found.toNewPlayerInfo == newInfo2 && found.toNewPlayerHistory == newHistory2 && found.federation.isEmpty)
@@ -139,8 +147,8 @@ object DbSuite extends SimpleIOSuite:
     val history2    = newHistory1.copy(federationId = fedId2.some)
     resource.use: db =>
       for
-        _      <- db.upsert(newInfo1, newHistory1, newFederation.some)
-        _      <- db.upsert(info2, history2, federation2.some)
+        _      <- db.upsertWithFed(newInfo1, newHistory1, newFederation)
+        _      <- db.upsertWithFed(info2, history2, federation2)
         result <- db.playerById(PlayerId(1))
         found = result.get
       yield expect(found.toNewPlayerInfo == info2 && found.toNewPlayerHistory == history2 &&
@@ -152,7 +160,7 @@ object DbSuite extends SimpleIOSuite:
   test("search playersByName success"):
     resource.use: db =>
       for
-        _       <- db.upsert(newPlayers)
+        _       <- db.upsertWithFeds(newPlayers, List(newFederation))
         players <- db.allPlayers(defaultSorting, defaultPage, PlayerFilter.default.copy(name = "jo".some))
       yield expect(
         players.length == 1 && players.head.toNewPlayerInfo == newInfo1 && players.head.federation.get
@@ -164,8 +172,8 @@ object DbSuite extends SimpleIOSuite:
     val history2 = newHistory1.copy(playerId = PlayerId(2))
     resource.use: db =>
       for
-        _       <- db.upsert(newInfo1, newHistory1, newFederation.some)
-        _       <- db.upsert(info2, history2, newFederation.some)
+        _       <- db.upsertWithFed(newInfo1, newHistory1, newFederation)
+        _       <- db.upsert(info2, history2)
         players <- db.allPlayers(defaultSorting, defaultPage, PlayerFilter.default)
       yield expect(players.length == 2 && players.head.name == "A")
 
@@ -174,15 +182,15 @@ object DbSuite extends SimpleIOSuite:
     val history2 = newHistory1.copy(playerId = PlayerId(2))
     resource.use: db =>
       for
-        _       <- db.upsert(newInfo1, newHistory1, newFederation.some)
-        _       <- db.upsert(info2, history2, newFederation.some)
+        _       <- db.upsertWithFed(newInfo1, newHistory1, newFederation)
+        _       <- db.upsert(info2, history2)
         players <- db.countPlayers(PlayerFilter.default)
       yield expect(players == 2)
 
   test("search playersByFederationId success"):
     resource.use: db =>
       for
-        _       <- db.upsert(newPlayers)
+        _       <- db.upsertWithFeds(newPlayers, List(newFederation))
         players <- db.playersByFederationId(fedId)
       yield expect(
         players.length == 1 && players.head.toNewPlayerInfo == newInfo1 && players.head.federation.get
@@ -192,7 +200,7 @@ object DbSuite extends SimpleIOSuite:
   test("playersByIds success"):
     resource.use: db =>
       for
-        _       <- db.upsert(newPlayers)
+        _       <- db.upsertWithFeds(newPlayers, List(newFederation))
         players <- db.playersByIds(Set(PlayerId(2), PlayerId(3)))
       yield expect(
         players.length == 1 && players.head.toNewPlayerInfo == newInfo2 && players.head.federation.isEmpty
@@ -202,7 +210,7 @@ object DbSuite extends SimpleIOSuite:
     val history2 = newHistory1.copy(otherTitles = List(OtherTitle.IA))
     resource.use: db =>
       for
-        _       <- db.upsert(newInfo1, history2, newFederation.some)
+        _       <- db.upsertWithFed(newInfo1, history2, newFederation)
         players <- db.allPlayers(
           defaultSorting,
           defaultPage,
@@ -213,7 +221,7 @@ object DbSuite extends SimpleIOSuite:
   test("query federation summary success"):
     resourceP.use: (db, kv) =>
       for
-        _      <- db.upsert(newInfo1, newHistory1, newFederation.some)
+        _      <- db.upsertWithFed(newInfo1, newHistory1, newFederation)
         _      <- kv.put("fide_last_update_key", "2021-01-01")
         result <- db.allFederationsSummary(defaultPage)
       yield expect(result.size == 1)
@@ -221,7 +229,7 @@ object DbSuite extends SimpleIOSuite:
   test("query federation summary byId success"):
     resourceP.use: (db, kv) =>
       for
-        _      <- db.upsert(newInfo1, newHistory1, newFederation.some)
+        _      <- db.upsertWithFed(newInfo1, newHistory1, newFederation)
         _      <- kv.put("fide_last_update_key", "2021-01-01")
         result <- db.federationSummaryById(fedId)
       yield expect(result.isDefined)

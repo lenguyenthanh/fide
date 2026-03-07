@@ -11,7 +11,7 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
 
 trait Downloader:
-  def fetch: fs2.Stream[IO, (NewPlayerInfo, NewPlayerHistory, Option[NewFederation])]
+  def fetch: fs2.Stream[IO, (NewPlayerInfo, NewPlayerHistory)]
 
 object Downloader:
   val downloadUrl = uri"http://ratings.fide.com/download/players_list.zip"
@@ -35,16 +35,15 @@ object Downloader:
         .drop(1) // first line is header
         .evalMapFilter(parseLine(_, month))
 
-  def parseLine(line: String, month: Short): Logger[IO] ?=> IO[Option[(NewPlayerInfo, NewPlayerHistory, Option[NewFederation])]] =
+  def parseLine(line: String, month: Short): Logger[IO] ?=> IO[Option[(NewPlayerInfo, NewPlayerHistory)]] =
 
-    inline def parse(line: String): IO[Option[(NewPlayerInfo, NewPlayerHistory, Option[NewFederation])]] =
+    inline def parse(line: String): IO[Option[(NewPlayerInfo, NewPlayerHistory)]] =
       parsePlayer(line, month).traverse: (info, history) =>
-        history.federationId.traverse(findFederation(_, info.id)).map((info, history, _))
+        history.federationId.traverse_(warnUnknownFederation(_, info.id)).as((info, history))
 
-    def findFederation(id: FederationId, playerId: PlayerId): IO[NewFederation] =
-      Federation.all.get(id) match
-        case None       => warn"Unknown federation: $id for player: $playerId".as(NewFederation(id, id.value))
-        case Some(name) => NewFederation(id, name).pure
+    def warnUnknownFederation(id: FederationId, playerId: PlayerId): IO[Unit] =
+      if Federation.all.contains(id) then IO.unit
+      else warn"Unknown federation: $id for player: $playerId"
 
     IO(line.trim.nonEmpty)
       .ifM(parse(line), none.pure[IO])

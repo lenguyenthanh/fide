@@ -82,6 +82,33 @@ Documents deviations, decisions, and notes as the plan is implemented.
 - `Crawler.fetchAndSave`: Changed `db.upsert` call to pass triple. Used explicit `xs => db.upsert(xs)` lambda for clarity (was point-free `db.upsert`).
 - **No other deviations from plan**.
 
+## Deadlock Fix (Post Phase 4)
+
+**Problem**: Running the crawler caused `ERROR 40P01 DeadlockDetected` on `INSERT INTO federations ... ON CONFLICT DO NOTHING`. With 40 concurrent transactions each inserting overlapping federation sets while also holding locks on `player_info` and `player_history`, PostgreSQL detected deadlocks.
+
+**Root cause**: The old code also inserted federations inside each chunk's transaction, but with only 1 table (`players`) the transactions were short. With 3 tables, transactions hold locks longer, making deadlocks far more likely across concurrent chunks that share federation IDs.
+
+**Fix**: Separated federation upserts completely from player upserts.
+
+### Db trait
+- Removed federation from `upsert` signatures entirely.
+- Added `upsertFederations(xs: List[NewFederation]): IO[Unit]` as a standalone operation.
+- `upsert(info, history)` and `upsert(xs: List[(NewPlayerInfo, NewPlayerHistory)])` no longer touch `federations` table.
+- Removed unused `Sql.upsertFederation` (singular).
+
+### Crawler
+- `fetchAndSave` now calls `upsertAllFederations` once before streaming player chunks.
+- Uses `Federation.all` (the hardcoded map) to build the full federation list upfront.
+- Added import for `Federation` and `NewFederation` in `Crawler.scala`.
+
+### Downloader
+- Stream type simplified: `fs2.Stream[IO, (NewPlayerInfo, NewPlayerHistory)]` (was triple with `Option[NewFederation]`).
+- Federation lookup replaced with `warnUnknownFederation` — only logs, no longer produces `NewFederation` objects.
+
+### Why this works
+- Federations are a small, static set (~200 entries). Upserting them all once is fast and contention-free.
+- Player chunk transactions now only touch `player_info` and `player_history`, which have non-overlapping PKs across chunks, so no deadlocks.
+
 ## Phase 5: Tests
 
 ### DbSuite.scala
@@ -91,20 +118,21 @@ Documents deviations, decisions, and notes as the plan is implemented.
 - Added `testMonth: Short = Month.current` for constructing test history records.
 - Replaced `transform` extension (used ducktape to convert `PlayerInfo -> NewPlayer`) with `toNewPlayerInfo` and `toNewPlayerHistory` extensions (manual construction, no ducktape needed for these).
 - `ducktape` import kept - still used for `FederationInfo.to[NewFederation]`.
-- Test data: `newPlayers` changed from `List[(NewPlayer, Option[NewFederation])]` to `List[(NewPlayerInfo, NewPlayerHistory, Option[NewFederation])]`.
+- Test data: `newPlayers` changed from `List[(NewPlayer, Option[NewFederation])]` to `List[(NewPlayerInfo, NewPlayerHistory)]`.
+- Added `upsertWithFed` / `upsertWithFeds` test helper extensions on `Db` to upsert federations before players.
 - All test assertions updated to use `toNewPlayerInfo`/`toNewPlayerHistory` instead of `transform`.
 
 ### ParserTest.scala
 **File**: `modules/crawler/src/test/scala/ParserTest.scala`
 
-- `parse` helper replaced with `parseHistory` that extracts `NewPlayerHistory` from the triple.
+- `parse` helper replaced with `parseHistory` that extracts `NewPlayerHistory` from the pair.
 - Tests access `.otherTitles`, `.active`, `.standard` on `NewPlayerHistory` (same field names, was on `NewPlayer`).
 - Added `testMonth` and `Month` import.
 
 ### DownloaderTest.scala
 **File**: `modules/crawler/src/test/scala/DownloaderTest.scala`
 
-- Fixed tuple access: `x._2.map(_.id)` -> `x._3.map(_.id)` (federation is now third element of triple).
+- Stream now emits `(NewPlayerInfo, NewPlayerHistory)`. Test extracts `_._2.federationId` to check for unknown federations.
 
 ### Test execution
 - All modules compile cleanly (main + test).

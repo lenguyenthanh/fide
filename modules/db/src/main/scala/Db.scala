@@ -9,8 +9,9 @@ import fide.types.*
 import skunk.*
 
 trait Db:
-  def upsert(info: NewPlayerInfo, history: NewPlayerHistory, federation: Option[NewFederation]): IO[Unit]
-  def upsert(xs: List[(NewPlayerInfo, NewPlayerHistory, Option[NewFederation])]): IO[Unit]
+  def upsertFederations(xs: List[NewFederation]): IO[Unit]
+  def upsert(info: NewPlayerInfo, history: NewPlayerHistory): IO[Unit]
+  def upsert(xs: List[(NewPlayerInfo, NewPlayerHistory)]): IO[Unit]
   def playerById(id: PlayerId): IO[Option[PlayerInfo]]
   def countPlayers(filter: PlayerFilter): IO[Long]
   def allPlayers(sorting: Sorting, paging: Pagination, filter: PlayerFilter): IO[List[PlayerInfo]]
@@ -25,28 +26,29 @@ trait Db:
 object Db:
 
   def apply(postgres: Resource[IO, Session[IO]]): Db = new:
-    def upsert(info: NewPlayerInfo, history: NewPlayerHistory, federation: Option[NewFederation]): IO[Unit] =
+    def upsertFederations(xs: List[NewFederation]): IO[Unit] =
+      if xs.isEmpty then IO.unit
+      else
+        postgres.use: s =>
+          s.prepare(Sql.upsertFederations(xs.size)).flatMap(_.execute(xs)).void
+
+    def upsert(info: NewPlayerInfo, history: NewPlayerHistory): IO[Unit] =
       postgres.use: s =>
         for
-          federationCmd <- s.prepare(Sql.upsertFederation)
-          infoCmd       <- s.prepare(Sql.upsertPlayerInfo)
-          historyCmd    <- s.prepare(Sql.upsertPlayerHistory)
-          _             <- s.transaction.use: _ =>
-            federation.traverse(federationCmd.execute) *>
-              infoCmd.execute(info) *>
+          infoCmd    <- s.prepare(Sql.upsertPlayerInfo)
+          historyCmd <- s.prepare(Sql.upsertPlayerHistory)
+          _          <- s.transaction.use: _ =>
+            infoCmd.execute(info) *>
               historyCmd.execute(history)
         yield ()
 
-    def upsert(xs: List[(NewPlayerInfo, NewPlayerHistory, Option[NewFederation])]): IO[Unit] =
-      val feds = xs.mapFilter(_._3).distinct
+    def upsert(xs: List[(NewPlayerInfo, NewPlayerHistory)]): IO[Unit] =
       postgres.use: s =>
         for
-          federationCmd <- s.prepare(Sql.upsertFederations(feds.size))
-          infoCmd       <- s.prepare(Sql.upsertPlayerInfos(xs.size))
-          historyCmd    <- s.prepare(Sql.upsertPlayerHistories(xs.size))
-          _             <- s.transaction.use: _ =>
-            federationCmd.execute(feds) *>
-              infoCmd.execute(xs.map(_._1)) *>
+          infoCmd    <- s.prepare(Sql.upsertPlayerInfos(xs.size))
+          historyCmd <- s.prepare(Sql.upsertPlayerHistories(xs.size))
+          _          <- s.transaction.use: _ =>
+            infoCmd.execute(xs.map(_._1)) *>
               historyCmd.execute(xs.map(_._2))
         yield ()
 
@@ -181,9 +183,6 @@ private object Sql:
        """.command
 
   // -- Upsert: federations --
-
-  lazy val upsertFederation: Command[NewFederation] =
-    sql"$insertIntoFederation VALUES ($newFederation) $onConflictDoNothing".command
 
   def upsertFederations(n: Int): Command[List[NewFederation]] =
     val feds = newFederation.values.list(n)
