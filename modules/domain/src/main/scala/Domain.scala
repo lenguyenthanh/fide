@@ -71,23 +71,33 @@ case class PlayerInfo(
     federation: Option[FederationInfo] = None
 )
 
-case class NewPlayer(
+case class NewPlayerInfo(
     id: PlayerId,
     name: String,
+    gender: Option[Gender] = None,
+    birthYear: Option[Int] = None
+)
+
+case class NewPlayerHistory(
+    playerId: PlayerId,
+    month: Short,
     title: Option[Title] = None,
     womenTitle: Option[Title] = None,
     otherTitles: List[OtherTitle] = Nil,
+    federationId: Option[FederationId] = None,
+    active: Boolean,
     standard: Option[Rating] = None,
     standardK: Option[Int] = None,
     rapid: Option[Rating] = None,
     rapidK: Option[Int] = None,
     blitz: Option[Rating] = None,
-    blitzK: Option[Int] = None,
-    gender: Option[Gender] = None,
-    birthYear: Option[Int] = None,
-    active: Boolean,
-    federationId: Option[FederationId] = None
+    blitzK: Option[Int] = None
 )
+
+object Month:
+  def current: Short =
+    val now = java.time.YearMonth.now()
+    ((now.getYear - 1970) * 12 + (now.getMonthValue - 1)).toShort
 
 case class NewFederation(
     id: FederationId,

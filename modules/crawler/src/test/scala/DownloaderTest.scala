@@ -19,7 +19,7 @@ object DownloaderTest extends SimpleIOSuite:
       .build
       .use: client =>
         Downloader(client).fetch
-          .mapFilter(x => x._2.map(_.id))
+          .mapFilter(x => x._3.map(_.id))
           .compile
           .to(Set)
           .map(Federation.all.keySet.diff)

@@ -4,7 +4,7 @@ package test
 
 import cats.effect.IO
 import cats.syntax.all.*
-import fide.domain.OtherTitle
+import fide.domain.{ Month, NewPlayerHistory, OtherTitle }
 import org.typelevel.log4cats.Logger
 import weaver.*
 
@@ -12,8 +12,10 @@ object ParserTest extends SimpleIOSuite:
 
   given Logger[IO] = org.typelevel.log4cats.noop.NoOpLogger[IO]
 
+  val testMonth: Short = Month.current
+
   test("player with other titles"):
-    parse(
+    parseHistory(
       "10001492       Ojok, Patrick                                                UGA M             FI,LSI             1638  0   20 1932  0   20 1926  0   20 1974      "
     ).map(_.get.otherTitles)
       .map(expect.same(_, List(OtherTitle.FI, OtherTitle.LSI)))
@@ -27,7 +29,7 @@ object ParserTest extends SimpleIOSuite:
       "1478800        Aagaard, Christian                                           DEN M                                                                       1999      "
     )
     lines
-      .traverseFilter(parse)
+      .traverseFilter(parseHistory)
       .map(_.map(_.active))
       .map(expect.same(_, List(false, false, true, true)))
 
@@ -38,7 +40,7 @@ object ParserTest extends SimpleIOSuite:
       "10001492       Ojok, Patrick                                                UGA M             FI,LSI             2700  0   20 1932  0   20 1926  0   20 1974      "
     )
     lines
-      .traverseFilter(parse)
+      .traverseFilter(parseHistory)
       .map(_.mapFilter(_.standard))
       .map(expect.same(_, List(2700)))
 
@@ -50,4 +52,6 @@ object ParserTest extends SimpleIOSuite:
       expect.same(Downloader.sanitizeName("Amar,, Kahtan"), "Amar Kahtan".some) &&
       expect.same(Downloader.sanitizeName("-,-"), none)
 
-  private def parse(s: String) = Downloader.parseLine(s).map(_.map(_._1))
+  // Parse a line and extract just the history (snapshot) part
+  private def parseHistory(s: String): IO[Option[NewPlayerHistory]] =
+    Downloader.parseLine(s, testMonth).map(_.map(_._2))

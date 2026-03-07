@@ -11,7 +11,7 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
 
 trait Downloader:
-  def fetch: fs2.Stream[IO, (NewPlayer, Option[NewFederation])]
+  def fetch: fs2.Stream[IO, (NewPlayerInfo, NewPlayerHistory, Option[NewFederation])]
 
 object Downloader:
   val downloadUrl = uri"http://ratings.fide.com/download/players_list.zip"
@@ -25,6 +25,7 @@ object Downloader:
   def apply(client: Client[IO])(using Logger[IO]): Downloader = new:
 
     def fetch =
+      val month = Month.current
       client
         .stream(request)
         .switchMap(_.body)
@@ -32,13 +33,13 @@ object Downloader:
         .through(fs2.text.utf8.decode)
         .through(fs2.text.lines)
         .drop(1) // first line is header
-        .evalMapFilter(parseLine)
+        .evalMapFilter(parseLine(_, month))
 
-  def parseLine(line: String): Logger[IO] ?=> IO[Option[(NewPlayer, Option[NewFederation])]] =
+  def parseLine(line: String, month: Short): Logger[IO] ?=> IO[Option[(NewPlayerInfo, NewPlayerHistory, Option[NewFederation])]] =
 
-    inline def parse(line: String): IO[Option[(NewPlayer, Option[NewFederation])]] =
-      parsePlayer(line).traverse: player =>
-        player.federationId.traverse(findFederation(_, player.id)).map(player -> _)
+    inline def parse(line: String): IO[Option[(NewPlayerInfo, NewPlayerHistory, Option[NewFederation])]] =
+      parsePlayer(line, month).traverse: (info, history) =>
+        history.federationId.traverse(findFederation(_, info.id)).map((info, history, _))
 
     def findFederation(id: FederationId, playerId: PlayerId): IO[NewFederation] =
       Federation.all.get(id) match
@@ -50,7 +51,7 @@ object Downloader:
       .handleErrorWith(e => Logger[IO].error(e)(s"Error while parsing line: $line").as(none))
 
   // shamelessly copied (with some minor modificaton) from: https://github.com/lichess-org/lila/blob/8033c4c5a15cf9bb2b36377c3480f3b64074a30f/modules/fide/src/main/FidePlayerSync.scala#L131
-  def parsePlayer(line: String): Option[NewPlayer] =
+  def parsePlayer(line: String, month: Short): Option[(NewPlayerInfo, NewPlayerHistory)] =
     inline def string(start: Int, end: Int): Option[String] =
       line.substring(start, end).trim.some.filter(_.nonEmpty)
     inline def number(start: Int, end: Int): Option[Int]    = string(start, end).flatMap(_.toIntOption)
@@ -62,23 +63,28 @@ object Downloader:
       string(76, 79).map(_.toUpperCase).filter(_ != "NON") >>= FederationId.option
 
     (playerId(), playerName()).mapN: (id, name) =>
-      NewPlayer(
+      val info = NewPlayerInfo(
         id = id,
         name = name,
+        gender = string(79, 82) >>= Gender.apply,
+        birthYear = number(152, 156).filter(y => y > 1000 && y < currentYear)
+      )
+      val history = NewPlayerHistory(
+        playerId = id,
+        month = month,
         title = string(84, 89) >>= Title.apply,
         womenTitle = string(89, 94) >>= Title.apply,
         otherTitles = string(94, 109).fold(Nil)(OtherTitle.applyToList),
+        federationId = federationId(),
+        active = string(158, 160).filter(_.contains("i")).isEmpty,
         standard = rating(113, 117),
         standardK = kFactor(123),
         rapid = rating(126, 132),
         rapidK = kFactor(136),
         blitz = rating(139, 145),
-        blitzK = kFactor(149),
-        gender = string(79, 82) >>= Gender.apply,
-        birthYear = number(152, 156).filter(y => y > 1000 && y < currentYear),
-        active = string(158, 160).filter(_.contains("i")).isEmpty,
-        federationId = federationId()
+        blitzK = kFactor(149)
       )
+      (info, history)
 
   def sanitizeName(name: String): Option[String] =
     name

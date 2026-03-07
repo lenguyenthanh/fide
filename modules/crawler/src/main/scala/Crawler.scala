@@ -32,7 +32,7 @@ object Crawler:
           *> downloader.fetch
             .chunkN(config.chunkSize)
             .map(_.toList)
-            .parEvalMapUnordered(config.concurrentUpsert)(db.upsert)
+            .parEvalMapUnordered(config.concurrentUpsert)(xs => db.upsert(xs))
             .compile
             .drain
           *> info"Finished crawling"
