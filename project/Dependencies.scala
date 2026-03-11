@@ -40,7 +40,7 @@ object Dependencies {
   val skunk = "org.tpolecat" %% "skunk-core" % "1.0.0-M12"
   val dumbo = "dev.rolang"   %% "dumbo"      % "0.6.1"
 
-  val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.7.1"
+  val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.8.0"
   val logback  = "ch.qos.logback" % "logback-classic" % "1.5.23"
 
   val ducktape = "io.github.arainko" %% "ducktape" % "0.2.11"
