@@ -169,59 +169,21 @@ object HistoryDb:
         """.apply(month)
 
     def historicalFederationSummaryById(id: FederationId, month: YearMonth): AppliedFragment =
-      sql"""
-        WITH active_players AS (
-          SELECT ph.federation_id, ph.standard, ph.rapid, ph.blitz,
-            row_number() OVER (PARTITION BY ph.federation_id ORDER BY ph.standard DESC NULLS LAST) as std_rn,
-            row_number() OVER (PARTITION BY ph.federation_id ORDER BY ph.rapid DESC NULLS LAST) as rapid_rn,
-            row_number() OVER (PARTITION BY ph.federation_id ORDER BY ph.blitz DESC NULLS LAST) as blitz_rn
-          FROM player_history AS ph
-          WHERE ph.year_month = $yearMonthCodec AND ph.active = true AND ph.federation_id = $federationIdCodec
-        ),
-        ranked_feds AS (
-          SELECT
-            ap.federation_id,
-            count(*) as players,
-            round(avg(ap.standard) FILTER (WHERE ap.std_rn <= 10))::int as avg_top_standard,
-            count(ap.standard) as standard_players,
-            round(avg(ap.rapid) FILTER (WHERE ap.rapid_rn <= 10))::int as avg_top_rapid,
-            count(ap.rapid) as rapid_players,
-            round(avg(ap.blitz) FILTER (WHERE ap.blitz_rn <= 10))::int as avg_top_blitz,
-            count(ap.blitz) as blitz_players
-          FROM active_players ap
-          GROUP BY ap.federation_id
-        )
+      val fedFilter = sql"ph.federation_id = $federationIdCodec".apply(id)
+      activePlayersAndRankedFedsCte(month, fedFilter) |+|
+        sql"""
         SELECT f.id, f.name, rf.players::int,
           1::int, rf.standard_players::int, coalesce(rf.avg_top_standard, 0)::int,
           1::int, rf.rapid_players::int, coalesce(rf.avg_top_rapid, 0)::int,
           1::int, rf.blitz_players::int, coalesce(rf.avg_top_blitz, 0)::int
         FROM ranked_feds rf
         JOIN federations f ON rf.federation_id = f.id
-        """.apply(month, id)
+        """.apply(Void)
 
     private def federationsSummaryBase(month: YearMonth): AppliedFragment =
-      sql"""
-        WITH active_players AS (
-          SELECT ph.federation_id, ph.standard, ph.rapid, ph.blitz,
-            row_number() OVER (PARTITION BY ph.federation_id ORDER BY ph.standard DESC NULLS LAST) as std_rn,
-            row_number() OVER (PARTITION BY ph.federation_id ORDER BY ph.rapid DESC NULLS LAST) as rapid_rn,
-            row_number() OVER (PARTITION BY ph.federation_id ORDER BY ph.blitz DESC NULLS LAST) as blitz_rn
-          FROM player_history AS ph
-          WHERE ph.year_month = $yearMonthCodec AND ph.active = true AND ph.federation_id IS NOT NULL
-        ),
-        ranked_feds AS (
-          SELECT
-            ap.federation_id,
-            count(*) as players,
-            round(avg(ap.standard) FILTER (WHERE ap.std_rn <= 10))::int as avg_top_standard,
-            count(ap.standard) as standard_players,
-            round(avg(ap.rapid) FILTER (WHERE ap.rapid_rn <= 10))::int as avg_top_rapid,
-            count(ap.rapid) as rapid_players,
-            round(avg(ap.blitz) FILTER (WHERE ap.blitz_rn <= 10))::int as avg_top_blitz,
-            count(ap.blitz) as blitz_players
-          FROM active_players ap
-          GROUP BY ap.federation_id
-        ),
+      val fedFilter = sql"ph.federation_id IS NOT NULL".apply(Void)
+      activePlayersAndRankedFedsCte(month, fedFilter) |+|
+        sql""",
         summary AS (
           SELECT rf.*,
             rank() OVER (ORDER BY rf.avg_top_standard DESC NULLS LAST) as std_rank,
@@ -236,7 +198,32 @@ object HistoryDb:
         FROM summary s
         JOIN federations f ON s.federation_id = f.id
         ORDER BY s.avg_top_standard DESC NULLS LAST
-        """.apply(month)
+        """.apply(Void)
+
+    private def activePlayersAndRankedFedsCte(month: YearMonth, fedFilter: AppliedFragment): AppliedFragment =
+      sql"""
+        WITH active_players AS (
+          SELECT ph.federation_id, ph.standard, ph.rapid, ph.blitz,
+            row_number() OVER (PARTITION BY ph.federation_id ORDER BY ph.standard DESC NULLS LAST) as std_rn,
+            row_number() OVER (PARTITION BY ph.federation_id ORDER BY ph.rapid DESC NULLS LAST) as rapid_rn,
+            row_number() OVER (PARTITION BY ph.federation_id ORDER BY ph.blitz DESC NULLS LAST) as blitz_rn
+          FROM player_history AS ph
+          WHERE ph.year_month = $yearMonthCodec AND ph.active = true AND """.apply(month) |+| fedFilter |+|
+        sql"""
+        ),
+        ranked_feds AS (
+          SELECT
+            ap.federation_id,
+            count(*) as players,
+            round(avg(ap.standard) FILTER (WHERE ap.std_rn <= 10))::int as avg_top_standard,
+            count(ap.standard) as standard_players,
+            round(avg(ap.rapid) FILTER (WHERE ap.rapid_rn <= 10))::int as avg_top_rapid,
+            count(ap.rapid) as rapid_players,
+            round(avg(ap.blitz) FILTER (WHERE ap.blitz_rn <= 10))::int as avg_top_blitz,
+            count(ap.blitz) as blitz_players
+          FROM active_players ap
+          GROUP BY ap.federation_id
+        )""".apply(Void)
 
     lazy val allPlayerInfoHashes: Query[Void, (PlayerId, Long)] =
       sql"SELECT id, hash FROM player_info".query(playerIdCodec *: int8)
