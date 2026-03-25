@@ -67,4 +67,3 @@ object PostgresConfig:
 
   def config =
     (host, port, user, password, database, max, schema, debug, ssl).parMapN(db.PostgresConfig.apply)
-

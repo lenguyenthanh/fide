@@ -102,4 +102,3 @@ object IngestorSuite extends SimpleIOSuite:
         _ <- ingestor.ingest
         months <- historyDb.availableMonths
       yield expect(months.isEmpty)
-

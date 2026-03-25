@@ -62,4 +62,3 @@ object PlayerEventDb:
         val cmd     = sql"UPDATE player_events SET ingested = TRUE WHERE id IN ($idCodec)".command
         postgres.use(_.execute(cmd)(chunk)).void
       }
-

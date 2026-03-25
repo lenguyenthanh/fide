@@ -88,15 +88,26 @@ object Crawler:
         // Upsert federations (still needed, idempotent)
         val feds = chunk.mapFilter(_._2).distinctBy(_.id)
 
-        case class ChunkResult(events: List[NewPlayerEvent], newCount: Long, changedCount: Long, unchangedCount: Long)
+        case class ChunkResult(
+            events: List[NewPlayerEvent],
+            newCount: Long,
+            changedCount: Long,
+            unchangedCount: Long
+        )
         val result = players.foldLeft(ChunkResult(Nil, 0L, 0L, 0L)):
           case (acc, player) =>
             val hash = NewPlayer.computeHash(player)
             hashMap.get(player.id) match
               case None =>
-                acc.copy(events = toEvent(player, hash, now, timestamp) :: acc.events, newCount = acc.newCount + 1)
+                acc.copy(
+                  events = toEvent(player, hash, now, timestamp) :: acc.events,
+                  newCount = acc.newCount + 1
+                )
               case Some(existingHash) if existingHash != hash =>
-                acc.copy(events = toEvent(player, hash, now, timestamp) :: acc.events, changedCount = acc.changedCount + 1)
+                acc.copy(
+                  events = toEvent(player, hash, now, timestamp) :: acc.events,
+                  changedCount = acc.changedCount + 1
+                )
               case _ =>
                 acc.copy(unchangedCount = acc.unchangedCount + 1)
         val events         = result.events
