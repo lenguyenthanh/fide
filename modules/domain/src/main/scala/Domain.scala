@@ -89,6 +89,93 @@ case class NewPlayer(
     federationId: Option[FederationId] = None
 )
 
+case class NewPlayerEvent(
+    playerId: PlayerId,
+    name: String,
+    title: Option[Title] = None,
+    womenTitle: Option[Title] = None,
+    otherTitles: List[OtherTitle] = Nil,
+    standard: Option[Rating] = None,
+    standardK: Option[Int] = None,
+    rapid: Option[Rating] = None,
+    rapidK: Option[Int] = None,
+    blitz: Option[Rating] = None,
+    blitzK: Option[Int] = None,
+    gender: Option[Gender] = None,
+    birthYear: Option[Int] = None,
+    active: Boolean,
+    federationId: Option[FederationId] = None,
+    rawData: String,
+    crawledAt: OffsetDateTime,
+    sourceLastModified: Option[String] = None
+)
+
+case class PlayerEvent(
+    id: Long,
+    playerId: PlayerId,
+    name: String,
+    title: Option[Title] = None,
+    womenTitle: Option[Title] = None,
+    otherTitles: List[OtherTitle] = Nil,
+    standard: Option[Rating] = None,
+    standardK: Option[Int] = None,
+    rapid: Option[Rating] = None,
+    rapidK: Option[Int] = None,
+    blitz: Option[Rating] = None,
+    blitzK: Option[Int] = None,
+    gender: Option[Gender] = None,
+    birthYear: Option[Int] = None,
+    active: Boolean,
+    federationId: Option[FederationId] = None,
+    rawData: String,
+    crawledAt: OffsetDateTime,
+    sourceLastModified: Option[String] = None,
+    ingested: Boolean = false,
+    createdAt: OffsetDateTime
+)
+
+case class PlayerInfoRow(
+    id: PlayerId,
+    name: String,
+    gender: Option[Gender] = None,
+    birthYear: Option[Int] = None
+)
+
+case class PlayerHistoryRow(
+    playerId: PlayerId,
+    yearMonth: YearMonth,
+    title: Option[Title] = None,
+    womenTitle: Option[Title] = None,
+    otherTitles: List[OtherTitle] = Nil,
+    standard: Option[Rating] = None,
+    standardK: Option[Int] = None,
+    rapid: Option[Rating] = None,
+    rapidK: Option[Int] = None,
+    blitz: Option[Rating] = None,
+    blitzK: Option[Int] = None,
+    federationId: Option[FederationId] = None,
+    active: Boolean
+)
+
+case class HistoricalPlayerInfo(
+    id: PlayerId,
+    name: String,
+    yearMonth: YearMonth,
+    title: Option[Title] = None,
+    womenTitle: Option[Title] = None,
+    otherTitles: List[OtherTitle] = Nil,
+    standard: Option[Rating] = None,
+    standardK: Option[Int] = None,
+    rapid: Option[Rating] = None,
+    rapidK: Option[Int] = None,
+    blitz: Option[Rating] = None,
+    blitzK: Option[Int] = None,
+    gender: Option[Gender] = None,
+    birthYear: Option[Int] = None,
+    active: Boolean,
+    federation: Option[FederationInfo] = None
+)
+
 case class NewFederation(
     id: FederationId,
     name: String

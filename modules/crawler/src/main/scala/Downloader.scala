@@ -11,7 +11,7 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
 
 trait Downloader:
-  def fetch: fs2.Stream[IO, (NewPlayer, Option[NewFederation])]
+  def fetch: fs2.Stream[IO, (NewPlayer, Option[NewFederation], String)]
 
 object Downloader:
   val downloadUrl = uri"http://ratings.fide.com/download/players_list.zip"
@@ -32,7 +32,8 @@ object Downloader:
         .through(fs2.text.utf8.decode)
         .through(fs2.text.lines)
         .drop(1) // first line is header
-        .evalMapFilter(parseLine)
+        .evalMapFilter: line =>
+          parseLine(line).map(_.map((player, fed) => (player, fed, line)))
 
   def parseLine(line: String): Logger[IO] ?=> IO[Option[(NewPlayer, Option[NewFederation])]] =
 

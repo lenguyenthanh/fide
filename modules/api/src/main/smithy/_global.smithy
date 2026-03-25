@@ -84,6 +84,13 @@ structure PageSizeFormat { }
 )
 structure BirthYearFormat { }
 
+@trait(selector: "string")
+@refinement(
+   targetType: "fide.types.YearMonth"
+   providerImport: "fide.spec.providers.given"
+)
+structure YearMonthFormat {}
+
 @trait(selector: "list")
 @refinement(
   targetType: "fide.types.NonEmptySet",

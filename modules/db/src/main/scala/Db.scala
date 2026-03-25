@@ -51,7 +51,7 @@ object Db:
 
     def allPlayers(sorting: Sorting, paging: Pagination, filter: PlayerFilter): IO[List[PlayerInfo]] =
       val f = Sql.allPlayers(sorting, paging, filter)
-      val q = f.fragment.query(Codecs.playerInfo)
+      val q = f.fragment.query(DbCodecs.playerInfo)
       postgres.use(_.execute(q)(f.argument))
 
     def countPlayers(filter: PlayerFilter): IO[Long] =
@@ -64,7 +64,7 @@ object Db:
 
     def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]] =
       val f = Sql.playersByIds(ids.size)
-      val q = f.query(Codecs.playerInfo)
+      val q = f.query(DbCodecs.playerInfo)
       postgres.use(_.execute(q)(ids.toList))
 
     def playersByFederationId(id: FederationId): IO[List[PlayerInfo]] =
@@ -72,7 +72,7 @@ object Db:
 
     def allFederationsSummary(paging: Pagination): IO[List[FederationSummary]] =
       val f = Sql.allFederationsSummary(paging)
-      val q = f.fragment.query(Codecs.federationSummary)
+      val q = f.fragment.query(DbCodecs.federationSummary)
       postgres.use(_.execute(q)(f.argument))
 
     def countFederationsSummary: IO[Long] =
@@ -84,55 +84,11 @@ object Db:
     def federationSummaryById(id: FederationId): IO[Option[FederationSummary]] =
       postgres.use(_.option(Sql.federationSummaryById)(id))
 
-private object Codecs:
-
-  import skunk.codec.all.*
-  import skunk.data.{ Arr, Type }
-
-  import io.github.iltotore.iron.constraint.all.*
-  import fide.db.iron.*
-
-  val title: Codec[Title]           = `enum`[Title](_.value, Title.apply, Type("title"))
-  val otherTitle: Codec[OtherTitle] = `enum`[OtherTitle](_.value, OtherTitle.apply, Type("other_title"))
-  val gender: Codec[Gender]         = `enum`[Gender](_.value, Gender.apply, Type("sex"))
-  val ratingCodec: Codec[Rating]    = int4.refined[RatingConstraint].imap(Rating.apply)(_.value)
-  val federationIdCodec: Codec[FederationId] = text.refined[NonEmpty].imap(FederationId.apply)(_.value)
-  val playerIdCodec: Codec[PlayerId]         = int4.refined[Positive].imap(PlayerId.apply)(_.value)
-
-  val otherTitleArr: Codec[Arr[OtherTitle]] =
-    Codec.array(
-      _.value,
-      OtherTitle(_).toRight("invalid title"),
-      Type("_other_title", List(Type("other_title")))
-    )
-
-  val otherTitles: Codec[List[OtherTitle]] = otherTitleArr.opt.imap(_.fold(Nil)(_.toList))(Arr(_*).some)
-
-  val newPlayer: Codec[NewPlayer] =
-    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: federationIdCodec.opt)
-      .to[NewPlayer]
-
-  val newFederation: Codec[NewFederation] =
-    (federationIdCodec *: text).to[NewFederation]
-
-  val federationInfo: Codec[FederationInfo] =
-    (federationIdCodec *: text).to[FederationInfo]
-
-  val stats: Codec[Stats] =
-    (int4 *: int4 *: int4).to[Stats]
-
-  val federationSummary: Codec[FederationSummary] =
-    (federationIdCodec *: text *: int4 *: stats *: stats *: stats).to[FederationSummary]
-
-  val playerInfo: Codec[PlayerInfo] =
-    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
-      .to[PlayerInfo]
-
 private object Sql:
 
   import skunk.codec.all.*
   import skunk.implicits.*
-  import Codecs.*
+  import DbCodecs.*
 
   val upsertPlayer: Command[NewPlayer] =
     sql"""

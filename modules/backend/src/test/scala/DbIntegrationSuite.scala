@@ -39,7 +39,8 @@ object DbIntegrationSuite extends IOSuite with Checkers:
     server = HttpServerConfig(ip"0.0.0.0", port"9999", shutdownTimeout = 1),
     crawler = crawler.CrawlerConfig(100, 40),
     crawlerJob = CrawlerJobConfig(0, 1000),
-    postgres = postgres
+    postgres = postgres,
+    ingestion = IngestionConfig(90)
   )
 
   given Show[Sorting]      = Show.fromToString
