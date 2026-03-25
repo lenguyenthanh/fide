@@ -203,8 +203,15 @@ private object Sql:
         LIMIT ${int4} OFFSET ${int4}""".apply(page.size, page.offset)
 
   private def sortingFragment(sorting: Sorting): AppliedFragment =
-    val column  = s"p.${sorting.sortBy.value}"
-    val orderBy = sorting.orderBy.value
+    val column = sorting.sortBy match
+      case SortBy.Name      => "p.name"
+      case SortBy.Standard  => "p.standard"
+      case SortBy.Rapid     => "p.rapid"
+      case SortBy.Blitz     => "p.blitz"
+      case SortBy.BirthYear => "p.birth_year"
+    val orderBy = sorting.orderBy match
+      case Order.Asc  => "ASC"
+      case Order.Desc => "DESC"
     sql"""
         ORDER BY #$column #$orderBy NULLS LAST""".apply(Void)
 

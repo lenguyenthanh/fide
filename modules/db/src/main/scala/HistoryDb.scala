@@ -249,10 +249,13 @@ object HistoryDb:
       sql" LIMIT ${int4} OFFSET ${int4}".apply(page.size, page.offset)
 
     private def sortingFragment(sorting: Sorting): AppliedFragment =
-      val a      = TableAliases.history
       val column = sorting.sortBy match
-        case SortBy.Name      => s"${a.identity}.name"
-        case SortBy.BirthYear => s"${a.identity}.birth_year"
-        case other            => s"${a.data}.${other.value}"
-      val orderBy = sorting.orderBy.value
+        case SortBy.Name      => "pi.name"
+        case SortBy.BirthYear => "pi.birth_year"
+        case SortBy.Standard  => "ph.standard"
+        case SortBy.Rapid     => "ph.rapid"
+        case SortBy.Blitz     => "ph.blitz"
+      val orderBy = sorting.orderBy match
+        case Order.Asc  => "ASC"
+        case Order.Desc => "DESC"
       sql" ORDER BY #$column #$orderBy NULLS LAST".apply(Void)
