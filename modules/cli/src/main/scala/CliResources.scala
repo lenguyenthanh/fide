@@ -1,7 +1,7 @@
 package fide.cli
 
 import cats.effect.*
-import fide.db.{ Db, DbResource, HistoryDb, PostgresConfig }
+import fide.db.{ Db, DbResource, HistoryDb }
 import org.http4s.client.Client
 import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.log4cats.Logger
@@ -17,8 +17,8 @@ object CliResources:
       .withIdleConnectionTime(60.seconds)
       .build
 
-  def makeDb(config: PostgresConfig)(using Logger[IO]): Resource[IO, (HistoryDb, Db)] =
+  def makeDb(config: IngestConfig)(using Logger[IO]): Resource[IO, (HistoryDb, Db)] =
     DbResource
-      .instance(config)
+      .instance(config.postgres)
       .map: res =>
-        (HistoryDb(res.postgres), Db(res.postgres))
+        (HistoryDb(res.postgres, config.historyChunkSize.self), Db(res.postgres))

@@ -17,7 +17,8 @@ case class IngestConfig(
     csvDir: Path,
     startMonth: Option[YearMonth],
     endMonth: Option[YearMonth],
-    postgres: PostgresConfig
+    postgres: PostgresConfig,
+    historyChunkSize: PositiveInt
 )
 
 object IngestConfig:
@@ -29,14 +30,15 @@ object IngestConfig:
         parseFlags(rest) match
           case Left(err)           => IO.raiseError(IllegalArgumentException(err))
           case Right((start, end)) =>
-            postgresConfig
+            (postgresConfig, historyChunkSize).tupled
               .load[IO]
-              .map: pg =>
+              .map: (pg, historyChunkSize) =>
                 IngestConfig(
                   csvDir = Path.of(csvDir),
                   startMonth = start,
                   endMonth = end,
-                  postgres = pg
+                  postgres = pg,
+                  historyChunkSize = historyChunkSize
                 )
 
   private def parseFlags(
@@ -67,3 +69,6 @@ object IngestConfig:
     val debug    = env("POSTGRES_DEBUG").or(prop("postgres.debug")).as[Boolean].default(false)
     val ssl      = env("POSTGRES_SSL").or(prop("postgres.ssl")).as[Boolean].default(false)
     (host, port, user, password, database, max, schema, debug, ssl).parMapN(PostgresConfig.apply)
+
+  private def historyChunkSize =
+    env("HISTORY_INSERT_SIZE").or(prop("history.insert.size")).as[PositiveInt].default(100)

@@ -30,7 +30,7 @@ object CliApp extends IOApp:
       .parse(args)
       .flatMap: config =>
         CliResources
-          .makeDb(config.postgres)
+          .makeDb(config)
           .use: (historyDb, db) =>
             HistoryIngestor(historyDb, db, config).ingest
           .as(ExitCode.Success)

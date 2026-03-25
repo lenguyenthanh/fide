@@ -30,95 +30,93 @@ trait HistoryDb:
 
 object HistoryDb:
 
-  // 32767 max params / 13 params per history row ≈ 2520; use 2000 for safety
-  private val ChunkSize = 2000
+  def apply(postgres: Resource[IO, Session[IO]], chunkSize: Int): HistoryDb =
+    new HistoryDb:
 
-  def apply(postgres: Resource[IO, Session[IO]]): HistoryDb = new:
+      def upsertPlayerInfo(players: List[PlayerInfoRow]): IO[Unit] =
+        players.grouped(chunkSize).toList.traverse_ { chunk =>
+          val codec = DbCodecs.playerInfoRow.values.list(chunk.size)
+          val cmd   = sql"""
+            INSERT INTO player_info (id, name, sex, birth_year)
+            VALUES $codec
+            ON CONFLICT (id) DO UPDATE SET
+              name = EXCLUDED.name, sex = EXCLUDED.sex, birth_year = EXCLUDED.birth_year""".command
+          postgres.use(_.execute(cmd)(chunk)).void
+        }
 
-    def upsertPlayerInfo(players: List[PlayerInfoRow]): IO[Unit] =
-      players.grouped(ChunkSize).toList.traverse_ { chunk =>
-        val codec = DbCodecs.playerInfoRow.values.list(chunk.size)
-        val cmd   = sql"""
-          INSERT INTO player_info (id, name, sex, birth_year)
-          VALUES $codec
-          ON CONFLICT (id) DO UPDATE SET
-            name = EXCLUDED.name, sex = EXCLUDED.sex, birth_year = EXCLUDED.birth_year""".command
-        postgres.use(_.execute(cmd)(chunk)).void
-      }
+      def upsertPlayerInfoWithHash(players: List[(PlayerInfoRow, Long)]): IO[Unit] =
+        players.grouped(chunkSize).toList.traverse_ { chunk =>
+          val codec = (DbCodecs.playerInfoRow *: int8)
+            .imap[(PlayerInfoRow, Long)] { case r *: h *: EmptyTuple =>
+              (r, h)
+            } { case (r, h) => r *: h *: EmptyTuple }
+            .values
+            .list(chunk.size)
+          val cmd = sql"""
+            INSERT INTO player_info (id, name, sex, birth_year, hash)
+            VALUES $codec
+            ON CONFLICT (id) DO UPDATE SET
+              name = EXCLUDED.name, sex = EXCLUDED.sex, birth_year = EXCLUDED.birth_year,
+              hash = EXCLUDED.hash""".command
+          postgres.use(_.execute(cmd)(chunk)).void
+        }
 
-    def upsertPlayerInfoWithHash(players: List[(PlayerInfoRow, Long)]): IO[Unit] =
-      players.grouped(ChunkSize).toList.traverse_ { chunk =>
-        val codec = (DbCodecs.playerInfoRow *: int8)
-          .imap[(PlayerInfoRow, Long)] { case r *: h *: EmptyTuple =>
-            (r, h)
-          } { case (r, h) => r *: h *: EmptyTuple }
-          .values
-          .list(chunk.size)
-        val cmd = sql"""
-          INSERT INTO player_info (id, name, sex, birth_year, hash)
-          VALUES $codec
-          ON CONFLICT (id) DO UPDATE SET
-            name = EXCLUDED.name, sex = EXCLUDED.sex, birth_year = EXCLUDED.birth_year,
-            hash = EXCLUDED.hash""".command
-        postgres.use(_.execute(cmd)(chunk)).void
-      }
+      def upsertPlayerHistory(snapshots: List[PlayerHistoryRow]): IO[Unit] =
+        snapshots.grouped(chunkSize).toList.traverse_ { chunk =>
+          val codec = DbCodecs.playerHistoryRow.values.list(chunk.size)
+          val cmd   = sql"""
+            INSERT INTO player_history (player_id, year_month, title, women_title, other_titles, standard,
+              standard_kfactor, rapid, rapid_kfactor, blitz, blitz_kfactor, federation_id, active)
+            VALUES $codec
+            ON CONFLICT (player_id, year_month) DO UPDATE SET
+              title = EXCLUDED.title, women_title = EXCLUDED.women_title, other_titles = EXCLUDED.other_titles,
+              standard = EXCLUDED.standard, standard_kfactor = EXCLUDED.standard_kfactor,
+              rapid = EXCLUDED.rapid, rapid_kfactor = EXCLUDED.rapid_kfactor,
+              blitz = EXCLUDED.blitz, blitz_kfactor = EXCLUDED.blitz_kfactor,
+              federation_id = EXCLUDED.federation_id, active = EXCLUDED.active""".command
+          postgres.use(_.execute(cmd)(chunk)).void
+        }
 
-    def upsertPlayerHistory(snapshots: List[PlayerHistoryRow]): IO[Unit] =
-      snapshots.grouped(ChunkSize).toList.traverse_ { chunk =>
-        val codec = DbCodecs.playerHistoryRow.values.list(chunk.size)
-        val cmd   = sql"""
-          INSERT INTO player_history (player_id, year_month, title, women_title, other_titles, standard,
-            standard_kfactor, rapid, rapid_kfactor, blitz, blitz_kfactor, federation_id, active)
-          VALUES $codec
-          ON CONFLICT (player_id, year_month) DO UPDATE SET
-            title = EXCLUDED.title, women_title = EXCLUDED.women_title, other_titles = EXCLUDED.other_titles,
-            standard = EXCLUDED.standard, standard_kfactor = EXCLUDED.standard_kfactor,
-            rapid = EXCLUDED.rapid, rapid_kfactor = EXCLUDED.rapid_kfactor,
-            blitz = EXCLUDED.blitz, blitz_kfactor = EXCLUDED.blitz_kfactor,
-            federation_id = EXCLUDED.federation_id, active = EXCLUDED.active""".command
-        postgres.use(_.execute(cmd)(chunk)).void
-      }
+      def playerById(id: PlayerId, month: YearMonth): IO[Option[HistoricalPlayerInfo]] =
+        val f = Sql.playerByIdQuery(month, id)
+        val q = f.fragment.query(DbCodecs.historicalPlayerInfo)
+        postgres.use(_.option(q)(f.argument))
 
-    def playerById(id: PlayerId, month: YearMonth): IO[Option[HistoricalPlayerInfo]] =
-      val f = Sql.playerByIdQuery(month, id)
-      val q = f.fragment.query(DbCodecs.historicalPlayerInfo)
-      postgres.use(_.option(q)(f.argument))
+      def allPlayers(
+          month: YearMonth,
+          sorting: Sorting,
+          paging: Pagination,
+          filter: PlayerFilter
+      ): IO[List[HistoricalPlayerInfo]] =
+        val f = Sql.allHistoricalPlayers(month, sorting, paging, filter)
+        val q = f.fragment.query(DbCodecs.historicalPlayerInfo)
+        postgres.use(_.execute(q)(f.argument))
 
-    def allPlayers(
-        month: YearMonth,
-        sorting: Sorting,
-        paging: Pagination,
-        filter: PlayerFilter
-    ): IO[List[HistoricalPlayerInfo]] =
-      val f = Sql.allHistoricalPlayers(month, sorting, paging, filter)
-      val q = f.fragment.query(DbCodecs.historicalPlayerInfo)
-      postgres.use(_.execute(q)(f.argument))
+      def countPlayers(month: YearMonth, filter: PlayerFilter): IO[Long] =
+        val f = Sql.countHistoricalPlayers(month, filter)
+        val q = f.fragment.query(int8)
+        postgres.use(_.unique(q)(f.argument))
 
-    def countPlayers(month: YearMonth, filter: PlayerFilter): IO[Long] =
-      val f = Sql.countHistoricalPlayers(month, filter)
-      val q = f.fragment.query(int8)
-      postgres.use(_.unique(q)(f.argument))
+      def federationsSummary(month: YearMonth, paging: Pagination): IO[List[FederationSummary]] =
+        val f = Sql.historicalFederationsSummary(month, paging)
+        val q = f.fragment.query(DbCodecs.federationSummary)
+        postgres.use(_.execute(q)(f.argument))
 
-    def federationsSummary(month: YearMonth, paging: Pagination): IO[List[FederationSummary]] =
-      val f = Sql.historicalFederationsSummary(month, paging)
-      val q = f.fragment.query(DbCodecs.federationSummary)
-      postgres.use(_.execute(q)(f.argument))
+      def countFederationsSummary(month: YearMonth): IO[Long] =
+        val f = Sql.countHistoricalFederationsSummary(month)
+        val q = f.fragment.query(int8)
+        postgres.use(_.unique(q)(f.argument))
 
-    def countFederationsSummary(month: YearMonth): IO[Long] =
-      val f = Sql.countHistoricalFederationsSummary(month)
-      val q = f.fragment.query(int8)
-      postgres.use(_.unique(q)(f.argument))
+      def federationSummaryById(id: FederationId, month: YearMonth): IO[Option[FederationSummary]] =
+        val f = Sql.historicalFederationSummaryById(id, month)
+        val q = f.fragment.query(DbCodecs.federationSummary)
+        postgres.use(_.option(q)(f.argument))
 
-    def federationSummaryById(id: FederationId, month: YearMonth): IO[Option[FederationSummary]] =
-      val f = Sql.historicalFederationSummaryById(id, month)
-      val q = f.fragment.query(DbCodecs.federationSummary)
-      postgres.use(_.option(q)(f.argument))
+      def allPlayerInfoHashes: IO[Map[PlayerId, Long]] =
+        postgres.use(_.execute(Sql.allPlayerInfoHashes)).map(_.toMap)
 
-    def allPlayerInfoHashes: IO[Map[PlayerId, Long]] =
-      postgres.use(_.execute(Sql.allPlayerInfoHashes)).map(_.toMap)
-
-    def availableMonths: IO[List[YearMonth]] =
-      postgres.use(_.execute(Sql.availableMonths))
+      def availableMonths: IO[List[YearMonth]] =
+        postgres.use(_.execute(Sql.availableMonths))
 
   private object Sql:
 

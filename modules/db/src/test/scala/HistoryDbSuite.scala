@@ -18,7 +18,7 @@ object HistoryDbSuite extends SimpleIOSuite:
   given Logger[IO] = NoOpLogger[IO]
 
   private def resource: Resource[IO, HistoryDb] =
-    Containers.createResource.map(x => HistoryDb(x.postgres))
+    Containers.createResource.map(x => HistoryDb(x.postgres, 100))
 
   val fedId   = FederationId("USA")
   val jan2024 = YearMonth(2024, 1)
@@ -41,7 +41,7 @@ object HistoryDbSuite extends SimpleIOSuite:
 
   // Need federations table populated for joins
   private def resourceWithFeds: Resource[IO, (HistoryDb, Db)] =
-    Containers.createResource.map(x => (HistoryDb(x.postgres), Db(x.postgres)))
+    Containers.createResource.map(x => (HistoryDb(x.postgres, 100), Db(x.postgres)))
 
   test("upsertPlayerInfo is idempotent"):
     resource.use: historyDb =>

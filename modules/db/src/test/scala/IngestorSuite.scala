@@ -22,7 +22,7 @@ object IngestorSuite extends SimpleIOSuite:
   private def resource: Resource[IO, (PlayerEventDb, HistoryDb, Ingestor, Db)] =
     Containers.createResource.evalMap: x =>
       val eventDb   = PlayerEventDb(x.postgres)
-      val historyDb = HistoryDb(x.postgres)
+      val historyDb = HistoryDb(x.postgres, 100)
       val db        = Db(x.postgres)
       for
         playerHashCache     <- HashCache(db.allPlayerHashes)

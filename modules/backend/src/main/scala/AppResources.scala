@@ -28,7 +28,7 @@ object AppResources:
       store     = KVStore(res.postgres)
       health    = Health(res.postgres)
       eventDb   = PlayerEventDb(res.postgres)
-      historyDb = HistoryDb(res.postgres)
+      historyDb = HistoryDb(res.postgres, conf.history.insertSize)
       playerHashCache     <- HashCache(db.allPlayerHashes).toResource
       playerInfoHashCache <- HashCache(historyDb.allPlayerInfoHashes).toResource
       ingestor = Ingestor(
