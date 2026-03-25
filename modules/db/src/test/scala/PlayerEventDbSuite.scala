@@ -21,6 +21,9 @@ object PlayerEventDbSuite extends SimpleIOSuite:
   private def resource: Resource[IO, PlayerEventDb] =
     Containers.createResource.map(x => PlayerEventDb(x.postgres))
 
+  private def collectUningested(eventDb: PlayerEventDb): IO[List[PlayerEvent]] =
+    eventDb.ungestedStream(10_000).compile.toList
+
   val now = OffsetDateTime.now()
 
   def mkEvent(
@@ -45,7 +48,7 @@ object PlayerEventDbSuite extends SimpleIOSuite:
       val events = List(mkEvent(1, "Alice"), mkEvent(2, "Bob"))
       for
         _         <- eventDb.append(events)
-        retrieved <- eventDb.uningested()
+        retrieved <- collectUningested(eventDb)
       yield expect(retrieved.size == 2) and
         expect(retrieved.head.name == "Alice") and
         expect(retrieved.head.hash == 1L) and
@@ -56,18 +59,10 @@ object PlayerEventDbSuite extends SimpleIOSuite:
       val events = List(mkEvent(1, "Alice"), mkEvent(2, "Bob"))
       for
         _      <- eventDb.append(events)
-        before <- eventDb.uningested()
+        before <- collectUningested(eventDb)
         _      <- eventDb.markIngested(before.map(_.id))
-        after  <- eventDb.uningested()
+        after  <- collectUningested(eventDb)
       yield expect(before.size == 2) and expect(after.isEmpty)
-
-  test("uningested respects limit"):
-    resource.use: eventDb =>
-      val events = List(mkEvent(1, "Alice"), mkEvent(2, "Bob"), mkEvent(3, "Charlie"))
-      for
-        _       <- eventDb.append(events)
-        limited <- eventDb.uningested(2)
-      yield expect(limited.size == 2)
 
   test("append empty list is no-op"):
     resource.use: eventDb =>

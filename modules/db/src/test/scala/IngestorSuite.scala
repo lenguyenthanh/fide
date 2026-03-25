@@ -71,7 +71,7 @@ object IngestorSuite extends SimpleIOSuite:
           PlayerFilter.default
         )
         // Verify events marked as ingested
-        uningested <- eventDb.uningested()
+        uningested <- eventDb.ungestedStream(10_000).compile.toList
       yield expect(players.size == 2) and
         expect(players.head.name == "Alice") and
         expect(players.head.standard.contains(Rating(2700))) and
