@@ -28,7 +28,7 @@ object PlayerEventDb:
         val codec = DbCodecs.newPlayerEvent.values.list(chunk.size)
         val cmd   = sql"""
           INSERT INTO player_events (player_id, name, title, women_title, other_titles, standard, standard_kfactor,
-            rapid, rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id, raw_data,
+            rapid, rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id, hash,
             crawled_at, source_last_modified)
           VALUES $codec""".command
         postgres.use(_.execute(cmd)(chunk)).void
@@ -37,7 +37,7 @@ object PlayerEventDb:
     def uningested(limit: Int): IO[List[PlayerEvent]] =
       val q = sql"""
         SELECT id, player_id, name, title, women_title, other_titles, standard, standard_kfactor,
-          rapid, rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id, raw_data,
+          rapid, rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id, hash,
           crawled_at, source_last_modified, ingested, created_at
         FROM player_events
         WHERE ingested = FALSE

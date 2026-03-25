@@ -50,11 +50,11 @@ private[db] object DbCodecs:
       .to[PlayerInfo]
 
   val newPlayerEvent: Codec[NewPlayerEvent] =
-    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: federationIdCodec.opt *: text *: timestamptz *: text.opt)
+    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: federationIdCodec.opt *: int8 *: timestamptz *: text.opt)
       .to[NewPlayerEvent]
 
   val playerEvent: Codec[PlayerEvent] =
-    (int8 *: playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: federationIdCodec.opt *: text *: timestamptz *: text.opt *: bool *: timestamptz)
+    (int8 *: playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: federationIdCodec.opt *: int8 *: timestamptz *: text.opt *: bool *: timestamptz)
       .to[PlayerEvent]
 
   val playerInfoRow: Codec[PlayerInfoRow] =

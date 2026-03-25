@@ -126,7 +126,7 @@ case class NewPlayerEvent(
     birthYear: Option[Int] = None,
     active: Boolean,
     federationId: Option[FederationId] = None,
-    rawData: String,
+    hash: Long,
     crawledAt: OffsetDateTime,
     sourceLastModified: Option[String] = None
 )
@@ -148,7 +148,7 @@ case class PlayerEvent(
     birthYear: Option[Int] = None,
     active: Boolean,
     federationId: Option[FederationId] = None,
-    rawData: String,
+    hash: Long,
     crawledAt: OffsetDateTime,
     sourceLastModified: Option[String] = None,
     ingested: Boolean = false,

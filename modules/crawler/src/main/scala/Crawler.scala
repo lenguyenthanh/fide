@@ -40,7 +40,7 @@ object Crawler:
             .map(_.toList)
             .parEvalMapUnordered(config.concurrentUpsert): chunk =>
               val dbData = chunk.map((p, f, _) => (p, f))
-              val events = chunk.map: (player, _, rawLine) =>
+              val events = chunk.map: (player, _, _) =>
                 NewPlayerEvent(
                   playerId = player.id,
                   name = player.name,
@@ -57,7 +57,7 @@ object Crawler:
                   birthYear = player.birthYear,
                   active = player.active,
                   federationId = player.federationId,
-                  rawData = rawLine,
+                  hash = NewPlayer.computeHash(player),
                   crawledAt = now,
                   sourceLastModified = timestamp
                 )
