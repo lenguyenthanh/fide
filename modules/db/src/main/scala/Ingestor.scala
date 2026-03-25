@@ -91,33 +91,34 @@ object Ingestor:
         ))
         (row, hash)
 
-      // Build history rows
-      val historyRows = events
-        .flatMap: e =>
-          e.sourceLastModified
-            .flatMap(YearMonth.fromLastModified)
-            .map: ym =>
-              PlayerHistoryRow(
-                playerId = e.playerId,
-                yearMonth = ym,
-                title = e.title,
-                womenTitle = e.womenTitle,
-                otherTitles = e.otherTitles,
-                standard = e.standard,
-                standardK = e.standardK,
-                rapid = e.rapid,
-                rapidK = e.rapidK,
-                blitz = e.blitz,
-                blitzK = e.blitzK,
-                federationId = e.federationId,
-                active = e.active
-              )
+      // Build history rows — parse sourceLastModified once
+      val parsedEvents = events.map: e =>
+        (e, e.sourceLastModified.flatMap(YearMonth.fromLastModified))
+
+      val historyRows = parsedEvents
+        .collect:
+          case (e, Some(ym)) =>
+            PlayerHistoryRow(
+              playerId = e.playerId,
+              yearMonth = ym,
+              title = e.title,
+              womenTitle = e.womenTitle,
+              otherTitles = e.otherTitles,
+              standard = e.standard,
+              standardK = e.standardK,
+              rapid = e.rapid,
+              rapidK = e.rapidK,
+              blitz = e.blitz,
+              blitzK = e.blitzK,
+              federationId = e.federationId,
+              active = e.active
+            )
         .groupBy(r => (r.playerId, r.yearMonth))
         .values
         .map(_.last)
         .toList
 
-      val skippedCount = events.count(_.sourceLastModified.flatMap(YearMonth.fromLastModified).isEmpty)
+      val skippedCount = parsedEvents.count(_._2.isEmpty)
 
       for
         _ <-
