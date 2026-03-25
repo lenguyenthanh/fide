@@ -7,6 +7,7 @@ import dumbo.logging.{ LogLevel, Logger as DumboLogger }
 import dumbo.{ ConnectionConfig, Dumbo }
 import org.typelevel.log4cats.Logger
 import org.typelevel.otel4s.trace.Tracer
+
 trait Flyway:
   def migrate: IO[Unit]
 

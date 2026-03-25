@@ -36,14 +36,14 @@ object Db:
         yield ()
 
     def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit] =
-      val feds = xs.mapFilter(_._2).distinct
+      val feds = xs.mapFilter(_._2).distinctBy(_.id)
       postgres.use: s =>
         for
+          federationCmd <- s.prepare(Sql.upsertFederation)
+          _             <- feds.traverse_(federationCmd.execute)
           playerCmd     <- s.prepare(Sql.upsertPlayers(xs.size))
-          federationCmd <- s.prepare(Sql.upsertFederations(feds.size))
           _             <- s.transaction.use: _ =>
-            federationCmd.execute(feds) *>
-              playerCmd.execute(xs.map(_._1))
+            playerCmd.execute(xs.map(_._1))
         yield ()
 
     def playerById(id: PlayerId): IO[Option[PlayerInfo]] =
