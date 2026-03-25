@@ -1,3 +1,18 @@
+CREATE TABLE IF NOT EXISTS player_info (
+    id              integer PRIMARY KEY,
+    name            text NOT NULL,
+    sex             sex,
+    birth_year      integer,
+    hash            BIGINT NOT NULL DEFAULT 0,
+    created_at      timestamptz NOT NULL DEFAULT NOW(),
+    updated_at      timestamptz NOT NULL DEFAULT NOW()
+);
+
+CREATE TRIGGER set_player_info_updated_at
+BEFORE UPDATE ON player_info
+FOR EACH ROW
+EXECUTE PROCEDURE set_updated_at();
+
 CREATE TABLE IF NOT EXISTS player_history (
     player_id       integer NOT NULL REFERENCES player_info(id),
     year_month      date NOT NULL,
@@ -30,3 +45,9 @@ CREATE TRIGGER set_player_history_updated_at
 BEFORE UPDATE ON player_history
 FOR EACH ROW
 EXECUTE PROCEDURE set_updated_at();
+
+-- Seed player_info from existing players table
+INSERT INTO player_info (id, name, sex, birth_year, created_at, updated_at)
+SELECT id, name, sex, birth_year, created_at, updated_at
+FROM players
+ON CONFLICT (id) DO NOTHING;
