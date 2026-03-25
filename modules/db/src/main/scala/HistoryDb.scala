@@ -77,8 +77,7 @@ object HistoryDb:
       }
 
     def playerById(id: PlayerId, month: YearMonth): IO[Option[HistoricalPlayerInfo]] =
-      val f = Sql.allHistoricalPlayersFragment(month) |+| Sql.andFragment |+|
-        sql"ph.player_id = ${DbCodecs.playerIdCodec}".apply(id)
+      val f = Sql.playerByIdQuery(month, id)
       val q = f.fragment.query(DbCodecs.historicalPlayerInfo)
       postgres.use(_.option(q)(f.argument))
 
@@ -124,7 +123,10 @@ object HistoryDb:
 
     private val void: AppliedFragment = sql"".apply(Void)
     private val and: AppliedFragment  = sql" AND ".apply(Void)
-    val andFragment: AppliedFragment  = and
+
+    def playerByIdQuery(month: YearMonth, id: PlayerId): AppliedFragment =
+      allHistoricalPlayersFragment(month) |+| and |+|
+        sql"ph.player_id = ${DbCodecs.playerIdCodec}".apply(id)
 
     // The base fragment selects from player_history joined with player_info and federations.
     // Column aliases: ph = player_history, pi = player_info, f = federations
