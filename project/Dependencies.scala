@@ -4,12 +4,12 @@ import smithy4s.codegen.BuildInfo.version as smithy4sVersion
 object Dependencies {
 
   object V {
-    val catsEffect = "3.6.3"
+    val catsEffect = "3.7.0"
     val ciris      = "3.12.0"
-    val fs2        = "3.12.2"
+    val fs2        = "3.13.0"
     val http4s     = "0.23.33"
-    val iron       = "3.2.2"
-    val gatling    = "3.14.9"
+    val iron       = "3.2.3"
+    val gatling    = "3.15.0"
   }
 
   def http4s(artifact: String) = "org.http4s" %% s"http4s-$artifact" % V.http4s
@@ -38,19 +38,19 @@ object Dependencies {
   val smithy4sHttp4sSwagger = smithy4s("http4s-swagger")
 
   val skunk = "org.tpolecat" %% "skunk-core" % "1.0.0-M12"
-  val dumbo = "dev.rolang"   %% "dumbo"      % "0.6.1"
+  val dumbo = "dev.rolang"   %% "dumbo"      % "0.8.1"
 
-  val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.7.1"
-  val logback  = "ch.qos.logback" % "logback-classic" % "1.5.23"
+  val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.8.0"
+  val logback  = "ch.qos.logback" % "logback-classic" % "1.5.32"
 
-  val ducktape = "io.github.arainko" %% "ducktape" % "0.2.11"
+  val ducktape = "io.github.arainko" %% "ducktape" % "0.2.12"
 
   val gatlingTestFramework = "io.gatling"            % "gatling-test-framework"    % V.gatling % Test
   val gatlingHighCharts    = "io.gatling.highcharts" % "gatling-charts-highcharts" % V.gatling % Test
 
   val testContainers    = "com.dimafeng"         %% "testcontainers-scala-postgresql" % "0.44.1"     % Test
-  val weaver            = "org.typelevel"        %% "weaver-cats"                     % "0.11.3"     % Test
-  val weaverScalaCheck  = "org.typelevel"        %% "weaver-scalacheck"               % "0.11.3"     % Test
+  val weaver            = "org.typelevel"        %% "weaver-cats"                     % "0.12.0"     % Test
+  val weaverScalaCheck  = "org.typelevel"        %% "weaver-scalacheck"               % "0.12.0"     % Test
   val catsEffectTestKit = "org.typelevel"        %% "cats-effect-testkit"             % V.catsEffect % Test
   val scalacheck        = "org.scalacheck"       %% "scalacheck"                      % "1.17.0"     % Test
   val scalacheckFaker   = "io.github.etspaceman" %% "scalacheck-faker"                % "9.0.2"      % Test
