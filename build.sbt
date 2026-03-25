@@ -50,6 +50,7 @@ lazy val api = (project in file("modules/api"))
     libraryDependencies ++= Seq(
       smithy4sCore
     ),
+    Compile / scalacOptions += "-Wconf:src=target/scala[^/]*/src_managed/.*:silent"
   )
   .dependsOn(types)
 
