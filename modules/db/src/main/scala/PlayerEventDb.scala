@@ -13,6 +13,7 @@ import scala.concurrent.duration.FiniteDuration
 trait PlayerEventDb:
   def append(events: List[NewPlayerEvent]): IO[Unit]
   def uningested(limit: Int = 1_000_000): IO[List[PlayerEvent]]
+  def ungestedStream(batchSize: Int): fs2.Stream[IO, PlayerEvent]
   def markIngested(ids: List[Long]): IO[Unit]
   def purgeOlderThan(ttl: FiniteDuration): IO[Unit]
 
@@ -44,6 +45,17 @@ object PlayerEventDb:
         ORDER BY id
         LIMIT $int4""".query(DbCodecs.playerEvent)
       postgres.use(_.execute(q)(limit))
+
+    def ungestedStream(batchSize: Int): fs2.Stream[IO, PlayerEvent] =
+      val q = sql"""
+        SELECT id, player_id, name, title, women_title, other_titles, standard, standard_kfactor,
+          rapid, rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id, hash,
+          crawled_at, source_last_modified, ingested, created_at
+        FROM player_events
+        WHERE ingested = FALSE
+        ORDER BY id""".query(DbCodecs.playerEvent)
+      fs2.Stream.resource(postgres).flatMap: session =>
+        session.stream(q)(Void, batchSize)
 
     def markIngested(ids: List[Long]): IO[Unit] =
       ids.grouped(ChunkSize).toList.traverse_ { chunk =>

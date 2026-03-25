@@ -16,6 +16,8 @@ trait Ingestor:
 
 object Ingestor:
 
+  private val BatchSize = 10_000
+
   def apply(
       eventDb: PlayerEventDb,
       historyDb: HistoryDb,
@@ -29,11 +31,16 @@ object Ingestor:
       for
         _       <- info"Starting ingestion"
         startAt <- IO.monotonic
-        events  <- eventDb.uningested()
-        _       <- info"Found ${events.size} uningested events"
-        _       <- if events.isEmpty then IO.unit else processEvents(events)
+        total   <- eventDb.ungestedStream(BatchSize)
+          .chunkN(BatchSize)
+          .evalScan(0L): (acc, chunk) =>
+            val events = chunk.toList
+            info"Processing batch of ${events.size} events (total so far: $acc)" *>
+              processBatch(events).as(acc + events.size)
+          .compile
+          .lastOrError
         elapsed <- IO.monotonic.map(_ - startAt)
-        _       <- info"Ingestion complete, duration=${elapsed.toSeconds}s"
+        _       <- info"Ingestion complete, total=$total, duration=${elapsed.toSeconds}s"
       yield ()
 
     def purge: IO[Unit] =
@@ -41,7 +48,7 @@ object Ingestor:
         eventDb.purgeOlderThan(ttl) *>
         info"Purge complete"
 
-    private def processEvents(events: List[PlayerEvent]): IO[Unit] =
+    private def processBatch(events: List[PlayerEvent]): IO[Unit] =
       // Group by player, take latest event per player
       val latestByPlayer = events
         .groupBy(_.playerId)
@@ -85,7 +92,7 @@ object Ingestor:
         changedInfoRows     = playerInfoRows.filter((row, hash) => infoHashMap.get(row.id).forall(_ != hash))
         playerInfoUpdated   = changedInfoRows.size
         _ <- info"Upserting ${playersWithHash.size} players, $playerInfoUpdated player info rows, and ${historyRows.size} history rows"
-        // Upsert players with hash (moved from crawl phase)
+        // Upsert players with hash
         _ <- db.upsertPlayersWithHash(playersWithHash)
         // Upsert only changed player_info rows
         _ <- if changedInfoRows.nonEmpty then historyDb.upsertPlayerInfoWithHash(changedInfoRows) else IO.unit
