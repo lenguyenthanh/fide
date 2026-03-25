@@ -21,6 +21,7 @@ trait Db:
   def countFederationsSummary: IO[Long]
   def countFederations: IO[Long]
   def federationSummaryById(id: FederationId): IO[Option[FederationSummary]]
+  def upsertFederations(feds: List[NewFederation]): IO[Unit]
   def allPlayerHashes: IO[Map[PlayerId, Long]]
   def updateLastSeenAt(ids: List[PlayerId]): IO[Unit]
 
@@ -85,6 +86,11 @@ object Db:
 
     def federationSummaryById(id: FederationId): IO[Option[FederationSummary]] =
       postgres.use(_.option(Sql.federationSummaryById)(id))
+
+    def upsertFederations(feds: List[NewFederation]): IO[Unit] =
+      postgres.use: s =>
+        s.prepare(Sql.upsertFederation).flatMap: cmd =>
+          feds.traverse_(cmd.execute)
 
     def allPlayerHashes: IO[Map[PlayerId, Long]] =
       postgres.use(_.execute(Sql.allPlayerHashes)).map(_.toMap)

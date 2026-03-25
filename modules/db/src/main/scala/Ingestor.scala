@@ -18,6 +18,9 @@ object Ingestor:
   def apply(
       eventDb: PlayerEventDb,
       historyDb: HistoryDb,
+      db: Db,
+      playerHashCache: HashCache,
+      playerInfoHashCache: HashCache,
       ttl: FiniteDuration
   )(using Logger[IO]): Ingestor = new:
 
