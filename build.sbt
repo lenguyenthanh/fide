@@ -128,5 +128,5 @@ lazy val root = project
 
 def full(p: Project) = p % "test->test;compile->compile"
 
-addCommandAlias("lint", "scalafixAll; scalafmtAll; scalafmtSbt")
+addCommandAlias("prepare", "scalafixAll; scalafmtAll; scalafmtSbt")
 addCommandAlias("lintCheck", "; scalafixAll --check ; scalafmtCheckAll; scalafmtSbtCheck")
