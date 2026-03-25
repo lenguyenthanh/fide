@@ -10,7 +10,6 @@ import fide.spec.{
   FederationId as _,
   PageNumber as _,
   PageSize as _,
-  PlayerId as _,
   Rating as _,
   *
 }
