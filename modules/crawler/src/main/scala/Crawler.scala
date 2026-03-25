@@ -88,22 +88,21 @@ object Crawler:
         // Upsert federations (still needed, idempotent)
         val feds = chunk.mapFilter(_._2).distinctBy(_.id)
 
-        var newCount       = 0L
-        var changedCount   = 0L
-        var unchangedCount = 0L
-
-        val events = players.mapFilter: player =>
-          val hash = NewPlayer.computeHash(player)
-          hashMap.get(player.id) match
-            case None =>
-              newCount += 1
-              Some(toEvent(player, hash, now, timestamp))
-            case Some(existingHash) if existingHash != hash =>
-              changedCount += 1
-              Some(toEvent(player, hash, now, timestamp))
-            case _ =>
-              unchangedCount += 1
-              None
+        case class ChunkResult(events: List[NewPlayerEvent], newCount: Long, changedCount: Long, unchangedCount: Long)
+        val result = players.foldLeft(ChunkResult(Nil, 0L, 0L, 0L)):
+          case (acc, player) =>
+            val hash = NewPlayer.computeHash(player)
+            hashMap.get(player.id) match
+              case None =>
+                acc.copy(events = toEvent(player, hash, now, timestamp) :: acc.events, newCount = acc.newCount + 1)
+              case Some(existingHash) if existingHash != hash =>
+                acc.copy(events = toEvent(player, hash, now, timestamp) :: acc.events, changedCount = acc.changedCount + 1)
+              case _ =>
+                acc.copy(unchangedCount = acc.unchangedCount + 1)
+        val events         = result.events
+        val newCount       = result.newCount
+        val changedCount   = result.changedCount
+        val unchangedCount = result.unchangedCount
 
         for
           _ <- if feds.nonEmpty then db.upsertFederations(feds) else IO.unit
