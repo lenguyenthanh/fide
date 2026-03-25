@@ -13,7 +13,6 @@ import org.typelevel.log4cats.noop.NoOpLogger
 import weaver.*
 
 import java.time.OffsetDateTime
-import scala.concurrent.duration.*
 
 object PlayerEventDbSuite extends SimpleIOSuite:
 
@@ -61,15 +60,6 @@ object PlayerEventDbSuite extends SimpleIOSuite:
         _      <- eventDb.markIngested(before.map(_.id))
         after  <- eventDb.uningested()
       yield expect(before.size == 2) and expect(after.isEmpty)
-
-  test("purgeOlderThan removes old events"):
-    resource.use: eventDb =>
-      val events = List(mkEvent(1, "Alice"))
-      for
-        _     <- eventDb.append(events)
-        _     <- eventDb.purgeOlderThan(0.seconds)
-        after <- eventDb.uningested()
-      yield expect(after.isEmpty)
 
   test("uningested respects limit"):
     resource.use: eventDb =>

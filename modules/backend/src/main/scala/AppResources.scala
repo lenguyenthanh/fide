@@ -8,8 +8,6 @@ import org.http4s.client.Client
 import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.log4cats.Logger
 
-import scala.concurrent.duration.*
-
 class AppResources private (
     val db: Db,
     val store: KVStore,
@@ -38,8 +36,7 @@ object AppResources:
         historyDb,
         db,
         playerHashCache,
-        playerInfoHashCache,
-        conf.ingestion.eventTtlDays.toLong.days
+        playerInfoHashCache
       )
     yield AppResources(
       db,

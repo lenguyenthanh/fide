@@ -8,11 +8,8 @@ import io.github.arainko.ducktape.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
 
-import scala.concurrent.duration.FiniteDuration
-
 trait Ingestor:
   def ingest: IO[Unit]
-  def purge: IO[Unit]
 
 object Ingestor:
 
@@ -23,8 +20,7 @@ object Ingestor:
       historyDb: HistoryDb,
       db: Db,
       playerHashCache: HashCache,
-      playerInfoHashCache: HashCache,
-      ttl: FiniteDuration
+      playerInfoHashCache: HashCache
   )(using Logger[IO]): Ingestor = new:
 
     def ingest: IO[Unit] =
@@ -43,11 +39,6 @@ object Ingestor:
         elapsed <- IO.monotonic.map(_ - startAt)
         _       <- info"Ingestion complete, total=$total, duration=${elapsed.toSeconds}s"
       yield ()
-
-    def purge: IO[Unit] =
-      info"Purging events older than $ttl" *>
-        eventDb.purgeOlderThan(ttl) *>
-        info"Purge complete"
 
     private def processBatch(events: List[PlayerEvent]): IO[Unit] =
       // Group by player, take latest event per player

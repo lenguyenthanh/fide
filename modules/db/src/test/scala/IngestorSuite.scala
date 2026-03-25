@@ -14,7 +14,6 @@ import org.typelevel.log4cats.noop.NoOpLogger
 import weaver.*
 
 import java.time.OffsetDateTime
-import scala.concurrent.duration.*
 
 object IngestorSuite extends SimpleIOSuite:
 
@@ -28,7 +27,7 @@ object IngestorSuite extends SimpleIOSuite:
       for
         playerHashCache     <- HashCache(db.allPlayerHashes)
         playerInfoHashCache <- HashCache(historyDb.allPlayerInfoHashes)
-        ingestor = Ingestor(eventDb, historyDb, db, playerHashCache, playerInfoHashCache, 90.days)
+        ingestor = Ingestor(eventDb, historyDb, db, playerHashCache, playerInfoHashCache)
       yield (eventDb, historyDb, ingestor, db)
 
   val now     = OffsetDateTime.now()
@@ -104,11 +103,3 @@ object IngestorSuite extends SimpleIOSuite:
         months <- historyDb.availableMonths
       yield expect(months.isEmpty)
 
-  test("purge removes old events"):
-    resource.use: (eventDb, _, _, _) =>
-      for
-        _      <- eventDb.append(List(mkEvent(1, "Alice")))
-        before <- eventDb.uningested()
-        _      <- eventDb.purgeOlderThan(0.seconds) // purge everything
-        after  <- eventDb.uningested()
-      yield expect(before.size == 1) and expect(after.isEmpty)

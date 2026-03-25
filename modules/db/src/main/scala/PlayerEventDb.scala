@@ -8,14 +8,11 @@ import skunk.*
 import skunk.codec.all.*
 import skunk.implicits.*
 
-import scala.concurrent.duration.FiniteDuration
-
 trait PlayerEventDb:
   def append(events: List[NewPlayerEvent]): IO[Unit]
   def uningested(limit: Int = 1_000_000): IO[List[PlayerEvent]]
   def ungestedStream(batchSize: Int): fs2.Stream[IO, PlayerEvent]
   def markIngested(ids: List[Long]): IO[Unit]
-  def purgeOlderThan(ttl: FiniteDuration): IO[Unit]
 
 object PlayerEventDb:
 
@@ -66,7 +63,3 @@ object PlayerEventDb:
         postgres.use(_.execute(cmd)(chunk)).void
       }
 
-    def purgeOlderThan(ttl: FiniteDuration): IO[Unit] =
-      val days = ttl.toDays.toInt
-      val cmd = sql"DELETE FROM player_events WHERE created_at < now() - make_interval(days => $int4)".command
-      postgres.use(_.execute(cmd)(days)).void

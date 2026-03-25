@@ -18,16 +18,14 @@ object AppConfig:
     HttpServerConfig.config,
     CrawlerConfig.config,
     CrawlerJobConfig.config,
-    PostgresConfig.config,
-    IngestionConfig.config
+    PostgresConfig.config
   ).parMapN(AppConfig.apply)
 
 case class AppConfig(
     server: HttpServerConfig,
     crawler: fide.crawler.CrawlerConfig,
     crawlerJob: CrawlerJobConfig,
-    postgres: db.PostgresConfig,
-    ingestion: IngestionConfig
+    postgres: db.PostgresConfig
 )
 
 case class HttpServerConfig(host: Host, port: Port, shutdownTimeout: PositiveInt)
@@ -70,8 +68,3 @@ object PostgresConfig:
   def config =
     (host, port, user, password, database, max, schema, debug, ssl).parMapN(db.PostgresConfig.apply)
 
-case class IngestionConfig(eventTtlDays: PositiveInt)
-object IngestionConfig:
-  private def eventTtlDays =
-    env("INGESTION_EVENT_TTL_DAYS").or(prop("ingestion.event.ttl.days")).as[PositiveInt].default(90)
-  def config = eventTtlDays.map(IngestionConfig.apply)

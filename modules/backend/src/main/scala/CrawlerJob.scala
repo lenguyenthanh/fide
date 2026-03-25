@@ -27,5 +27,4 @@ object CrawlerJob:
       def crawlWithSleep =
         crawler.crawl *>
           ingestor.ingest.handleErrorWith(e => error"Error during ingestion: $e") *>
-          ingestor.purge.handleErrorWith(e => error"Error during purge: $e") *>
           IO.sleep(config.intervalInMinutes.minutes)
