@@ -2,9 +2,18 @@
 
 Guidance for AI agents generating Scala 3 code in this Typelevel-stack project.
 
-## MCP — Always verify APIs via MCP before using them
+## Issue Tracking
 
-Metals MCP at `.metals/mcp.json`. Query definitions/types/symbols, check compilation errors before running sbt. Fix MCP issues before running sbt to avoid long feedback loops.
+This project uses **bd (beads)** for issue tracking.
+Run `bd prime` for workflow context, or install hooks (`bd hooks install`) for auto-injection.
+
+**Quick reference:**
+- `bd ready` - Find unblocked work
+- `bd create "Title" --type task --priority 2` - Create issue
+- `bd close <id>` - Complete work
+- `bd dolt push` - Push beads to remote
+
+For full workflow details: `bd prime`
 
 ## Global Rules
 
@@ -15,7 +24,11 @@ Metals MCP at `.metals/mcp.json`. Query definitions/types/symbols, check compila
  - After code changes: `sbt lint` (scalafmt + scalafix), then `sbt test`.
  - **Do not add yourself as co-author** — no `Co-Authored-By: Claude ...` in commits.
 
-### Tool references
+## Tool references
+
+### MCP — Always verify APIs via MCP before using them
+
+Metals MCP at `.metals/mcp.json`. Query definitions/types/symbols, check compilation errors before running sbt. Fix MCP issues before running sbt to avoid long feedback loops.
 
 **Override Grep with Metals MCP when the question is "what does the compiler resolve this to?"**
 
