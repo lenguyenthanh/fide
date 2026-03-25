@@ -21,6 +21,8 @@ trait Db:
   def countFederationsSummary: IO[Long]
   def countFederations: IO[Long]
   def federationSummaryById(id: FederationId): IO[Option[FederationSummary]]
+  def allPlayerHashes: IO[Map[PlayerId, Long]]
+  def updateLastSeenAt(ids: List[PlayerId]): IO[Unit]
 
 object Db:
 
@@ -83,6 +85,15 @@ object Db:
 
     def federationSummaryById(id: FederationId): IO[Option[FederationSummary]] =
       postgres.use(_.option(Sql.federationSummaryById)(id))
+
+    def allPlayerHashes: IO[Map[PlayerId, Long]] =
+      postgres.use(_.execute(Sql.allPlayerHashes)).map(_.toMap)
+
+    def updateLastSeenAt(ids: List[PlayerId]): IO[Unit] =
+      ids.grouped(5000).toList.traverse_ { chunk =>
+        val cmd = Sql.updateLastSeenAt(chunk.size)
+        postgres.use(_.execute(cmd)(chunk)).void
+      }
 
 private object Sql:
 
@@ -252,6 +263,13 @@ private object Sql:
     val orderBy = sorting.orderBy.value
     sql"""
         ORDER BY #$column #$orderBy NULLS LAST""".apply(Void)
+
+  lazy val allPlayerHashes: Query[Void, (PlayerId, Long)] =
+    sql"SELECT id, hash FROM players".query(playerIdCodec *: int8)
+
+  def updateLastSeenAt(n: Int): Command[List[PlayerId]] =
+    val ids = playerIdCodec.values.list(n)
+    sql"UPDATE players SET last_seen_at = now() WHERE id IN ($ids)".command
 
   private lazy val allPlayersFragment: Fragment[Void] =
     sql"""

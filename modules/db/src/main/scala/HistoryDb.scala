@@ -13,6 +13,7 @@ import skunk.implicits.*
 trait HistoryDb:
   def upsertPlayerInfo(players: List[PlayerInfoRow]): IO[Unit]
   def upsertPlayerHistory(snapshots: List[PlayerHistoryRow]): IO[Unit]
+  def allPlayerInfoHashes: IO[Map[PlayerId, Long]]
   def playerById(id: PlayerId, month: YearMonth): IO[Option[HistoricalPlayerInfo]]
   def allPlayers(
       month: YearMonth,
@@ -95,6 +96,9 @@ object HistoryDb:
       val f = Sql.historicalFederationSummaryById(id, month)
       val q = f.fragment.query(DbCodecs.federationSummary)
       postgres.use(_.option(q)(f.argument))
+
+    def allPlayerInfoHashes: IO[Map[PlayerId, Long]] =
+      postgres.use(_.execute(Sql.allPlayerInfoHashes)).map(_.toMap)
 
     def availableMonths: IO[List[YearMonth]] =
       postgres.use(_.execute(Sql.availableMonths))
@@ -216,6 +220,9 @@ object HistoryDb:
         JOIN federations f ON s.federation_id = f.id
         ORDER BY s.avg_top_standard DESC NULLS LAST
         """.apply(month)
+
+    lazy val allPlayerInfoHashes: Query[Void, (PlayerId, Long)] =
+      sql"SELECT id, hash FROM player_info".query(playerIdCodec *: int8)
 
     lazy val availableMonths: Query[Void, YearMonth] =
       sql"SELECT DISTINCT year_month FROM player_history ORDER BY year_month DESC".query(yearMonthCodec)
