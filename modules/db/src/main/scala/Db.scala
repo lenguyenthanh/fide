@@ -164,7 +164,7 @@ private object Sql:
     sql"SELECT count(*) FROM federations".query(codec.all.int8)
 
   val countFederationsSummary: Query[Void, Long] =
-    sql"SELECT count(*) FROM federations".query(codec.all.int8)
+    sql"SELECT count(*) FROM federations_summary".query(codec.all.int8)
 
   def playersByIds(n: Int): Fragment[List[PlayerId]] =
     val ids = playerIdCodec.values.list(n)
