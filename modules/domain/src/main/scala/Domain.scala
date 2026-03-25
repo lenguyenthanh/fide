@@ -5,6 +5,7 @@ import cats.syntax.all.*
 import fide.types.*
 
 import java.time.OffsetDateTime
+import scala.util.hashing.MurmurHash3
 
 enum Title(val value: String):
   case GM  extends Title("GM")
@@ -88,6 +89,26 @@ case class NewPlayer(
     active: Boolean,
     federationId: Option[FederationId] = None
 )
+
+object NewPlayer:
+  private val seed2 = 0x9e3779b9
+
+  /** Hash all mutable fields for change detection. Two-pass MurmurHash3 combined into Long. */
+  def computeHash(p: NewPlayer): Long =
+    val fields = (p.name, p.title, p.womenTitle, p.otherTitles,
+      p.standard, p.standardK, p.rapid, p.rapidK,
+      p.blitz, p.blitzK, p.gender, p.birthYear,
+      p.active, p.federationId)
+    val hi = MurmurHash3.productHash(fields, MurmurHash3.productSeed)
+    val lo = MurmurHash3.productHash(fields, seed2)
+    (hi.toLong << 32) | (lo.toLong & 0xFFFFFFFFL)
+
+  /** Hash identity fields only (name, gender, birthYear) for player_info change detection. */
+  def computeInfoHash(p: NewPlayer): Long =
+    val fields = (p.name, p.gender, p.birthYear)
+    val hi = MurmurHash3.productHash(fields, MurmurHash3.productSeed)
+    val lo = MurmurHash3.productHash(fields, seed2)
+    (hi.toLong << 32) | (lo.toLong & 0xFFFFFFFFL)
 
 case class NewPlayerEvent(
     playerId: PlayerId,
