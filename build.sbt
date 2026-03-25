@@ -109,6 +109,23 @@ lazy val backend = (project in file("modules/backend"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .dependsOn(api, domain, full(db), crawler)
 
+lazy val cli = (project in file("modules/cli"))
+  .settings(
+    commonSettings,
+    name := "cli",
+    libraryDependencies ++= Seq(
+      http4sEmberClient,
+      fs2IO,
+      cirisCore,
+      cirisHtt4s,
+      ironCiris,
+      logback % Runtime
+    ),
+    Compile / run / fork         := true,
+    Compile / run / connectInput := true
+  )
+  .dependsOn(crawler, full(db))
+
 lazy val gatling = (project in file("modules/gatling"))
   .settings(name := "gatling")
   .enablePlugins(GatlingPlugin)
@@ -124,7 +141,7 @@ lazy val gatling = (project in file("modules/gatling"))
 lazy val root = project
   .in(file("."))
   .settings(publish := {}, publish / skip := true)
-  .aggregate(types, api, domain, db, crawler, backend, gatling)
+  .aggregate(types, api, domain, db, crawler, backend, cli, gatling)
 
 def full(p: Project) = p % "test->test;compile->compile"
 
