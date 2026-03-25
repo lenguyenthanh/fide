@@ -26,11 +26,13 @@ object Ingestor:
 
     def ingest: IO[Unit] =
       for
-        _      <- info"Starting ingestion"
-        events <- eventDb.uningested()
-        _      <- info"Found ${events.size} uningested events"
-        _      <- if events.isEmpty then IO.unit else processEvents(events)
-        _      <- info"Ingestion complete"
+        _       <- info"Starting ingestion"
+        startAt <- IO.monotonic
+        events  <- eventDb.uningested()
+        _       <- info"Found ${events.size} uningested events"
+        _       <- if events.isEmpty then IO.unit else processEvents(events)
+        elapsed <- IO.monotonic.map(_ - startAt)
+        _       <- info"Ingestion complete, duration=${elapsed.toSeconds}s"
       yield ()
 
     def purge: IO[Unit] =
