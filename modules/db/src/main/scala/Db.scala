@@ -22,6 +22,7 @@ trait Db:
   def countFederations: IO[Long]
   def federationSummaryById(id: FederationId): IO[Option[FederationSummary]]
   def upsertFederations(feds: List[NewFederation]): IO[Unit]
+  def upsertPlayersWithHash(xs: List[(NewPlayer, Long)]): IO[Unit]
   def allPlayerHashes: IO[Map[PlayerId, Long]]
   def updateLastSeenAt(ids: List[PlayerId]): IO[Unit]
 
@@ -91,6 +92,12 @@ object Db:
       postgres.use: s =>
         s.prepare(Sql.upsertFederation).flatMap: cmd =>
           feds.traverse_(cmd.execute)
+
+    def upsertPlayersWithHash(xs: List[(NewPlayer, Long)]): IO[Unit] =
+      xs.grouped(2000).toList.traverse_ { chunk =>
+        val cmd = Sql.upsertPlayersWithHash(chunk.size)
+        postgres.use(_.execute(cmd)(chunk)).void
+      }
 
     def allPlayerHashes: IO[Map[PlayerId, Long]] =
       postgres.use(_.execute(Sql.allPlayerHashes)).map(_.toMap)
@@ -272,6 +279,22 @@ private object Sql:
 
   lazy val allPlayerHashes: Query[Void, (PlayerId, Long)] =
     sql"SELECT id, hash FROM players".query(playerIdCodec *: int8)
+
+  private val newPlayerWithHash: Codec[(NewPlayer, Long)] =
+    (newPlayer *: int8).imap[(NewPlayer, Long)] { case p *: h *: EmptyTuple => (p, h) } { case (p, h) => p *: h *: EmptyTuple }
+
+  def upsertPlayersWithHash(n: Int): Command[List[(NewPlayer, Long)]] =
+    val players = newPlayerWithHash.values.list(n)
+    sql"""
+        INSERT INTO players (id, name, title, women_title, other_titles, standard, standard_kfactor, rapid,
+          rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id, hash)
+        VALUES $players
+        ON CONFLICT (id) DO UPDATE SET (name, title, women_title, other_titles, standard, standard_kfactor, rapid,
+          rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id, hash) =
+        (EXCLUDED.name, EXCLUDED.title, EXCLUDED.women_title, EXCLUDED.other_titles, EXCLUDED.standard,
+          EXCLUDED.standard_kfactor, EXCLUDED.rapid, EXCLUDED.rapid_kfactor, EXCLUDED.blitz, EXCLUDED.blitz_kfactor,
+          EXCLUDED.sex, EXCLUDED.birth_year, EXCLUDED.active, EXCLUDED.federation_id, EXCLUDED.hash)
+       """.command
 
   def updateLastSeenAt(n: Int): Command[List[PlayerId]] =
     val ids = playerIdCodec.values.list(n)

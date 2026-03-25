@@ -39,13 +39,57 @@ object Ingestor:
         info"Purge complete"
 
     private def processEvents(events: List[PlayerEvent]): IO[Unit] =
-      val playerInfoRows = events
+      // Group by player, take latest event per player
+      val latestByPlayer = events
         .groupBy(_.playerId)
         .values
         .map(_.maxBy(_.id))
-        .map(e => PlayerInfoRow(e.playerId, e.name, e.gender, e.birthYear))
         .toList
 
+      // Build NewPlayer + hash pairs for players upsert
+      val playersWithHash: List[(NewPlayer, Long)] = latestByPlayer.map: e =>
+        val player = NewPlayer(
+          id = e.playerId,
+          name = e.name,
+          title = e.title,
+          womenTitle = e.womenTitle,
+          otherTitles = e.otherTitles,
+          standard = e.standard,
+          standardK = e.standardK,
+          rapid = e.rapid,
+          rapidK = e.rapidK,
+          blitz = e.blitz,
+          blitzK = e.blitzK,
+          gender = e.gender,
+          birthYear = e.birthYear,
+          active = e.active,
+          federationId = e.federationId
+        )
+        (player, e.hash)
+
+      // Build player info rows with identity hash
+      val playerInfoRows: List[(PlayerInfoRow, Long)] = latestByPlayer.map: e =>
+        val row = PlayerInfoRow(e.playerId, e.name, e.gender, e.birthYear)
+        val hash = NewPlayer.computeInfoHash(NewPlayer(
+          id = e.playerId,
+          name = e.name,
+          title = e.title,
+          womenTitle = e.womenTitle,
+          otherTitles = e.otherTitles,
+          standard = e.standard,
+          standardK = e.standardK,
+          rapid = e.rapid,
+          rapidK = e.rapidK,
+          blitz = e.blitz,
+          blitzK = e.blitzK,
+          gender = e.gender,
+          birthYear = e.birthYear,
+          active = e.active,
+          federationId = e.federationId
+        ))
+        (row, hash)
+
+      // Build history rows
       val historyRows = events
         .flatMap: e =>
           e.sourceLastModified
@@ -78,8 +122,18 @@ object Ingestor:
           if skippedCount > 0 then
             warn"$skippedCount events skipped for history (unparseable sourceLastModified)"
           else IO.unit
-        _ <- info"Upserting ${playerInfoRows.size} player info rows and ${historyRows.size} history rows"
-        _ <- historyDb.upsertPlayerInfo(playerInfoRows)
+        // Diff player_info: only upsert rows whose identity hash changed
+        infoHashMap        <- playerInfoHashCache.get
+        changedInfoRows     = playerInfoRows.filter((row, hash) => infoHashMap.get(row.id).forall(_ != hash))
+        playerInfoUpdated   = changedInfoRows.size
+        _ <- info"Upserting ${playersWithHash.size} players, $playerInfoUpdated player info rows, and ${historyRows.size} history rows"
+        // Upsert players with hash (moved from crawl phase)
+        _ <- db.upsertPlayersWithHash(playersWithHash)
+        // Upsert only changed player_info rows
+        _ <- if changedInfoRows.nonEmpty then historyDb.upsertPlayerInfoWithHash(changedInfoRows) else IO.unit
         _ <- historyDb.upsertPlayerHistory(historyRows)
         _ <- eventDb.markIngested(events.map(_.id))
+        // Update caches
+        _ <- playerHashCache.update(playersWithHash.map((p, h) => p.id -> h).toMap)
+        _ <- playerInfoHashCache.update(changedInfoRows.map((r, h) => r.id -> h).toMap)
       yield ()
