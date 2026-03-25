@@ -30,7 +30,7 @@ val commonSettings = Seq(
     log4Cats,
     weaver,
     weaverScalaCheck
-  )
+  ),
 )
 
 lazy val types = (project in file("modules/types"))
@@ -49,7 +49,7 @@ lazy val api = (project in file("modules/api"))
     smithy4sWildcardArgument := "?",
     libraryDependencies ++= Seq(
       smithy4sCore
-    )
+    ),
   )
   .dependsOn(types)
 
