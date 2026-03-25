@@ -231,88 +231,17 @@ object HistoryDb:
     lazy val availableMonths: Query[Void, YearMonth] =
       sql"SELECT DISTINCT year_month FROM player_history ORDER BY year_month DESC".query(yearMonthCodec)
 
-    // Filter fragments adapted for history queries.
-    // Rating, title, active, other_titles, federation_id use ph. prefix.
-    // Name, sex use pi. prefix.
-    // Birth year uses pi. prefix.
     private def filterFragment(filter: PlayerFilter): Option[AppliedFragment] =
-      List.concat(
-        filter.name.map(nameLikeFragment),
-        between("ph", "standard", filter.standard),
-        between("ph", "rapid", filter.rapid),
-        between("ph", "blitz", filter.blitz),
-        filter.isActive.map(filterActive),
-        filter.federationId.map(federationIdFragment),
-        filter.titles.map(xs => playersByTitles(xs.size)(xs, xs)),
-        filter.otherTitles.map(xs => playersByOtherTitles(xs.size)(xs)),
-        filter.gender.map(filterGender),
-        between("pi", "birth_year", filter.birthYearMin, filter.birthYearMax),
-        filter.hasTitle.map(hasTitle),
-        filter.hasWomenTitle.map(hasWomenTitle),
-        filter.hasOtherTitle.map(hasOtherTitle)
-      ) match
-        case Nil => none
-        case xs  => xs.intercalate(and).some
-
-    private def between(tableAlias: String, column: String, range: RatingRange): Option[AppliedFragment] =
-      between(tableAlias, column, range.min, range.max)
-
-    private def between[A <: Int](
-        tableAlias: String,
-        column: String,
-        min: Option[A],
-        max: Option[A]
-    ): Option[AppliedFragment] =
-      val col = s"$tableAlias.$column"
-      (min, max) match
-        case (Some(min), Some(max)) =>
-          sql"#$col BETWEEN ${int4} AND ${int4}".apply(min, max).some
-        case (Some(min), None) =>
-          sql"#$col >= ${int4}".apply(min).some
-        case (None, Some(max)) =>
-          sql"#$col <= ${int4}".apply(max).some
-        case (None, None) => none
-
-    private lazy val filterActive: Fragment[Boolean] =
-      sql"ph.active = $bool"
-
-    private lazy val filterGender: Fragment[Gender] =
-      sql"pi.sex = $gender"
-
-    private def playersByTitles(n: Int): Fragment[(List[Title], List[Title])] =
-      val titles = title.values.list(n)
-      sql"(ph.title IN ($titles) OR ph.women_title IN ($titles))"
-
-    private def hasTitle: Boolean => AppliedFragment =
-      case true  => sql"ph.title IS NOT NULL".apply(Void)
-      case false => sql"ph.title IS NULL".apply(Void)
-
-    private def hasWomenTitle: Boolean => AppliedFragment =
-      case true  => sql"ph.women_title IS NOT NULL".apply(Void)
-      case false => sql"ph.women_title IS NULL".apply(Void)
-
-    private def hasOtherTitle: Boolean => AppliedFragment =
-      case true  => sql"cardinality(ph.other_titles) != 0".apply(Void)
-      case false => sql"cardinality(ph.other_titles) = 0".apply(Void)
-
-    private def playersByOtherTitles(n: Int): Fragment[List[OtherTitle]] =
-      val otherTitles = otherTitle.values.list(n)
-      sql"ph.other_titles && array[$otherTitles]::other_title[]"
-
-    private def nameLikeFragment(name: String): AppliedFragment =
-      sql"pi.name % $text".apply(name)
+      FilterSql.filterFragment(TableAliases.history)(filter)
 
     private def pagingFragment(page: Pagination): AppliedFragment =
       sql" LIMIT ${int4} OFFSET ${int4}".apply(page.size, page.offset)
 
-    private def federationIdFragment(id: FederationId): AppliedFragment =
-      if id.value.toLowerCase == "non" then sql"ph.federation_id IS NULL".apply(Void)
-      else sql"ph.federation_id = $federationIdCodec".apply(id)
-
     private def sortingFragment(sorting: Sorting): AppliedFragment =
+      val a = TableAliases.history
       val column = sorting.sortBy match
-        case SortBy.Name      => "pi.name"
-        case SortBy.BirthYear => "pi.birth_year"
-        case other            => s"ph.${other.value}"
+        case SortBy.Name      => s"${a.identity}.name"
+        case SortBy.BirthYear => s"${a.identity}.birth_year"
+        case other            => s"${a.data}.${other.value}"
       val orderBy = sorting.orderBy.value
       sql" ORDER BY #$column #$orderBy NULLS LAST".apply(Void)

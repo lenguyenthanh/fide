@@ -177,72 +177,10 @@ private object Sql:
         WHERE id = $federationIdCodec""".query(federationSummary)
 
   private val void: AppliedFragment  = sql"".apply(Void)
-  private val and: AppliedFragment   = sql" AND ".apply(Void)
   private val where: AppliedFragment = sql"WHERE ".apply(Void)
 
-  private def between(column: String, range: RatingRange): Option[AppliedFragment] =
-    between(column, range.min, range.max)
-
-  private def between[A <: Int](column: String, min: Option[A], max: Option[A]): Option[AppliedFragment] =
-    val _column = s"p.$column"
-    (min, max) match
-      case (Some(min), Some(max)) =>
-        sql"""
-            #$_column BETWEEN ${int4} AND ${int4}""".apply(min, max).some
-      case (Some(min), None) =>
-        sql"""
-            #$_column >= ${int4}""".apply(min).some
-      case (None, Some(max)) =>
-        sql"""
-            #$_column <= ${int4}""".apply(max).some
-      case (None, None) => none
-
   private def filterFragment(filter: PlayerFilter): Option[AppliedFragment] =
-    List.concat(
-      filter.name.map(nameLikeFragment),
-      between("standard", filter.standard),
-      between("rapid", filter.rapid),
-      between("blitz", filter.blitz),
-      filter.isActive.map(filterActive),
-      filter.federationId.map(federationIdFragment),
-      filter.titles.map(xs => playersByTitles(xs.size)(xs, xs)),
-      filter.otherTitles.map(xs => playersByOtherTitles(xs.size)(xs)),
-      filter.gender.map(filterGender),
-      between("birth_year", filter.birthYearMin, filter.birthYearMax),
-      filter.hasTitle.map(hasTitle),
-      filter.hasWomenTitle.map(hasWomenTitle),
-      filter.hasOtherTitle.map(hasOtherTitle)
-    ) match
-      case Nil => none
-      case xs  => xs.intercalate(and).some
-
-  private lazy val filterActive: Fragment[Boolean] =
-    sql"p.active = $bool"
-
-  private lazy val filterGender: Fragment[Gender] =
-    sql"p.sex = $gender"
-
-  def playersByTitles(n: Int): Fragment[(List[Title], List[Title])] =
-    val titles = title.values.list(n)
-    sql"(p.title IN ($titles) OR p.women_title in ($titles))"
-
-  private def hasTitle: Boolean => AppliedFragment =
-    case true  => sql"p.title IS NOT NULL".apply(Void)
-    case false => sql"p.title IS NULL".apply(Void)
-
-  private def hasWomenTitle: Boolean => AppliedFragment =
-    case true  => sql"p.women_title IS NOT NULL".apply(Void)
-    case false => sql"p.women_title IS NULL".apply(Void)
-
-  private def hasOtherTitle: Boolean => AppliedFragment =
-    case true  => sql"cardinality(p.other_titles) != 0".apply(Void)
-    case false => sql"cardinality(p.other_titles) = 0".apply(Void)
-
-  // https://www.postgresql.org/docs/current/functions-array.html#FUNCTIONS-ARRAY
-  // select * from player where other_titles && array['IA','FA']::other_title[]
-  def playersByOtherTitles(n: Int): Fragment[List[OtherTitle]] =
-    val otherTitles = otherTitle.values.list(n)
-    sql"p.other_titles && array[$otherTitles]::other_title[]"
+    FilterSql.filterFragment(TableAliases.players)(filter)
 
   private lazy val insertIntoPlayer =
     sql"""INSERT INTO players (id, name, title, women_title, other_titles, standard, standard_kfactor, rapid,
@@ -259,17 +197,9 @@ private object Sql:
   private val onConflictDoNothing  = sql"ON CONFLICT DO NOTHING"
   private val insertIntoFederation = sql"INSERT INTO federations (id, name)"
 
-  private def nameLikeFragment(name: String): AppliedFragment =
-    sql"""
-        p.name % $text""".apply(name)
-
   private def pagingFragment(page: Pagination): AppliedFragment =
     sql"""
         LIMIT ${int4} OFFSET ${int4}""".apply(page.size, page.offset)
-
-  private def federationIdFragment(id: FederationId): AppliedFragment =
-    if id.value.toLowerCase == "non" then sql"p.federation_id IS NULL".apply(Void)
-    else sql"""p.federation_id = $federationIdCodec""".apply(id)
 
   private def sortingFragment(sorting: Sorting): AppliedFragment =
     val column  = s"p.${sorting.sortBy.value}"
