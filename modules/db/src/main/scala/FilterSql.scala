@@ -94,5 +94,5 @@ object FilterSql:
     sql"#${s"$alias.name"} % $text".apply(name)
 
   private def federationIdFragment(alias: String)(id: FederationId): AppliedFragment =
-    if id.value.toLowerCase == "non" then sql"#${s"$alias.federation_id"} IS NULL".apply(Void)
+    if FederationId.isNone(id) then sql"#${s"$alias.federation_id"} IS NULL".apply(Void)
     else sql"#${s"$alias.federation_id"} = $federationIdCodec".apply(id)

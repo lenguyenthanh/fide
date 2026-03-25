@@ -60,7 +60,7 @@ object Downloader:
     inline def playerName(): Option[String]                 = sanitizeName(line.substring(15, 76))
     inline def playerId(): Option[PlayerId]                 = number(0, 15) >>= PlayerId.option
     inline def federationId(): Option[FederationId]         =
-      string(76, 79).map(_.toUpperCase).filter(_ != "NON") >>= FederationId.option
+      string(76, 79).map(_.toUpperCase).filter(_ != FederationId.NoneFederationId) >>= FederationId.option
 
     (playerId(), playerName()).mapN: (id, name) =>
       NewPlayer(

@@ -65,7 +65,7 @@ object ArchiveParser:
 
     val playerId     = number(0, 15) >>= PlayerId.option
     val playerName   = Downloader.sanitizeName(line.substring(15, math.min(76, line.length)))
-    val federationId = string(76, 79).map(_.toUpperCase).filter(_ != "NON") >>= FederationId.option
+    val federationId = string(76, 79).map(_.toUpperCase).filter(_ != FederationId.NoneFederationId) >>= FederationId.option
     val gender       = string(80, 82) >>= Gender.apply
     val title        = string(84, 89) >>= Title.apply
     val womenTitle   = string(89, 94) >>= Title.apply
