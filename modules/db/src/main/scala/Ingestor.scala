@@ -4,6 +4,7 @@ package db
 import cats.effect.*
 import fide.domain.*
 import fide.types.*
+import io.github.arainko.ducktape.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
 
@@ -50,45 +51,13 @@ object Ingestor:
 
       // Build NewPlayer + hash pairs for players upsert
       val playersWithHash: List[(NewPlayer, Long)] = latestByPlayer.map: e =>
-        val player = NewPlayer(
-          id = e.playerId,
-          name = e.name,
-          title = e.title,
-          womenTitle = e.womenTitle,
-          otherTitles = e.otherTitles,
-          standard = e.standard,
-          standardK = e.standardK,
-          rapid = e.rapid,
-          rapidK = e.rapidK,
-          blitz = e.blitz,
-          blitzK = e.blitzK,
-          gender = e.gender,
-          birthYear = e.birthYear,
-          active = e.active,
-          federationId = e.federationId
-        )
+        val player = e.into[NewPlayer].transform(Field.renamed(_.id, _.playerId))
         (player, e.hash)
 
       // Build player info rows with identity hash
-      val playerInfoRows: List[(PlayerInfoRow, Long)] = latestByPlayer.map: e =>
-        val row = PlayerInfoRow(e.playerId, e.name, e.gender, e.birthYear)
-        val hash = NewPlayer.computeInfoHash(NewPlayer(
-          id = e.playerId,
-          name = e.name,
-          title = e.title,
-          womenTitle = e.womenTitle,
-          otherTitles = e.otherTitles,
-          standard = e.standard,
-          standardK = e.standardK,
-          rapid = e.rapid,
-          rapidK = e.rapidK,
-          blitz = e.blitz,
-          blitzK = e.blitzK,
-          gender = e.gender,
-          birthYear = e.birthYear,
-          active = e.active,
-          federationId = e.federationId
-        ))
+      val playerInfoRows: List[(PlayerInfoRow, Long)] = playersWithHash.map: (player, _) =>
+        val row  = player.to[PlayerInfoRow]
+        val hash = NewPlayer.computeInfoHash(player)
         (row, hash)
 
       // Build history rows — parse sourceLastModified once
@@ -98,21 +67,7 @@ object Ingestor:
       val historyRows = parsedEvents
         .collect:
           case (e, Some(ym)) =>
-            PlayerHistoryRow(
-              playerId = e.playerId,
-              yearMonth = ym,
-              title = e.title,
-              womenTitle = e.womenTitle,
-              otherTitles = e.otherTitles,
-              standard = e.standard,
-              standardK = e.standardK,
-              rapid = e.rapid,
-              rapidK = e.rapidK,
-              blitz = e.blitz,
-              blitzK = e.blitzK,
-              federationId = e.federationId,
-              active = e.active
-            )
+            e.into[PlayerHistoryRow].transform(Field.const(_.yearMonth, ym))
         .groupBy(r => (r.playerId, r.yearMonth))
         .values
         .map(_.last)

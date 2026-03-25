@@ -6,6 +6,7 @@ import cats.effect.std.AtomicCell
 import cats.syntax.all.*
 import fide.db.{ Db, HashCache, KVStore, PlayerEventDb }
 import fide.domain.*
+import io.github.arainko.ducktape.*
 import org.http4s.client.Client
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
@@ -123,23 +124,11 @@ object Crawler:
           now: OffsetDateTime,
           timestamp: Option[String]
       ): NewPlayerEvent =
-        NewPlayerEvent(
-          playerId = player.id,
-          name = player.name,
-          title = player.title,
-          womenTitle = player.womenTitle,
-          otherTitles = player.otherTitles,
-          standard = player.standard,
-          standardK = player.standardK,
-          rapid = player.rapid,
-          rapidK = player.rapidK,
-          blitz = player.blitz,
-          blitzK = player.blitzK,
-          gender = player.gender,
-          birthYear = player.birthYear,
-          active = player.active,
-          federationId = player.federationId,
-          hash = hash,
-          crawledAt = now,
-          sourceLastModified = timestamp
-        )
+        player
+          .into[NewPlayerEvent]
+          .transform(
+            Field.renamed(_.playerId, _.id),
+            Field.const(_.hash, hash),
+            Field.const(_.crawledAt, now),
+            Field.const(_.sourceLastModified, timestamp)
+          )
