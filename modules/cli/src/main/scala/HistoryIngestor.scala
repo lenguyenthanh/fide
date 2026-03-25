@@ -58,7 +58,7 @@ object HistoryIngestor:
         .readFile(path)
         .chunkN(ChunkSize)
         .evalScan(0L): (acc, chunk) =>
-          val players = chunk.toList
+          val players     = chunk.toList
           val historyRows = players.map: p =>
             PlayerHistoryRow(
               playerId = p.id,
@@ -82,10 +82,11 @@ object HistoryIngestor:
               gender = p.gender,
               birthYear = p.birthYear
             )
-          val feds = players.mapFilter: p =>
-            p.federationId.map: fid =>
-              NewFederation(fid, Federation.all.getOrElse(fid, fid.value))
-          .distinctBy(_.id)
+          val feds = players
+            .mapFilter: p =>
+              p.federationId.map: fid =>
+                NewFederation(fid, Federation.all.getOrElse(fid, fid.value))
+            .distinctBy(_.id)
           for
             _ <- if feds.nonEmpty then db.upsertFederations(feds) else IO.unit
             _ <- historyDb.upsertPlayerInfo(infoRows)

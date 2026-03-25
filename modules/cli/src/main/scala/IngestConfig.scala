@@ -24,18 +24,20 @@ object IngestConfig:
 
   def parse(args: List[String]): IO[IngestConfig] =
     args match
-      case Nil => IO.raiseError(IllegalArgumentException("Missing required argument: <csvDir>"))
+      case Nil            => IO.raiseError(IllegalArgumentException("Missing required argument: <csvDir>"))
       case csvDir :: rest =>
         parseFlags(rest) match
-          case Left(err) => IO.raiseError(IllegalArgumentException(err))
+          case Left(err)           => IO.raiseError(IllegalArgumentException(err))
           case Right((start, end)) =>
-            postgresConfig.load[IO].map: pg =>
-              IngestConfig(
-                csvDir = Path.of(csvDir),
-                startMonth = start,
-                endMonth = end,
-                postgres = pg
-              )
+            postgresConfig
+              .load[IO]
+              .map: pg =>
+                IngestConfig(
+                  csvDir = Path.of(csvDir),
+                  startMonth = start,
+                  endMonth = end,
+                  postgres = pg
+                )
 
   private def parseFlags(
       args: List[String]
@@ -47,9 +49,11 @@ object IngestConfig:
     ): Either[String, (Option[YearMonth], Option[YearMonth])] =
       remaining match
         case Nil                        => Right((start, end))
-        case "--start" :: value :: tail => YearMonth.fromString(value).flatMap(ym => loop(tail, Some(ym), end))
-        case "--end" :: value :: tail   => YearMonth.fromString(value).flatMap(ym => loop(tail, start, Some(ym)))
-        case unknown :: _              => Left(s"Unknown flag: $unknown")
+        case "--start" :: value :: tail =>
+          YearMonth.fromString(value).flatMap(ym => loop(tail, Some(ym), end))
+        case "--end" :: value :: tail =>
+          YearMonth.fromString(value).flatMap(ym => loop(tail, start, Some(ym)))
+        case unknown :: _ => Left(s"Unknown flag: $unknown")
     loop(args, None, None)
 
   private def postgresConfig =

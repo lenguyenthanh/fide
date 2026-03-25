@@ -95,20 +95,32 @@ object NewPlayer:
 
   /** Hash all mutable fields for change detection. Two-pass MurmurHash3 combined into Long. */
   def computeHash(p: NewPlayer): Long =
-    val fields = (p.name, p.title, p.womenTitle, p.otherTitles,
-      p.standard, p.standardK, p.rapid, p.rapidK,
-      p.blitz, p.blitzK, p.gender, p.birthYear,
-      p.active, p.federationId)
+    val fields = (
+      p.name,
+      p.title,
+      p.womenTitle,
+      p.otherTitles,
+      p.standard,
+      p.standardK,
+      p.rapid,
+      p.rapidK,
+      p.blitz,
+      p.blitzK,
+      p.gender,
+      p.birthYear,
+      p.active,
+      p.federationId
+    )
     val hi = MurmurHash3.productHash(fields, MurmurHash3.productSeed)
     val lo = MurmurHash3.productHash(fields, seed2)
-    (hi.toLong << 32) | (lo.toLong & 0xFFFFFFFFL)
+    (hi.toLong << 32) | (lo.toLong & 0xffffffffL)
 
   /** Hash identity fields only (name, gender, birthYear) for player_info change detection. */
   def computeInfoHash(p: NewPlayer): Long =
     val fields = (p.name, p.gender, p.birthYear)
-    val hi = MurmurHash3.productHash(fields, MurmurHash3.productSeed)
-    val lo = MurmurHash3.productHash(fields, seed2)
-    (hi.toLong << 32) | (lo.toLong & 0xFFFFFFFFL)
+    val hi     = MurmurHash3.productHash(fields, MurmurHash3.productSeed)
+    val lo     = MurmurHash3.productHash(fields, seed2)
+    (hi.toLong << 32) | (lo.toLong & 0xffffffffL)
 
 case class NewPlayerEvent(
     playerId: PlayerId,

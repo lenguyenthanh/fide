@@ -32,6 +32,5 @@ object CsvWriter:
     ).mkString(",")
 
   private def escapeCsv(s: String): String =
-    if s.contains(",") || s.contains("\"") || s.contains("\n") then
-      "\"" + s.replace("\"", "\"\"") + "\""
+    if s.contains(",") || s.contains("\"") || s.contains("\n") then "\"" + s.replace("\"", "\"\"") + "\""
     else s

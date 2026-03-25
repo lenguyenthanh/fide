@@ -20,7 +20,7 @@ object CrawlConfig:
 
   def parse(args: List[String]): Either[String, CrawlConfig] =
     args match
-      case Nil => Left("Missing required argument: <outputDir>")
+      case Nil               => Left("Missing required argument: <outputDir>")
       case outputDir :: rest =>
         parseFlags(rest).map: (start, end, delay) =>
           CrawlConfig(
@@ -41,8 +41,10 @@ object CrawlConfig:
     ): Either[String, (Option[YearMonth], Option[YearMonth], Option[FiniteDuration])] =
       remaining match
         case Nil                        => Right((start, end, delay))
-        case "--start" :: value :: tail => YearMonth.fromString(value).flatMap(ym => loop(tail, Some(ym), end, delay))
-        case "--end" :: value :: tail   => YearMonth.fromString(value).flatMap(ym => loop(tail, start, Some(ym), delay))
+        case "--start" :: value :: tail =>
+          YearMonth.fromString(value).flatMap(ym => loop(tail, Some(ym), end, delay))
+        case "--end" :: value :: tail =>
+          YearMonth.fromString(value).flatMap(ym => loop(tail, start, Some(ym), delay))
         case "--delay" :: value :: tail =>
           value.toIntOption match
             case Some(secs) => loop(tail, start, end, Some(secs.seconds))

@@ -33,7 +33,14 @@ object AppResources:
       historyDb = HistoryDb(res.postgres)
       playerHashCache     <- HashCache(db.allPlayerHashes).toResource
       playerInfoHashCache <- HashCache(historyDb.allPlayerInfoHashes).toResource
-      ingestor  = Ingestor(eventDb, historyDb, db, playerHashCache, playerInfoHashCache, conf.ingestion.eventTtlDays.toLong.days)
+      ingestor = Ingestor(
+        eventDb,
+        historyDb,
+        db,
+        playerHashCache,
+        playerInfoHashCache,
+        conf.ingestion.eventTtlDays.toLong.days
+      )
     yield AppResources(
       db,
       store,

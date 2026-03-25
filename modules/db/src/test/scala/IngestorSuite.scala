@@ -21,12 +21,15 @@ object IngestorSuite extends SimpleIOSuite:
   given Logger[IO] = NoOpLogger[IO]
 
   private def resource: Resource[IO, (PlayerEventDb, HistoryDb, Ingestor, Db)] =
-    Containers.createResource.map: x =>
+    Containers.createResource.evalMap: x =>
       val eventDb   = PlayerEventDb(x.postgres)
       val historyDb = HistoryDb(x.postgres)
-      val ingestor  = Ingestor(eventDb, historyDb, 90.days)
       val db        = Db(x.postgres)
-      (eventDb, historyDb, ingestor, db)
+      for
+        playerHashCache     <- HashCache(db.allPlayerHashes)
+        playerInfoHashCache <- HashCache(historyDb.allPlayerInfoHashes)
+        ingestor = Ingestor(eventDb, historyDb, db, playerHashCache, playerInfoHashCache, 90.days)
+      yield (eventDb, historyDb, ingestor, db)
 
   val now     = OffsetDateTime.now()
   val fedId   = FederationId("USA")
@@ -45,7 +48,7 @@ object IngestorSuite extends SimpleIOSuite:
       birthYear = 1990.some,
       active = true,
       federationId = fedId.some,
-      rawData = s"raw-line-$playerId",
+      hash = playerId.toLong,
       crawledAt = now,
       sourceLastModified = lastModified
     )
@@ -93,15 +96,16 @@ object IngestorSuite extends SimpleIOSuite:
 
   test("ingest skips history for events without sourceLastModified"):
     resource.use: (eventDb, historyDb, ingestor, db) =>
+      val fed = NewFederation(fedId, "United States")
       for
-        _      <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true), none)
-        _      <- eventDb.append(List(mkEvent(1, "Alice", lastModified = none)))
-        _      <- ingestor.ingest
+        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
+        _ <- eventDb.append(List(mkEvent(1, "Alice", lastModified = none)))
+        _ <- ingestor.ingest
         months <- historyDb.availableMonths
       yield expect(months.isEmpty)
 
   test("purge removes old events"):
-    resource.use: (eventDb, _, ingestor, _) =>
+    resource.use: (eventDb, _, _, _) =>
       for
         _      <- eventDb.append(List(mkEvent(1, "Alice")))
         before <- eventDb.uningested()

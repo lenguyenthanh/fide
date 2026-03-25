@@ -6,8 +6,18 @@ import org.http4s.Uri
 object FideArchiveUrl:
 
   private val monthAbbrevs = Array(
-    "jan", "feb", "mar", "apr", "may", "jun",
-    "jul", "aug", "sep", "oct", "nov", "dec"
+    "jan",
+    "feb",
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct",
+    "nov",
+    "dec"
   )
 
   val categories = List("standard", "rapid", "blitz")

@@ -23,8 +23,8 @@ object ArchiveParser:
   def detectOffset(header: String): Int =
     if header.contains("FOA") then 0 else -4
 
-  /** Parse a per-category archive line with federation resolution.
-    * Returns None for blank/unparseable lines (errors are logged).
+  /** Parse a per-category archive line with federation resolution. Returns None for blank/unparseable lines
+    * (errors are logged).
     */
   def parseLine(line: String, category: String, offset: Int)(using Logger[IO]): IO[Option[NewPlayer]] =
     IO(line.trim.nonEmpty)
@@ -46,20 +46,11 @@ object ArchiveParser:
 
   /** Parse a single fixed-width line from a per-category archive.
     *
-    * Shared columns (all variants):
-    *   0-14:   player ID
-    *   15-75:  name
-    *   76-78:  federation
-    *   80-81:  gender
-    *   84-88:  title
-    *   89-93:  women's title
-    *   94-108: other titles
+    * Shared columns (all variants): 0-14: player ID 15-75: name 76-78: federation 80-81: gender 84-88: title
+    * 89-93: women's title 94-108: other titles
     *
-    * Offset-dependent columns (offset=0 with FOA, offset=-4 without):
-    *   113+offset: rating (5 chars)
-    *   123+offset: K-factor (3 chars)
-    *   126+offset: birth year (4 chars)
-    *   132+offset: active flag
+    * Offset-dependent columns (offset=0 with FOA, offset=-4 without): 113+offset: rating (5 chars)
+    * 123+offset: K-factor (3 chars) 126+offset: birth year (4 chars) 132+offset: active flag
     */
   def parsePlayer(line: String, category: String, offset: Int): Option[NewPlayer] =
     inline def string(start: Int, end: Int): Option[String] =

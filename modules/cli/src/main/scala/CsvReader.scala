@@ -4,8 +4,8 @@ import cats.effect.IO
 import cats.syntax.all.*
 import fide.domain.*
 import fide.types.*
-import fs2.{ Pipe, Stream }
 import fs2.io.file.{ Files, Path }
+import fs2.{ Pipe, Stream }
 import org.typelevel.log4cats.Logger
 
 object CsvReader:
@@ -26,7 +26,7 @@ object CsvReader:
     val fields = parseCsvFields(line)
     if fields.length < 15 then none
     else
-      val id = fields(0).toIntOption >>= PlayerId.option
+      val id   = fields(0).toIntOption >>= PlayerId.option
       val name = fields(1).some.filter(_.nonEmpty)
       (id, name).mapN: (pid, pname) =>
         NewPlayer(
@@ -34,7 +34,8 @@ object CsvReader:
           name = pname,
           title = fields(2).some.filter(_.nonEmpty) >>= Title.apply,
           womenTitle = fields(3).some.filter(_.nonEmpty) >>= Title.apply,
-          otherTitles = fields(4).some.filter(_.nonEmpty).fold(Nil)(s => s.split(";").toList.mapFilter(OtherTitle.apply)),
+          otherTitles =
+            fields(4).some.filter(_.nonEmpty).fold(Nil)(s => s.split(";").toList.mapFilter(OtherTitle.apply)),
           standard = fields(5).some.filter(_.nonEmpty) >>= Rating.fromString,
           standardK = fields(6).toIntOption,
           rapid = fields(7).some.filter(_.nonEmpty) >>= Rating.fromString,
@@ -49,8 +50,8 @@ object CsvReader:
 
   /** Parse CSV fields handling quoted values with embedded commas and escaped quotes. */
   private def parseCsvFields(line: String): Array[String] =
-    val fields  = scala.collection.mutable.ArrayBuffer.empty[String]
-    val current = new StringBuilder
+    val fields   = scala.collection.mutable.ArrayBuffer.empty[String]
+    val current  = new StringBuilder
     var inQuotes = false
     var i        = 0
     while i < line.length do

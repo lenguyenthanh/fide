@@ -36,7 +36,7 @@ object PlayerEventDbSuite extends SimpleIOSuite:
       standard = Rating(2700).some,
       active = true,
       federationId = FederationId("USA").some,
-      rawData = s"raw-line-for-$name",
+      hash = playerId.toLong,
       crawledAt = now,
       sourceLastModified = lastModified
     )
@@ -49,7 +49,7 @@ object PlayerEventDbSuite extends SimpleIOSuite:
         retrieved <- eventDb.uningested()
       yield expect(retrieved.size == 2) and
         expect(retrieved.head.name == "Alice") and
-        expect(retrieved.head.rawData == "raw-line-for-Alice") and
+        expect(retrieved.head.hash == 1L) and
         expect(retrieved.last.name == "Bob")
 
   test("markIngested filters from uningested"):

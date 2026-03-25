@@ -30,7 +30,7 @@ val commonSettings = Seq(
     log4Cats,
     weaver,
     weaverScalaCheck
-  ),
+  )
 )
 
 lazy val types = (project in file("modules/types"))

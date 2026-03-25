@@ -31,7 +31,8 @@ object Ingestor:
       for
         _       <- info"Starting ingestion"
         startAt <- IO.monotonic
-        total   <- eventDb.ungestedStream(BatchSize)
+        total   <- eventDb
+          .ungestedStream(BatchSize)
           .chunkN(BatchSize)
           .evalScan(0L): (acc, chunk) =>
             val events = chunk.toList
@@ -88,10 +89,11 @@ object Ingestor:
             warn"$skippedCount events skipped for history (unparseable sourceLastModified)"
           else IO.unit
         // Diff player_info: only upsert rows whose identity hash changed
-        infoHashMap        <- playerInfoHashCache.get
-        changedInfoRows     = playerInfoRows.filter((row, hash) => infoHashMap.get(row.id).forall(_ != hash))
-        playerInfoUpdated   = changedInfoRows.size
-        _ <- info"Upserting ${playersWithHash.size} players, $playerInfoUpdated player info rows, and ${historyRows.size} history rows"
+        infoHashMap <- playerInfoHashCache.get
+        changedInfoRows   = playerInfoRows.filter((row, hash) => infoHashMap.get(row.id).forall(_ != hash))
+        playerInfoUpdated = changedInfoRows.size
+        _ <-
+          info"Upserting ${playersWithHash.size} players, $playerInfoUpdated player info rows, and ${historyRows.size} history rows"
         // Upsert players with hash
         _ <- db.upsertPlayersWithHash(playersWithHash)
         // Upsert only changed player_info rows

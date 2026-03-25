@@ -48,9 +48,12 @@ object HistoryDb:
 
     def upsertPlayerInfoWithHash(players: List[(PlayerInfoRow, Long)]): IO[Unit] =
       players.grouped(ChunkSize).toList.traverse_ { chunk =>
-        val codec = (DbCodecs.playerInfoRow *: int8).imap[(PlayerInfoRow, Long)] {
-          case r *: h *: EmptyTuple => (r, h)
-        } { case (r, h) => r *: h *: EmptyTuple }.values.list(chunk.size)
+        val codec = (DbCodecs.playerInfoRow *: int8)
+          .imap[(PlayerInfoRow, Long)] { case r *: h *: EmptyTuple =>
+            (r, h)
+          } { case (r, h) => r *: h *: EmptyTuple }
+          .values
+          .list(chunk.size)
         val cmd = sql"""
           INSERT INTO player_info (id, name, sex, birth_year, hash)
           VALUES $codec
@@ -238,7 +241,7 @@ object HistoryDb:
       sql" LIMIT ${int4} OFFSET ${int4}".apply(page.size, page.offset)
 
     private def sortingFragment(sorting: Sorting): AppliedFragment =
-      val a = TableAliases.history
+      val a      = TableAliases.history
       val column = sorting.sortBy match
         case SortBy.Name      => s"${a.identity}.name"
         case SortBy.BirthYear => s"${a.identity}.birth_year"

@@ -54,8 +54,10 @@ object PlayerEventDb:
         FROM player_events
         WHERE ingested = FALSE
         ORDER BY id""".query(DbCodecs.playerEvent)
-      fs2.Stream.resource(postgres).flatMap: session =>
-        session.stream(q)(Void, batchSize)
+      fs2.Stream
+        .resource(postgres)
+        .flatMap: session =>
+          session.stream(q)(Void, batchSize)
 
     def markIngested(ids: List[Long]): IO[Unit] =
       ids.grouped(ChunkSize).toList.traverse_ { chunk =>

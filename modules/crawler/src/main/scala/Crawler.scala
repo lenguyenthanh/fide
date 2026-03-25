@@ -50,13 +50,13 @@ object Crawler:
       def fetchAndSave(timestamp: Option[String]): IO[Unit] =
         val now = OffsetDateTime.now()
         for
-          _        <- info"Start crawling"
-          startAt  <- IO.monotonic
-          hashMap  <- playerHashCache.get
-          _        <- info"Loaded ${hashMap.size} player hashes for diffing"
-          metrics  <- AtomicCell[IO].of(CrawlMetrics())
-          seenIds  <- AtomicCell[IO].of(List.empty[fide.types.PlayerId])
-          _ <- downloader.fetch
+          _       <- info"Start crawling"
+          startAt <- IO.monotonic
+          hashMap <- playerHashCache.get
+          _       <- info"Loaded ${hashMap.size} player hashes for diffing"
+          metrics <- AtomicCell[IO].of(CrawlMetrics())
+          seenIds <- AtomicCell[IO].of(List.empty[fide.types.PlayerId])
+          _       <- downloader.fetch
             .chunkN(config.chunkSize)
             .map(_.toList)
             .parEvalMapUnordered(config.concurrentUpsert): chunk =>
@@ -67,7 +67,8 @@ object Crawler:
           m       <- metrics.get
           seen    <- seenIds.get
           disappeared = hashMap.keySet -- seen.toSet
-          _ <- info"Crawl complete: total=${m.total}, new=${m.newPlayers}, changed=${m.changed}, unchanged=${m.unchanged}, disappeared=${disappeared.size}, duration=${elapsed.toSeconds}s"
+          _ <-
+            info"Crawl complete: total=${m.total}, new=${m.newPlayers}, changed=${m.changed}, unchanged=${m.unchanged}, disappeared=${disappeared.size}, duration=${elapsed.toSeconds}s"
           _ <- db.updateLastSeenAt(seen)
         yield ()
 
@@ -87,8 +88,8 @@ object Crawler:
         // Upsert federations (still needed, idempotent)
         val feds = chunk.mapFilter(_._2).distinctBy(_.id)
 
-        var newCount     = 0L
-        var changedCount = 0L
+        var newCount       = 0L
+        var changedCount   = 0L
         var unchangedCount = 0L
 
         val events = players.mapFilter: player =>

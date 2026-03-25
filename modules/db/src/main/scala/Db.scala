@@ -90,8 +90,9 @@ object Db:
 
     def upsertFederations(feds: List[NewFederation]): IO[Unit] =
       postgres.use: s =>
-        s.prepare(Sql.upsertFederation).flatMap: cmd =>
-          feds.traverse_(cmd.execute)
+        s.prepare(Sql.upsertFederation)
+          .flatMap: cmd =>
+            feds.traverse_(cmd.execute)
 
     def upsertPlayersWithHash(xs: List[(NewPlayer, Long)]): IO[Unit] =
       xs.grouped(2000).toList.traverse_ { chunk =>
@@ -211,7 +212,9 @@ private object Sql:
     sql"SELECT id, hash FROM players".query(playerIdCodec *: int8)
 
   private val newPlayerWithHash: Codec[(NewPlayer, Long)] =
-    (newPlayer *: int8).imap[(NewPlayer, Long)] { case p *: h *: EmptyTuple => (p, h) } { case (p, h) => p *: h *: EmptyTuple }
+    (newPlayer *: int8).imap[(NewPlayer, Long)] { case p *: h *: EmptyTuple => (p, h) } { case (p, h) =>
+      p *: h *: EmptyTuple
+    }
 
   def upsertPlayersWithHash(n: Int): Command[List[(NewPlayer, Long)]] =
     val players = newPlayerWithHash.values.list(n)

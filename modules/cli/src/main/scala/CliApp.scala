@@ -26,14 +26,16 @@ object CliApp extends IOApp:
             Logger[IO].error(e)("Crawl failed").as(ExitCode.Error)
 
   private def runIngest(args: List[String]): IO[ExitCode] =
-    IngestConfig.parse(args).flatMap: config =>
-      CliResources
-        .makeDb(config.postgres)
-        .use: (historyDb, db) =>
-          HistoryIngestor(historyDb, db, config).ingest
-        .as(ExitCode.Success)
-    .handleErrorWith: e =>
-      Logger[IO].error(e)("Ingest failed").as(ExitCode.Error)
+    IngestConfig
+      .parse(args)
+      .flatMap: config =>
+        CliResources
+          .makeDb(config.postgres)
+          .use: (historyDb, db) =>
+            HistoryIngestor(historyDb, db, config).ingest
+          .as(ExitCode.Success)
+      .handleErrorWith: e =>
+        Logger[IO].error(e)("Ingest failed").as(ExitCode.Error)
 
   private def printUsage: IO[Unit] =
     IO.consoleForIO.errorln:
