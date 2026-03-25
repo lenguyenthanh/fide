@@ -172,16 +172,24 @@ object HistoryDb:
         """.apply(month)
 
     def historicalFederationSummaryById(id: FederationId, month: YearMonth): AppliedFragment =
-      val fedFilter = sql"ph.federation_id = $federationIdCodec".apply(id)
-      activePlayersAndRankedFedsCte(month, fedFilter) |+|
-        sql"""
-        SELECT f.id, f.name, rf.players::int,
-          1::int, rf.standard_players::int, coalesce(rf.avg_top_standard, 0)::int,
-          1::int, rf.rapid_players::int, coalesce(rf.avg_top_rapid, 0)::int,
-          1::int, rf.blitz_players::int, coalesce(rf.avg_top_blitz, 0)::int
-        FROM ranked_feds rf
-        JOIN federations f ON rf.federation_id = f.id
-        """.apply(Void)
+      val allFeds = sql"ph.federation_id IS NOT NULL".apply(Void)
+      activePlayersAndRankedFedsCte(month, allFeds) |+|
+        sql""",
+        summary AS (
+          SELECT rf.*,
+            rank() OVER (ORDER BY rf.avg_top_standard DESC NULLS LAST) as std_rank,
+            rank() OVER (ORDER BY rf.avg_top_rapid DESC NULLS LAST) as rapid_rank,
+            rank() OVER (ORDER BY rf.avg_top_blitz DESC NULLS LAST) as blitz_rank
+          FROM ranked_feds rf
+        )
+        SELECT f.id, f.name, s.players::int,
+          s.std_rank::int, s.standard_players::int, coalesce(s.avg_top_standard, 0)::int,
+          s.rapid_rank::int, s.rapid_players::int, coalesce(s.avg_top_rapid, 0)::int,
+          s.blitz_rank::int, s.blitz_players::int, coalesce(s.avg_top_blitz, 0)::int
+        FROM summary s
+        JOIN federations f ON s.federation_id = f.id
+        WHERE f.id = $federationIdCodec
+        """.apply(id)
 
     private def federationsSummaryBase(month: YearMonth): AppliedFragment =
       val fedFilter = sql"ph.federation_id IS NOT NULL".apply(Void)
