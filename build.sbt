@@ -115,8 +115,11 @@ lazy val cli = (project in file("modules/cli"))
     commonSettings,
     name := "cli",
     libraryDependencies ++= Seq(
-      http4sEmberClient,
       fs2IO,
+      fs2DataCsv,
+      fs2DataCsvGen,
+      declineCore,
+      declineCatsEffect,
       cirisCore,
       cirisHtt4s,
       ironCiris,
@@ -125,7 +128,7 @@ lazy val cli = (project in file("modules/cli"))
     Compile / run / fork         := true,
     Compile / run / connectInput := true
   )
-  .dependsOn(crawler, full(db))
+  .dependsOn(domain, full(db))
 
 lazy val gatling = (project in file("modules/gatling"))
   .settings(name := "gatling")

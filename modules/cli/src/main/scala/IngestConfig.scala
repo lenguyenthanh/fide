@@ -1,10 +1,12 @@
 package fide.cli
 
+import cats.data.Validated
 import cats.effect.IO
 import cats.syntax.all.*
 import ciris.*
 import ciris.http4s.*
 import com.comcast.ip4s.*
+import com.monovore.decline.*
 import fide.db.PostgresConfig
 import fide.types.{ PositiveInt, YearMonth }
 import io.github.iltotore.iron.*
@@ -21,42 +23,42 @@ case class IngestConfig(
     historyChunkSize: PositiveInt
 )
 
+/** CLI-only arguments parsed by decline (no env vars). */
+case class IngestCliOpts(
+    csvDir: Path,
+    startMonth: Option[YearMonth],
+    endMonth: Option[YearMonth]
+)
+
 object IngestConfig:
 
-  def parse(args: List[String]): IO[IngestConfig] =
-    args match
-      case Nil            => IO.raiseError(IllegalArgumentException("Missing required argument: <csvDir>"))
-      case csvDir :: rest =>
-        parseFlags(rest) match
-          case Left(err)           => IO.raiseError(IllegalArgumentException(err))
-          case Right((start, end)) =>
-            (postgresConfig, historyChunkSize).tupled
-              .load[IO]
-              .map: (pg, historyChunkSize) =>
-                IngestConfig(
-                  csvDir = Path.of(csvDir),
-                  startMonth = start,
-                  endMonth = end,
-                  postgres = pg,
-                  historyChunkSize = historyChunkSize
-                )
+  given Argument[YearMonth] =
+    Argument.from("yyyy-MM"): s =>
+      YearMonth.fromString(s).fold(Validated.invalidNel(_), Validated.valid)
 
-  private def parseFlags(
-      args: List[String]
-  ): Either[String, (Option[YearMonth], Option[YearMonth])] =
-    def loop(
-        remaining: List[String],
-        start: Option[YearMonth],
-        end: Option[YearMonth]
-    ): Either[String, (Option[YearMonth], Option[YearMonth])] =
-      remaining match
-        case Nil                        => Right((start, end))
-        case "--start" :: value :: tail =>
-          YearMonth.fromString(value).flatMap(ym => loop(tail, Some(ym), end))
-        case "--end" :: value :: tail =>
-          YearMonth.fromString(value).flatMap(ym => loop(tail, start, Some(ym)))
-        case unknown :: _ => Left(s"Unknown flag: $unknown")
-    loop(args, None, None)
+  private val csvDirOpt =
+    Opts.argument[String]("csvDir").map(Path.of(_))
+
+  private val startOpt =
+    Opts.option[YearMonth]("start", "Only ingest files from this month onwards", "s").orNone
+
+  private val endOpt =
+    Opts.option[YearMonth]("end", "Only ingest files up to this month", "e").orNone
+
+  val opts: Opts[IngestCliOpts] =
+    (csvDirOpt, startOpt, endOpt).mapN(IngestCliOpts.apply)
+
+  def load(cli: IngestCliOpts): IO[IngestConfig] =
+    (postgresConfig, historyChunkSize).tupled
+      .load[IO]
+      .map: (pg, chunkSize) =>
+        IngestConfig(
+          csvDir = cli.csvDir,
+          startMonth = cli.startMonth,
+          endMonth = cli.endMonth,
+          postgres = pg,
+          historyChunkSize = chunkSize
+        )
 
   private def postgresConfig =
     val host     = env("POSTGRES_HOST").or(prop("postgres.host")).as[Host].default(ip"0.0.0.0")
