@@ -64,6 +64,9 @@ private[db] object DbCodecs:
     (playerIdCodec *: yearMonthCodec *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: federationIdCodec.opt *: bool)
       .to[PlayerHistoryRow]
 
+  val ratingHistoryEntry: Codec[RatingHistoryEntry] =
+    (yearMonthCodec *: ratingCodec.opt *: ratingCodec.opt *: ratingCodec.opt).to[RatingHistoryEntry]
+
   val historicalPlayerInfo: Codec[HistoricalPlayerInfo] =
     (playerIdCodec *: text *: yearMonthCodec *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: federationInfo.opt)
       .to[HistoricalPlayerInfo]

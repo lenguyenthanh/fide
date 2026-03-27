@@ -9,7 +9,7 @@ use smithy4s.meta#unwrap
 @simpleRestJson
 service PlayerService {
   version: "0.0.1"
-  operations: [GetPlayers, GetPlayerById, GetPlayerByIds],
+  operations: [GetPlayers, GetPlayerById, GetPlayerByIds, GetPlayerHistory],
 }
 
 @readonly
@@ -90,6 +90,53 @@ list SetPlayerIds {
 structure PlayerNotFound {
   @required
   id: PlayerId
+}
+
+@readonly
+@paginated(inputToken: "page", outputToken: "nextPage", pageSize: "pageSize")
+@http(method: "GET", uri: "/api/players/{id}/history", code: 200)
+operation GetPlayerHistory {
+  input :=
+    @scalaImports(["fide.spec.providers.given"]) {
+
+    @httpLabel
+    @required
+    id: PlayerId
+
+    @httpQuery("since")
+    since: YearMonthString
+
+    @httpQuery("until")
+    until: YearMonthString
+
+    @httpQuery("page")
+    page: PageNumber = "1"
+
+    @httpQuery("page_size")
+    @range(min: 1, max: 100)
+    pageSize: PageSize = 30
+  }
+
+  output := {
+    @required
+    items: RatingHistory
+    nextPage: PageNumber
+  }
+
+  errors: [PlayerNotFound, InternalServerError]
+}
+
+structure RatingHistoryEntry {
+  @required
+  month: YearMonthString
+
+  standard: Rating
+  rapid: Rating
+  blitz: Rating
+}
+
+list RatingHistory {
+  member: RatingHistoryEntry
 }
 
 @error("client")

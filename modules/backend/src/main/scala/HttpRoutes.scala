@@ -10,7 +10,7 @@ import smithy4s.http4s.SimpleRestJsonBuilder
 
 def Routes(resources: AppResources)(using Logger[IO]): Resource[IO, HttpApp[IO]] =
 
-  val playerServiceImpl: PlayerService[IO]         = PlayerServiceImpl(resources.db)
+  val playerServiceImpl: PlayerService[IO]         = PlayerServiceImpl(resources.db, resources.historyDb)
   val federationServiceImpl: FederationService[IO] = FederationServiceImpl(resources.db)
   val healthServiceImpl: HealthService[IO]         = HealthServiceImpl(resources.health)
   val historyServiceImpl: HistoryService[IO]       = HistoryServiceImpl(resources.historyDb)

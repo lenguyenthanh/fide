@@ -26,6 +26,12 @@ trait HistoryDb:
   def federationsSummary(month: YearMonth, paging: Pagination): IO[List[FederationSummary]]
   def countFederationsSummary(month: YearMonth): IO[Long]
   def federationSummaryById(id: FederationId, month: YearMonth): IO[Option[FederationSummary]]
+  def playerRatingHistory(
+      id: PlayerId,
+      since: Option[YearMonth],
+      until: Option[YearMonth],
+      paging: Pagination
+  ): IO[List[RatingHistoryEntry]]
   def availableMonths: IO[List[YearMonth]]
 
 object HistoryDb:
@@ -111,6 +117,16 @@ object HistoryDb:
         val f = Sql.historicalFederationSummaryById(id, month)
         val q = f.fragment.query(DbCodecs.federationSummary)
         postgres.use(_.option(q)(f.argument))
+
+      def playerRatingHistory(
+          id: PlayerId,
+          since: Option[YearMonth],
+          until: Option[YearMonth],
+          paging: Pagination
+      ): IO[List[RatingHistoryEntry]] =
+        val f = Sql.playerRatingHistory(id, since, until, paging)
+        val q = f.fragment.query(DbCodecs.ratingHistoryEntry)
+        postgres.use(_.execute(q)(f.argument))
 
       def allPlayerInfoHashes: IO[Map[PlayerId, Long]] =
         postgres.use(_.execute(Sql.allPlayerInfoHashes)).map(_.toMap)
@@ -233,6 +249,21 @@ object HistoryDb:
           FROM active_players ap
           GROUP BY ap.federation_id
         )""".apply(Void)
+
+    def playerRatingHistory(
+        id: PlayerId,
+        since: Option[YearMonth],
+        until: Option[YearMonth],
+        paging: Pagination
+    ): AppliedFragment =
+      val base = sql"""
+        SELECT year_month, standard, rapid, blitz
+        FROM player_history
+        WHERE player_id = ${DbCodecs.playerIdCodec}""".apply(id)
+      val sinceF = since.fold(void)(s => sql" AND year_month >= $yearMonthCodec".apply(s))
+      val untilF = until.fold(void)(u => sql" AND year_month <= $yearMonthCodec".apply(u))
+      base |+| sinceF |+| untilF |+|
+        sql" ORDER BY year_month DESC".apply(Void) |+| pagingFragment(paging)
 
     lazy val allPlayerInfoHashes: Query[Void, (PlayerId, Long)] =
       sql"SELECT id, hash FROM player_info".query(playerIdCodec *: int8)

@@ -209,6 +209,13 @@ case class HistoricalPlayerInfo(
     federation: Option[FederationInfo] = None
 )
 
+case class RatingHistoryEntry(
+    yearMonth: YearMonth,
+    standard: Option[Rating],
+    rapid: Option[Rating],
+    blitz: Option[Rating]
+)
+
 case class NewFederation(
     id: FederationId,
     name: String
