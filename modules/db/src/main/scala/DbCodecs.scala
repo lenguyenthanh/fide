@@ -17,7 +17,7 @@ private[db] object DbCodecs:
   val gender: Codec[Gender]         = `enum`[Gender](_.value, Gender.apply, Type("sex"))
   val ratingCodec: Codec[Rating]    = int4.refined[RatingConstraint].imap(Rating.apply)(_.value)
   val federationIdCodec: Codec[FederationId] = text.refined[NonEmpty].imap(FederationId.apply)(_.value)
-  val playerIdCodec: Codec[PlayerId]         = int4.refined[Positive].imap(PlayerId.apply)(_.value)
+  val playerIdCodec: Codec[PlayerId]         = int4.refined[Not[StrictEqual[0]]].imap(PlayerId.apply)(_.value)
   val yearMonthCodec: Codec[YearMonth]       = date.imap(YearMonth.apply)(_.toLocalDate)
 
   val otherTitleArr: Codec[Arr[OtherTitle]] =
