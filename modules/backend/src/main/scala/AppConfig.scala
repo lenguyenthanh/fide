@@ -51,7 +51,7 @@ object CrawlerConfig:
   private def chunkSize =
     env("CRAWLER_CHUNK_SIZE").or(prop("crawler.chunk.size")).as[PositiveInt].default(100)
   private def concurrentUpsert =
-    env("CRAWLER_CONCURRENT_UPSERT").or(prop("crawler.concurrent.upsert")).as[PositiveInt].default(40)
+    env("CRAWLER_CONCURRENT_UPSERT").or(prop("crawler.concurrent.upsert")).as[PositiveInt].default(10)
   def config = (chunkSize, concurrentUpsert).parMapN(crawler.CrawlerConfig.apply)
 
 object PostgresConfig:
