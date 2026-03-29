@@ -28,6 +28,11 @@ object YearMonth:
       Some(apply(parsed.toLocalDate))
     catch case _: Exception => None
 
+  given Ordering[YearMonth] = new Ordering[YearMonth]:
+    override def compare(x: YearMonth, y: YearMonth): Int =
+      if x.year == y.year then x.month - y.month
+      else x.year - y.year
+
   extension (self: YearMonth)
     inline def value: LocalDate       = self
     inline def toLocalDate: LocalDate = self

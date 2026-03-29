@@ -41,7 +41,7 @@ object HistoryIngestor:
             .filter: (ym, _) =>
               config.startMonth.forall(s => !ym.toLocalDate.isBefore(s.toLocalDate)) &&
                 config.endMonth.forall(e => !ym.toLocalDate.isAfter(e.toLocalDate))
-            .sortBy(_._1.toLocalDate)
+            .sortBy(_._1)(using summon[Ordering[YearMonth]].reverse)
 
     private def ingestFile(ym: YearMonth, path: Path): IO[Unit] =
       for
