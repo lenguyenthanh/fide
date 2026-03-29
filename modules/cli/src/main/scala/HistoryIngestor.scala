@@ -31,10 +31,9 @@ object HistoryIngestor:
       Files[IO]
         .walk(Path.fromNioPath(config.csvDir), fs2.io.file.WalkOptions.Default.withMaxDepth(2))
         .filter(_.extName == ".csv")
-        .evalMapFilter: path =>
+        .mapFilter: path =>
           val filename = path.fileName.toString.stripSuffix(".csv")
-          IO.pure:
-            YearMonth.fromString(filename).toOption.map(_ -> path)
+          YearMonth.fromString(filename).toOption.map(_ -> path)
         .compile
         .toList
         .map: files =>
@@ -89,7 +88,7 @@ object HistoryIngestor:
             .distinctBy(_.id)
           for
             _ <- if feds.nonEmpty then db.upsertFederations(feds) else IO.unit
-            _ <- historyDb.upsertPlayerInfo(infoRows)
+            _ <- historyDb.insertPlayerInfo(infoRows)
             _ <- historyDb.upsertPlayerHistory(historyRows)
           yield acc + players.size
         .compile

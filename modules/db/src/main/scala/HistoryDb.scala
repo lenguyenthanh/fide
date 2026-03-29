@@ -11,7 +11,7 @@ import skunk.codec.all.*
 import skunk.implicits.*
 
 trait HistoryDb:
-  def upsertPlayerInfo(players: List[PlayerInfoRow]): IO[Unit]
+  def insertPlayerInfo(players: List[PlayerInfoRow]): IO[Unit]
   def upsertPlayerInfoWithHash(players: List[(PlayerInfoRow, Long)]): IO[Unit]
   def upsertPlayerHistory(snapshots: List[PlayerHistoryRow]): IO[Unit]
   def allPlayerInfoHashes: IO[Map[PlayerId, Long]]
@@ -39,14 +39,13 @@ object HistoryDb:
   def apply(postgres: Resource[IO, Session[IO]], chunkSize: Int): HistoryDb =
     new HistoryDb:
 
-      def upsertPlayerInfo(players: List[PlayerInfoRow]): IO[Unit] =
+      def insertPlayerInfo(players: List[PlayerInfoRow]): IO[Unit] =
         players.grouped(chunkSize).toList.traverse_ { chunk =>
           val codec = DbCodecs.playerInfoRow.values.list(chunk.size)
           val cmd   = sql"""
             INSERT INTO player_info (id, name, sex, birth_year)
             VALUES $codec
-            ON CONFLICT (id) DO UPDATE SET
-              name = EXCLUDED.name, sex = EXCLUDED.sex, birth_year = EXCLUDED.birth_year""".command
+            ON CONFLICT (id) DO NOTHING""".command
           postgres.use(_.execute(cmd)(chunk)).void
         }
 
@@ -61,9 +60,7 @@ object HistoryDb:
           val cmd = sql"""
             INSERT INTO player_info (id, name, sex, birth_year, hash)
             VALUES $codec
-            ON CONFLICT (id) DO UPDATE SET
-              name = EXCLUDED.name, sex = EXCLUDED.sex, birth_year = EXCLUDED.birth_year,
-              hash = EXCLUDED.hash""".command
+            ON CONFLICT (id) DO NOTHING""".command
           postgres.use(_.execute(cmd)(chunk)).void
         }
 

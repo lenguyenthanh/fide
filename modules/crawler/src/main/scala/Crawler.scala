@@ -50,13 +50,13 @@ object Crawler:
       def fetchAndSave(timestamp: Option[String]): IO[Unit] =
         val now = OffsetDateTime.now()
         for
-          _       <- info"Start crawling"
-          startAt <- IO.monotonic
+          _               <- info"Start crawling"
+          startAt         <- IO.monotonic
           playerHashCache <- playerHashCache.get
-          _       <- info"Loaded ${playerHashCache.size} player hashes for diffing"
-          metrics <- AtomicCell[IO].of(CrawlMetrics())
-          seenIds <- AtomicCell[IO].of(List.empty[fide.types.PlayerId])
-          _       <- downloader.fetch
+          _               <- info"Loaded ${playerHashCache.size} player hashes for diffing"
+          metrics         <- AtomicCell[IO].of(CrawlMetrics())
+          seenIds         <- AtomicCell[IO].of(List.empty[fide.types.PlayerId])
+          _               <- downloader.fetch
             .chunkN(config.chunkSize)
             .map(_.toList)
             .parEvalMapUnordered(config.concurrentUpsert): chunk =>

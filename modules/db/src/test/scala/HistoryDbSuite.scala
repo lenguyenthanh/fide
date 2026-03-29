@@ -46,8 +46,8 @@ object HistoryDbSuite extends SimpleIOSuite:
   test("upsertPlayerInfo is idempotent"):
     resource.use: historyDb =>
       for
-        _ <- historyDb.upsertPlayerInfo(List(playerInfo1))
-        _ <- historyDb.upsertPlayerInfo(List(playerInfo1.copy(name = "Alice Updated")))
+        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
+        _ <- historyDb.insertPlayerInfo(List(playerInfo1.copy(name = "Alice Updated")))
       yield success
 
   test("upsertPlayerHistory with ON CONFLICT updates"):
@@ -55,7 +55,7 @@ object HistoryDbSuite extends SimpleIOSuite:
       val fed = NewFederation(fedId, "United States")
       for
         _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
-        _ <- historyDb.upsertPlayerInfo(List(playerInfo1))
+        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
         _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024, 2700)))
         _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024, 2750))) // update same month
       yield success
@@ -66,7 +66,7 @@ object HistoryDbSuite extends SimpleIOSuite:
       for
         _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
         _ <- db.upsert(NewPlayer(PlayerId(2), "Bob", active = true), none)
-        _ <- historyDb.upsertPlayerInfo(List(playerInfo1, playerInfo2))
+        _ <- historyDb.insertPlayerInfo(List(playerInfo1, playerInfo2))
         _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024), mkHistory(2, jan2024)))
         _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, feb2024)))
         janPlayers <- historyDb.allPlayers(
@@ -92,7 +92,7 @@ object HistoryDbSuite extends SimpleIOSuite:
       for
         _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
         _ <- db.upsert(NewPlayer(PlayerId(2), "Bob", active = true), none)
-        _ <- historyDb.upsertPlayerInfo(List(playerInfo1, playerInfo2))
+        _ <- historyDb.insertPlayerInfo(List(playerInfo1, playerInfo2))
         _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024), mkHistory(2, jan2024)))
         count <- historyDb.countPlayers(jan2024, PlayerFilter.default)
       yield expect(count == 2L)
@@ -102,7 +102,7 @@ object HistoryDbSuite extends SimpleIOSuite:
       val fed = NewFederation(fedId, "United States")
       for
         _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
-        _ <- historyDb.upsertPlayerInfo(List(playerInfo1))
+        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
         _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024, 2700)))
         result  <- historyDb.playerById(PlayerId(1), jan2024)
         missing <- historyDb.playerById(PlayerId(1), feb2024)
@@ -117,7 +117,7 @@ object HistoryDbSuite extends SimpleIOSuite:
       for
         _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
         _ <- db.upsert(NewPlayer(PlayerId(2), "Bob", active = true), none)
-        _ <- historyDb.upsertPlayerInfo(List(playerInfo1, playerInfo2))
+        _ <- historyDb.insertPlayerInfo(List(playerInfo1, playerInfo2))
         _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024), mkHistory(2, jan2024)))
         filtered <- historyDb.allPlayers(
           jan2024,
@@ -131,7 +131,7 @@ object HistoryDbSuite extends SimpleIOSuite:
     resourceWithFeds.use: (historyDb, db) =>
       for
         _      <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true), none)
-        _      <- historyDb.upsertPlayerInfo(List(playerInfo1))
+        _      <- historyDb.insertPlayerInfo(List(playerInfo1))
         _      <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024), mkHistory(1, feb2024)))
         months <- historyDb.availableMonths
       yield expect(months.size == 2) and
@@ -143,7 +143,7 @@ object HistoryDbSuite extends SimpleIOSuite:
       val fed = NewFederation(fedId, "United States")
       for
         _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
-        _ <- historyDb.upsertPlayerInfo(List(playerInfo1))
+        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
         _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024, 2700)))
         summaries <- historyDb.federationsSummary(jan2024, Pagination(PageNumber(1), PageSize(30)))
         count     <- historyDb.countFederationsSummary(jan2024)
@@ -157,7 +157,7 @@ object HistoryDbSuite extends SimpleIOSuite:
       val fed = NewFederation(fedId, "United States")
       for
         _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
-        _ <- historyDb.upsertPlayerInfo(List(playerInfo1))
+        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
         _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024, 2700)))
         result  <- historyDb.federationSummaryById(fedId, jan2024)
         missing <- historyDb.federationSummaryById(FederationId("XXX"), jan2024)
