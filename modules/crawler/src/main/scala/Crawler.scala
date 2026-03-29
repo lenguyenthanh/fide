@@ -52,21 +52,21 @@ object Crawler:
         for
           _       <- info"Start crawling"
           startAt <- IO.monotonic
-          hashMap <- playerHashCache.get
-          _       <- info"Loaded ${hashMap.size} player hashes for diffing"
+          playerHashCache <- playerHashCache.get
+          _       <- info"Loaded ${playerHashCache.size} player hashes for diffing"
           metrics <- AtomicCell[IO].of(CrawlMetrics())
           seenIds <- AtomicCell[IO].of(List.empty[fide.types.PlayerId])
           _       <- downloader.fetch
             .chunkN(config.chunkSize)
             .map(_.toList)
             .parEvalMapUnordered(config.concurrentUpsert): chunk =>
-              processChunk(chunk, hashMap, timestamp, now, metrics, seenIds, eventDb, db)
+              processChunk(chunk, playerHashCache, timestamp, now, metrics, seenIds, eventDb, db)
             .compile
             .drain
           elapsed <- IO.monotonic.map(_ - startAt)
           m       <- metrics.get
           seen    <- seenIds.get
-          disappeared = hashMap.keySet -- seen.toSet
+          disappeared = playerHashCache.keySet -- seen.toSet
           _ <-
             info"Crawl complete: total=${m.total}, new=${m.newPlayers}, changed=${m.changed}, unchanged=${m.unchanged}, disappeared=${disappeared.size}, duration=${elapsed.toSeconds}s"
           _ <- db.updateLastSeenAt(seen)
@@ -74,7 +74,7 @@ object Crawler:
 
       private def processChunk(
           chunk: List[(NewPlayer, Option[NewFederation], String)],
-          hashMap: Map[fide.types.PlayerId, Long],
+          playerHashCache: Map[fide.types.PlayerId, Long],
           timestamp: Option[String],
           now: OffsetDateTime,
           metrics: AtomicCell[IO, CrawlMetrics],
@@ -97,7 +97,7 @@ object Crawler:
         val result = players.foldLeft(ChunkResult(Nil, 0L, 0L, 0L)):
           case (acc, player) =>
             val hash = NewPlayer.computeHash(player)
-            hashMap.get(player.id) match
+            playerHashCache.get(player.id) match
               case None =>
                 acc.copy(
                   events = toEvent(player, hash, now, timestamp) :: acc.events,
