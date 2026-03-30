@@ -68,9 +68,11 @@ object Db:
       postgres.use(_.execute(Sql.allFederations))
 
     def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]] =
-      val f = Sql.playersByIds(ids.size)
-      val q = f.query(DbCodecs.playerInfo)
-      postgres.use(_.execute(q)(ids.toList))
+      if ids.isEmpty then IO.pure(Nil)
+      else
+        val f = Sql.playersByIds(ids.size)
+        val q = f.query(DbCodecs.playerInfo)
+        postgres.use(_.execute(q)(ids.toList))
 
     def playersByFederationId(id: FederationId): IO[List[PlayerInfo]] =
       postgres.use(_.execute(Sql.playersByFederationId)(id))
