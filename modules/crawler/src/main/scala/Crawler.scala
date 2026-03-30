@@ -16,10 +16,12 @@ import java.time.OffsetDateTime
 import Syncer.Status.*
 
 trait Crawler:
-  /** Returns true if data was crawled, false if skipped (up to date). */
-  def crawl: IO[Boolean]
+  def crawl: IO[Crawler.CrawlStatus]
 
 object Crawler:
+
+  enum CrawlStatus:
+    case Done, Skipped
 
   case class CrawlMetrics(
       total: Long = 0,
@@ -41,15 +43,15 @@ object Crawler:
     val downloader = Downloader(client)
     new Crawler:
 
-      def crawl: IO[Boolean] =
+      def crawl: IO[CrawlStatus] =
         syncer.fetchStatus.flatMap:
           case OutDated(timestamp) =>
             (fetchAndSave(timestamp) *> timestamp.traverse_(
               syncer.saveLastUpdate
             ) *> db.refreshFederationsSummary)
-              .as(true)
-              .handleErrorWith(e => error"Error while crawling: $e".as(false))
-          case _ => info"Skipping crawling as the data is up to date".as(false)
+              .as(CrawlStatus.Done)
+              .handleErrorWith(e => error"Error while crawling: $e".as(CrawlStatus.Skipped))
+          case _ => info"Skipping crawling as the data is up to date".as(CrawlStatus.Skipped)
 
       def fetchAndSave(timestamp: Option[String]): IO[Unit] =
         val now = OffsetDateTime.now()

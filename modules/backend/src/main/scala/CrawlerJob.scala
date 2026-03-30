@@ -4,6 +4,7 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.syntax.all.*
 import fide.crawler.Crawler
+import fide.crawler.Crawler.CrawlStatus
 import fide.db.Ingestor
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
@@ -25,6 +26,7 @@ object CrawlerJob:
           crawlWithSleep.foreverM
 
       def crawlWithSleep =
-        crawler.crawl.flatMap: crawled =>
-          IO.whenA(crawled)(ingestor.ingest.handleErrorWith(e => error"Error during ingestion: $e"))
+        crawler.crawl.flatMap:
+          case CrawlStatus.Done    => ingestor.ingest.handleErrorWith(e => error"Error during ingestion: $e")
+          case CrawlStatus.Skipped => IO.unit
         *> IO.sleep(config.intervalInMinutes.minutes)
