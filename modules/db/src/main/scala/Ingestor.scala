@@ -41,57 +41,47 @@ object Ingestor:
       yield ()
 
     private def processBatch(events: List[PlayerEvent]): IO[Unit] =
-      // Group by player, take latest event per player
-      val latestByPlayer = events
-        .groupBy(_.playerId)
-        .values
-        .map(_.maxBy(_.id))
-        .toList
+      case class Acc(
+          playersWithHash: List[(NewPlayer, Long)],
+          playerInfoRows: List[(PlayerInfoRow, Long)],
+          historyByKey: Map[(PlayerId, YearMonth), PlayerHistoryRow],
+          skippedCount: Int
+      )
 
-      // Build NewPlayer + hash pairs for players upsert
-      val playersWithHash: List[(NewPlayer, Long)] = latestByPlayer.map: e =>
-        val player = e.into[NewPlayer].transform(Field.renamed(_.id, _.playerId))
-        (player, e.hash)
+      val acc = events.foldLeft(Acc(Nil, Nil, Map.empty, 0)): (acc, e) =>
+        val player   = e.into[NewPlayer].transform(Field.renamed(_.id, _.playerId))
+        val infoRow  = player.to[PlayerInfoRow]
+        val infoHash = NewPlayer.computeInfoHash(player)
+        val ymOpt    = e.sourceLastModified.flatMap(YearMonth.fromLastModified)
+        val newHistory = ymOpt match
+          case Some(ym) =>
+            val row = e.into[PlayerHistoryRow].transform(Field.const(_.yearMonth, ym))
+            acc.historyByKey.updated((row.playerId, ym), row)
+          case None => acc.historyByKey
+        acc.copy(
+          playersWithHash = (player, e.hash) :: acc.playersWithHash,
+          playerInfoRows = (infoRow, infoHash) :: acc.playerInfoRows,
+          historyByKey = newHistory,
+          skippedCount = acc.skippedCount + (if ymOpt.isEmpty then 1 else 0)
+        )
 
-      // Build player info rows with identity hash
-      val playerInfoRows: List[(PlayerInfoRow, Long)] = playersWithHash.map: (player, _) =>
-        val row  = player.to[PlayerInfoRow]
-        val hash = NewPlayer.computeInfoHash(player)
-        (row, hash)
-
-      // Build history rows — parse sourceLastModified once
-      val parsedEvents = events.map: e =>
-        (e, e.sourceLastModified.flatMap(YearMonth.fromLastModified))
-
-      val historyRows = parsedEvents
-        .collect:
-          case (e, Some(ym)) =>
-            e.into[PlayerHistoryRow].transform(Field.const(_.yearMonth, ym))
-        .groupBy(r => (r.playerId, r.yearMonth))
-        .values
-        .map(_.last)
-        .toList
-
-      val skippedCount = parsedEvents.count(_._2.isEmpty)
+      val historyRows = acc.historyByKey.values.toList
 
       for
         _ <-
-          if skippedCount > 0 then
-            warn"$skippedCount events skipped for history (unparseable sourceLastModified)"
+          if acc.skippedCount > 0 then
+            warn"${acc.skippedCount} events skipped for history (unparseable sourceLastModified)"
           else IO.unit
         // Diff player_info: only upsert rows whose identity hash changed
         infoHashMap <- playerInfoHashCache.get
-        changedInfoRows   = playerInfoRows.filter((row, hash) => infoHashMap.get(row.id).forall(_ != hash))
+        changedInfoRows   = acc.playerInfoRows.filter((row, hash) => infoHashMap.get(row.id).forall(_ != hash))
         playerInfoUpdated = changedInfoRows.size
         _ <-
-          info"Upserting ${playersWithHash.size} players, $playerInfoUpdated player info rows, and ${historyRows.size} history rows"
-        // Upsert players with hash
-        _ <- db.upsertPlayersWithHash(playersWithHash)
-        // Upsert only changed player_info rows
+          info"Upserting ${acc.playersWithHash.size} players, $playerInfoUpdated player info rows, and ${historyRows.size} history rows"
+        _ <- db.upsertPlayersWithHash(acc.playersWithHash)
         _ <- if changedInfoRows.nonEmpty then historyDb.upsertPlayerInfoWithHash(changedInfoRows) else IO.unit
         _ <- historyDb.upsertPlayerHistory(historyRows)
         _ <- eventDb.markIngested(events.map(_.id))
-        // Update caches
-        _ <- playerHashCache.update(playersWithHash.map((p, h) => p.id -> h).toMap)
+        _ <- playerHashCache.update(acc.playersWithHash.map((p, h) => p.id -> h).toMap)
         _ <- playerInfoHashCache.update(changedInfoRows.map((r, h) => r.id -> h).toMap)
       yield ()
