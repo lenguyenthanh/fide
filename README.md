@@ -116,3 +116,22 @@ Then run:
 ```bash
 docker compose up -d
 ```
+
+## Run CLI without building
+
+You can use the pre-built CLI Docker image from [GitHub Container Registry](https://github.com/lenguyenthanh/fide/pkgs/container/fide-cli) to ingest historical CSV files into the database.
+
+Assuming CSV files are in `./csv-data` and the docker-compose Postgres is running:
+
+```bash
+docker run --rm \
+  --network fide_fide \
+  -v ./csv-data:/data \
+  -e POSTGRES_HOST=fide_postgres \
+  -e POSTGRES_PORT=5432 \
+  -e POSTGRES_USER=admin \
+  -e POSTGRES_PASSWORD=dummy \
+  -e POSTGRES_DATABASE=fide \
+  ghcr.io/lenguyenthanh/fide-cli:latest \
+  ingest /data --start 2024-01 --end 2024-12
+```

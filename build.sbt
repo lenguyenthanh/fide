@@ -126,8 +126,12 @@ lazy val cli = (project in file("modules/cli"))
       logback % Runtime
     ),
     Compile / run / fork         := true,
-    Compile / run / connectInput := true
+    Compile / run / connectInput := true,
+    Docker / packageName         := "lenguyenthanh/fide-cli",
+    Docker / maintainer          := "Thanh Le",
+    Docker / dockerRepository    := Some("ghcr.io")
   )
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
   .dependsOn(domain, full(db))
 
 lazy val gatling = (project in file("modules/gatling"))
