@@ -26,6 +26,7 @@ trait Db:
   def allPlayerHashes: IO[Map[PlayerId, Long]]
   def updateLastSeenAt(ids: List[PlayerId]): IO[Unit]
   def markInactive(ids: Set[PlayerId]): IO[Unit]
+  def refreshFederationsSummary: IO[Unit]
 
 object Db:
 
@@ -117,6 +118,9 @@ object Db:
         val cmd = Sql.markInactive(chunk.size)
         postgres.use(_.execute(cmd)(chunk)).void
       }
+
+    def refreshFederationsSummary: IO[Unit] =
+      postgres.use(_.execute(Sql.refreshFederationsSummary)).void
 
 private object Sql:
 
@@ -253,6 +257,9 @@ private object Sql:
   def markInactive(n: Int): Command[List[PlayerId]] =
     val ids = playerIdCodec.values.list(n)
     sql"UPDATE players SET active = false WHERE id IN ($ids)".command
+
+  val refreshFederationsSummary: Command[Void] =
+    sql"REFRESH MATERIALIZED VIEW CONCURRENTLY federations_summary".command
 
   private lazy val allPlayersFragment: Fragment[Void] =
     sql"""

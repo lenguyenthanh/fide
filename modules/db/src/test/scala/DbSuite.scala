@@ -176,7 +176,7 @@ object DbSuite extends SimpleIOSuite:
     resourceP.use: (db, kv) =>
       for
         _      <- db.upsert(newPlayer1, newFederation.some)
-        _      <- kv.put("fide_last_update_key", "2021-01-01")
+        _      <- db.refreshFederationsSummary
         result <- db.allFederationsSummary(defaultPage)
       yield expect(result.size == 1)
 
@@ -184,6 +184,6 @@ object DbSuite extends SimpleIOSuite:
     resourceP.use: (db, kv) =>
       for
         _      <- db.upsert(newPlayer1, newFederation.some)
-        _      <- kv.put("fide_last_update_key", "2021-01-01")
+        _      <- db.refreshFederationsSummary
         result <- db.federationSummaryById(fedId)
       yield expect(result.isDefined)
