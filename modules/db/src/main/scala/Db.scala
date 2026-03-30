@@ -90,10 +90,10 @@ object Db:
       postgres.use(_.option(Sql.federationSummaryById)(id))
 
     def upsertFederations(feds: List[NewFederation]): IO[Unit] =
-      postgres.use: s =>
-        s.prepare(Sql.upsertFederation)
-          .flatMap: cmd =>
-            feds.traverse_(cmd.execute)
+      feds.grouped(1500).toList.traverse_ { chunk =>
+        val cmd = Sql.upsertFederations(chunk.size)
+        postgres.use(_.execute(cmd)(chunk)).void
+      }
 
     def upsertPlayersWithHash(xs: List[(NewPlayer, Long)]): IO[Unit] =
       xs.grouped(2000).toList.traverse_ { chunk =>
