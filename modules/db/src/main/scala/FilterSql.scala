@@ -83,8 +83,8 @@ object FilterSql:
     case false => sql"#${s"$alias.women_title"} IS NULL".apply(Void)
 
   private def hasOtherTitle(alias: String): Boolean => AppliedFragment =
-    case true  => sql"cardinality(#${s"$alias.other_titles"}) != 0".apply(Void)
-    case false => sql"cardinality(#${s"$alias.other_titles"}) = 0".apply(Void)
+    case true  => sql"COALESCE(cardinality(#${s"$alias.other_titles"}), 0) != 0".apply(Void)
+    case false => sql"COALESCE(cardinality(#${s"$alias.other_titles"}), 0) = 0".apply(Void)
 
   private def playersByOtherTitles(alias: String, n: Int): Fragment[List[OtherTitle]] =
     val otherTitles = otherTitle.values.list(n)
