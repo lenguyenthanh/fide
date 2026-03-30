@@ -25,6 +25,7 @@ trait Db:
   def upsertPlayersWithHash(xs: List[(NewPlayer, Long)]): IO[Unit]
   def allPlayerHashes: IO[Map[PlayerId, Long]]
   def updateLastSeenAt(ids: List[PlayerId]): IO[Unit]
+  def markInactive(ids: Set[PlayerId]): IO[Unit]
 
 object Db:
 
@@ -106,6 +107,12 @@ object Db:
     def updateLastSeenAt(ids: List[PlayerId]): IO[Unit] =
       ids.grouped(5000).toList.traverse_ { chunk =>
         val cmd = Sql.updateLastSeenAt(chunk.size)
+        postgres.use(_.execute(cmd)(chunk)).void
+      }
+
+    def markInactive(ids: Set[PlayerId]): IO[Unit] =
+      ids.toList.grouped(5000).toList.traverse_ { chunk =>
+        val cmd = Sql.markInactive(chunk.size)
         postgres.use(_.execute(cmd)(chunk)).void
       }
 
@@ -239,6 +246,10 @@ private object Sql:
   def updateLastSeenAt(n: Int): Command[List[PlayerId]] =
     val ids = playerIdCodec.values.list(n)
     sql"UPDATE players SET last_seen_at = now() WHERE id IN ($ids)".command
+
+  def markInactive(n: Int): Command[List[PlayerId]] =
+    val ids = playerIdCodec.values.list(n)
+    sql"UPDATE players SET active = false WHERE id IN ($ids)".command
 
   private lazy val allPlayersFragment: Fragment[Void] =
     sql"""

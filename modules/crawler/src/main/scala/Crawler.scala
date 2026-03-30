@@ -72,6 +72,7 @@ object Crawler:
           _ <-
             info"Crawl complete: total=${m.total}, new=${m.newPlayers}, changed=${m.changed}, unchanged=${m.unchanged}, disappeared=${disappeared.size}, duration=${elapsed.toSeconds}s"
           _ <- if newIds.nonEmpty then db.updateLastSeenAt(newIds.toList) else IO.unit
+          _ <- if disappeared.nonEmpty then db.markInactive(disappeared) else IO.unit
         yield ()
 
       private def processChunk(
