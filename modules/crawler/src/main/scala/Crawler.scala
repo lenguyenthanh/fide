@@ -50,35 +50,38 @@ object Crawler:
       def fetchAndSave(timestamp: Option[String]): IO[Unit] =
         val now = OffsetDateTime.now()
         for
-          _               <- info"Start crawling"
-          startAt         <- IO.monotonic
-          playerHashCache <- playerHashCache.get
-          _               <- info"Loaded ${playerHashCache.size} player hashes for diffing"
-          metrics         <- AtomicCell[IO].of(CrawlMetrics())
-          seenIds         <- AtomicCell[IO].of(List.empty[fide.types.PlayerId])
-          _               <- downloader.fetch
+          _              <- info"Start crawling"
+          startAt        <- IO.monotonic
+          cachedHashes   <- playerHashCache.get
+          _              <- info"Loaded ${cachedHashes.size} player hashes for diffing"
+          metrics        <- AtomicCell[IO].of(CrawlMetrics())
+          seenIds        <- AtomicCell[IO].of(Set.empty[fide.types.PlayerId])
+          newPlayerIds   <- AtomicCell[IO].of(Set.empty[fide.types.PlayerId])
+          _              <- downloader.fetch
             .chunkN(config.chunkSize)
             .map(_.toList)
             .parEvalMapUnordered(config.concurrentUpsert): chunk =>
-              processChunk(chunk, playerHashCache, timestamp, now, metrics, seenIds, eventDb, db)
+              processChunk(chunk, cachedHashes, timestamp, now, metrics, seenIds, newPlayerIds, eventDb, db)
             .compile
             .drain
           elapsed <- IO.monotonic.map(_ - startAt)
           m       <- metrics.get
           seen    <- seenIds.get
-          disappeared = playerHashCache.keySet -- seen.toSet
+          newIds  <- newPlayerIds.get
+          disappeared = cachedHashes.keySet -- seen
           _ <-
             info"Crawl complete: total=${m.total}, new=${m.newPlayers}, changed=${m.changed}, unchanged=${m.unchanged}, disappeared=${disappeared.size}, duration=${elapsed.toSeconds}s"
-          _ <- db.updateLastSeenAt(seen)
+          _ <- if newIds.nonEmpty then db.updateLastSeenAt(newIds.toList) else IO.unit
         yield ()
 
       private def processChunk(
           chunk: List[(NewPlayer, Option[NewFederation], String)],
-          playerHashCache: Map[fide.types.PlayerId, Long],
+          cachedHashes: Map[fide.types.PlayerId, Long],
           timestamp: Option[String],
           now: OffsetDateTime,
           metrics: AtomicCell[IO, CrawlMetrics],
-          seenIds: AtomicCell[IO, List[fide.types.PlayerId]],
+          seenIds: AtomicCell[IO, Set[fide.types.PlayerId]],
+          newPlayerIds: AtomicCell[IO, Set[fide.types.PlayerId]],
           eventDb: PlayerEventDb,
           db: Db
       ): IO[Unit] =
@@ -90,17 +93,19 @@ object Crawler:
 
         case class ChunkResult(
             events: List[NewPlayerEvent],
+            newIds: List[fide.types.PlayerId],
             newCount: Long,
             changedCount: Long,
             unchangedCount: Long
         )
-        val result = players.foldLeft(ChunkResult(Nil, 0L, 0L, 0L)):
+        val result = players.foldLeft(ChunkResult(Nil, Nil, 0L, 0L, 0L)):
           case (acc, player) =>
             val hash = NewPlayer.computeHash(player)
-            playerHashCache.get(player.id) match
+            cachedHashes.get(player.id) match
               case None =>
                 acc.copy(
                   events = toEvent(player, hash, now, timestamp) :: acc.events,
+                  newIds = player.id :: acc.newIds,
                   newCount = acc.newCount + 1
                 )
               case Some(existingHash) if existingHash != hash =>
@@ -110,23 +115,20 @@ object Crawler:
                 )
               case _ =>
                 acc.copy(unchangedCount = acc.unchangedCount + 1)
-        val events         = result.events
-        val newCount       = result.newCount
-        val changedCount   = result.changedCount
-        val unchangedCount = result.unchangedCount
 
         for
           _ <- if feds.nonEmpty then db.upsertFederations(feds) else IO.unit
-          _ <- if events.nonEmpty then eventDb.append(events) else IO.unit
+          _ <- if result.events.nonEmpty then eventDb.append(result.events) else IO.unit
           _ <- metrics.update(m =>
             m.copy(
               total = m.total + players.size,
-              newPlayers = m.newPlayers + newCount,
-              changed = m.changed + changedCount,
-              unchanged = m.unchanged + unchangedCount
+              newPlayers = m.newPlayers + result.newCount,
+              changed = m.changed + result.changedCount,
+              unchanged = m.unchanged + result.unchangedCount
             )
           )
           _ <- seenIds.update(_ ++ ids)
+          _ <- if result.newIds.nonEmpty then newPlayerIds.update(_ ++ result.newIds) else IO.unit
         yield ()
 
       private def toEvent(
