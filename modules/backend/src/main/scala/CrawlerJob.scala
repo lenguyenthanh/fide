@@ -25,6 +25,6 @@ object CrawlerJob:
           crawlWithSleep.foreverM
 
       def crawlWithSleep =
-        crawler.crawl *>
-          ingestor.ingest.handleErrorWith(e => error"Error during ingestion: $e") *>
-          IO.sleep(config.intervalInMinutes.minutes)
+        crawler.crawl.flatMap: crawled =>
+          IO.whenA(crawled)(ingestor.ingest.handleErrorWith(e => error"Error during ingestion: $e"))
+        *> IO.sleep(config.intervalInMinutes.minutes)
