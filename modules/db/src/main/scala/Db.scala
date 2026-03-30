@@ -105,7 +105,11 @@ object Db:
       }
 
     def allPlayerHashes: IO[Map[PlayerId, Long]] =
-      postgres.use(_.execute(Sql.allPlayerHashes)).map(_.toMap)
+      fs2.Stream
+        .resource(postgres)
+        .flatMap(_.stream(Sql.allPlayerHashes)(Void, 4096))
+        .compile
+        .fold(Map.empty[PlayerId, Long])(_ + _)
 
     def updateLastSeenAt(ids: List[PlayerId]): IO[Unit] =
       ids.grouped(5000).toList.traverse_ { chunk =>

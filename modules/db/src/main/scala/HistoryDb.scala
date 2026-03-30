@@ -128,7 +128,11 @@ object HistoryDb:
         postgres.use(_.execute(q)(f.argument))
 
       def allPlayerInfoHashes: IO[Map[PlayerId, Long]] =
-        postgres.use(_.execute(Sql.allPlayerInfoHashes)).map(_.toMap)
+        fs2.Stream
+          .resource(postgres)
+          .flatMap(_.stream(Sql.allPlayerInfoHashes)(Void, 4096))
+          .compile
+          .fold(Map.empty[PlayerId, Long])(_ + _)
 
       def availableMonths: IO[List[YearMonth]] =
         postgres.use(_.execute(Sql.availableMonths))
