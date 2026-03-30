@@ -10,12 +10,15 @@ import org.http4s.implicits.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
 
+import scala.concurrent.duration.*
+
 trait Downloader:
   def fetch: fs2.Stream[IO, (NewPlayer, Option[NewFederation], String)]
 
 object Downloader:
-  val downloadUrl = uri"http://ratings.fide.com/download/players_list.zip"
-  def currentYear = java.time.Year.now.getValue
+  val downloadUrl        = uri"http://ratings.fide.com/download/players_list.zip"
+  val downloadTimeout    = 10.minutes
+  def currentYear        = java.time.Year.now.getValue
 
   lazy val request = Request[IO](
     method = Method.GET,
@@ -34,6 +37,7 @@ object Downloader:
         .drop(1) // first line is header
         .evalMapFilter: line =>
           parseLine(line).map(_.map((player, fed) => (player, fed, line)))
+        .interruptAfter(downloadTimeout)
 
   def parseLine(line: String): Logger[IO] ?=> IO[Option[(NewPlayer, Option[NewFederation])]] =
 
