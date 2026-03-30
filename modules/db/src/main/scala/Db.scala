@@ -180,7 +180,8 @@ private object Sql:
     sql"$allPlayersFragment WHERE p.id IN ($ids)"
 
   def allFederationsSummary(paging: Pagination): AppliedFragment =
-    allFederationsSummaryFragment(Void) |+| pagingFragment(paging)
+    allFederationsSummaryFragment(Void) |+|
+      sql""" ORDER BY avg_top_standard DESC NULLS LAST""".apply(Void) |+| pagingFragment(paging)
 
   lazy val federationSummaryById: Query[FederationId, FederationSummary] =
     sql"""$allFederationsSummaryFragment
