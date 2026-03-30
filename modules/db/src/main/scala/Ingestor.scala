@@ -38,6 +38,7 @@ object Ingestor:
           .lastOrError
         elapsed <- IO.monotonic.map(_ - startAt)
         _       <- info"Ingestion complete, total=$total, duration=${elapsed.toSeconds}s"
+        _       <- eventDb.purgeOld
       yield ()
 
     private def processBatch(events: List[PlayerEvent]): IO[Unit] =

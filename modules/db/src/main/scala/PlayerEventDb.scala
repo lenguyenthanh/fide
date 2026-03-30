@@ -12,6 +12,7 @@ trait PlayerEventDb:
   def append(events: List[NewPlayerEvent]): IO[Unit]
   def ungestedStream(batchSize: Int): fs2.Stream[IO, PlayerEvent]
   def markIngested(ids: List[Long]): IO[Unit]
+  def purgeOld: IO[Unit]
 
 object PlayerEventDb:
 
@@ -50,3 +51,7 @@ object PlayerEventDb:
         val cmd     = sql"UPDATE player_events SET ingested = TRUE WHERE id IN ($idCodec)".command
         postgres.use(_.execute(cmd)(chunk)).void
       }
+
+    def purgeOld: IO[Unit] =
+      val cmd = sql"DELETE FROM player_events WHERE ingested = TRUE AND created_at < now() - interval '90 days'".command
+      postgres.use(_.execute(cmd)).void
