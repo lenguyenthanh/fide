@@ -44,7 +44,9 @@ object Crawler:
       def crawl: IO[Boolean] =
         syncer.fetchStatus.flatMap:
           case OutDated(timestamp) =>
-            (fetchAndSave(timestamp) *> timestamp.traverse_(syncer.saveLastUpdate) *> db.refreshFederationsSummary)
+            (fetchAndSave(timestamp) *> timestamp.traverse_(
+              syncer.saveLastUpdate
+            ) *> db.refreshFederationsSummary)
               .as(true)
               .handleErrorWith(e => error"Error while crawling: $e".as(false))
           case _ => info"Skipping crawling as the data is up to date".as(false)
@@ -52,14 +54,14 @@ object Crawler:
       def fetchAndSave(timestamp: Option[String]): IO[Unit] =
         val now = OffsetDateTime.now()
         for
-          _              <- info"Start crawling"
-          startAt        <- IO.monotonic
-          cachedHashes   <- playerHashCache.get
-          _              <- info"Loaded ${cachedHashes.size} player hashes for diffing"
-          metrics        <- AtomicCell[IO].of(CrawlMetrics())
-          seenIds        <- AtomicCell[IO].of(Set.empty[fide.types.PlayerId])
-          newPlayerIds   <- AtomicCell[IO].of(Set.empty[fide.types.PlayerId])
-          _              <- downloader.fetch
+          _            <- info"Start crawling"
+          startAt      <- IO.monotonic
+          cachedHashes <- playerHashCache.get
+          _            <- info"Loaded ${cachedHashes.size} player hashes for diffing"
+          metrics      <- AtomicCell[IO].of(CrawlMetrics())
+          seenIds      <- AtomicCell[IO].of(Set.empty[fide.types.PlayerId])
+          newPlayerIds <- AtomicCell[IO].of(Set.empty[fide.types.PlayerId])
+          _            <- downloader.fetch
             .chunkN(config.chunkSize)
             .map(_.toList)
             .parEvalMapUnordered(config.concurrentUpsert): chunk =>

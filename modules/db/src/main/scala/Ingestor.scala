@@ -50,10 +50,10 @@ object Ingestor:
       )
 
       val acc = events.foldLeft(Acc(Nil, Nil, Map.empty, 0)): (acc, e) =>
-        val player   = e.into[NewPlayer].transform(Field.renamed(_.id, _.playerId))
-        val infoRow  = player.to[PlayerInfoRow]
-        val infoHash = NewPlayer.computeInfoHash(player)
-        val ymOpt    = e.sourceLastModified.flatMap(YearMonth.fromLastModified)
+        val player     = e.into[NewPlayer].transform(Field.renamed(_.id, _.playerId))
+        val infoRow    = player.to[PlayerInfoRow]
+        val infoHash   = NewPlayer.computeInfoHash(player)
+        val ymOpt      = e.sourceLastModified.flatMap(YearMonth.fromLastModified)
         val newHistory = ymOpt match
           case Some(ym) =>
             val row = e.into[PlayerHistoryRow].transform(Field.const(_.yearMonth, ym))
@@ -75,7 +75,7 @@ object Ingestor:
           else IO.unit
         // Diff player_info: only upsert rows whose identity hash changed
         infoHashMap <- playerInfoHashCache.get
-        changedInfoRows   = acc.playerInfoRows.filter((row, hash) => infoHashMap.get(row.id).forall(_ != hash))
+        changedInfoRows = acc.playerInfoRows.filter((row, hash) => infoHashMap.get(row.id).forall(_ != hash))
         playerInfoUpdated = changedInfoRows.size
         _ <-
           info"Upserting ${acc.playersWithHash.size} players, $playerInfoUpdated player info rows, and ${historyRows.size} history rows"

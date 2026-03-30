@@ -53,5 +53,6 @@ object PlayerEventDb:
       }
 
     def purgeOld: IO[Unit] =
-      val cmd = sql"DELETE FROM player_events WHERE ingested = TRUE AND created_at < now() - interval '90 days'".command
+      val cmd =
+        sql"DELETE FROM player_events WHERE ingested = TRUE AND created_at < now() - interval '90 days'".command
       postgres.use(_.execute(cmd)).void

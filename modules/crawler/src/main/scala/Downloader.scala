@@ -16,9 +16,9 @@ trait Downloader:
   def fetch: fs2.Stream[IO, (NewPlayer, Option[NewFederation], String)]
 
 object Downloader:
-  val downloadUrl        = uri"http://ratings.fide.com/download/players_list.zip"
-  val downloadTimeout    = 10.minutes
-  def currentYear        = java.time.Year.now.getValue
+  val downloadUrl     = uri"http://ratings.fide.com/download/players_list.zip"
+  val downloadTimeout = 10.minutes
+  def currentYear     = java.time.Year.now.getValue
 
   lazy val request = Request[IO](
     method = Method.GET,

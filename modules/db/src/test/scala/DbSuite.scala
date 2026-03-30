@@ -173,7 +173,7 @@ object DbSuite extends SimpleIOSuite:
       yield expect(players.length == 1 && players.head.transform == player2)
 
   test("query federation summary success"):
-    resourceP.use: (db, kv) =>
+    resourceP.use: (db, _) =>
       for
         _      <- db.upsert(newPlayer1, newFederation.some)
         _      <- db.refreshFederationsSummary
@@ -181,7 +181,7 @@ object DbSuite extends SimpleIOSuite:
       yield expect(result.size == 1)
 
   test("query federation summary byId success"):
-    resourceP.use: (db, kv) =>
+    resourceP.use: (db, _) =>
       for
         _      <- db.upsert(newPlayer1, newFederation.some)
         _      <- db.refreshFederationsSummary
