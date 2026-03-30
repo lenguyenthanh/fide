@@ -5,6 +5,7 @@ import cats.syntax.all.*
 import fide.types.*
 
 import java.time.OffsetDateTime
+import scala.util.hashing.MurmurHash3
 
 enum Title(val value: String):
   case GM  extends Title("GM")
@@ -89,6 +90,132 @@ case class NewPlayer(
     federationId: Option[FederationId] = None
 )
 
+object NewPlayer:
+  private val seed2 = 0x9e3779b9
+
+  /** Hash all mutable fields for change detection. Two-pass MurmurHash3 combined into Long. */
+  def computeHash(p: NewPlayer): Long =
+    val fields = (
+      p.name,
+      p.title,
+      p.womenTitle,
+      p.otherTitles,
+      p.standard,
+      p.standardK,
+      p.rapid,
+      p.rapidK,
+      p.blitz,
+      p.blitzK,
+      p.gender,
+      p.birthYear,
+      p.active,
+      p.federationId
+    )
+    val hi = MurmurHash3.productHash(fields, MurmurHash3.productSeed)
+    val lo = MurmurHash3.productHash(fields, seed2)
+    (hi.toLong << 32) | (lo.toLong & 0xffffffffL)
+
+  /** Hash identity fields only (name, gender, birthYear) for player_info change detection. */
+  def computeInfoHash(p: NewPlayer): Long =
+    val fields = (p.name, p.gender, p.birthYear)
+    val hi     = MurmurHash3.productHash(fields, MurmurHash3.productSeed)
+    val lo     = MurmurHash3.productHash(fields, seed2)
+    (hi.toLong << 32) | (lo.toLong & 0xffffffffL)
+
+case class NewPlayerEvent(
+    playerId: PlayerId,
+    name: String,
+    title: Option[Title] = None,
+    womenTitle: Option[Title] = None,
+    otherTitles: List[OtherTitle] = Nil,
+    standard: Option[Rating] = None,
+    standardK: Option[Int] = None,
+    rapid: Option[Rating] = None,
+    rapidK: Option[Int] = None,
+    blitz: Option[Rating] = None,
+    blitzK: Option[Int] = None,
+    gender: Option[Gender] = None,
+    birthYear: Option[Int] = None,
+    active: Boolean,
+    federationId: Option[FederationId] = None,
+    hash: Long,
+    crawledAt: OffsetDateTime,
+    sourceLastModified: Option[String] = None
+)
+
+case class PlayerEvent(
+    id: Long,
+    playerId: PlayerId,
+    name: String,
+    title: Option[Title] = None,
+    womenTitle: Option[Title] = None,
+    otherTitles: List[OtherTitle] = Nil,
+    standard: Option[Rating] = None,
+    standardK: Option[Int] = None,
+    rapid: Option[Rating] = None,
+    rapidK: Option[Int] = None,
+    blitz: Option[Rating] = None,
+    blitzK: Option[Int] = None,
+    gender: Option[Gender] = None,
+    birthYear: Option[Int] = None,
+    active: Boolean,
+    federationId: Option[FederationId] = None,
+    hash: Long,
+    crawledAt: OffsetDateTime,
+    sourceLastModified: Option[String] = None,
+    ingested: Boolean = false,
+    createdAt: OffsetDateTime
+)
+
+case class PlayerInfoRow(
+    id: PlayerId,
+    name: String,
+    gender: Option[Gender] = None,
+    birthYear: Option[Int] = None
+)
+
+case class PlayerHistoryRow(
+    playerId: PlayerId,
+    yearMonth: YearMonth,
+    title: Option[Title] = None,
+    womenTitle: Option[Title] = None,
+    otherTitles: List[OtherTitle] = Nil,
+    standard: Option[Rating] = None,
+    standardK: Option[Int] = None,
+    rapid: Option[Rating] = None,
+    rapidK: Option[Int] = None,
+    blitz: Option[Rating] = None,
+    blitzK: Option[Int] = None,
+    federationId: Option[FederationId] = None,
+    active: Boolean
+)
+
+case class HistoricalPlayerInfo(
+    id: PlayerId,
+    name: String,
+    yearMonth: YearMonth,
+    title: Option[Title] = None,
+    womenTitle: Option[Title] = None,
+    otherTitles: List[OtherTitle] = Nil,
+    standard: Option[Rating] = None,
+    standardK: Option[Int] = None,
+    rapid: Option[Rating] = None,
+    rapidK: Option[Int] = None,
+    blitz: Option[Rating] = None,
+    blitzK: Option[Int] = None,
+    gender: Option[Gender] = None,
+    birthYear: Option[Int] = None,
+    active: Boolean,
+    federation: Option[FederationInfo] = None
+)
+
+case class RatingHistoryEntry(
+    yearMonth: YearMonth,
+    standard: Option[Rating],
+    rapid: Option[Rating],
+    blitz: Option[Rating]
+)
+
 case class NewFederation(
     id: FederationId,
     name: String
@@ -148,6 +275,7 @@ object Federation:
     FederationId("BIH") -> "Bosnia & Herzegovina",
     FederationId("BIZ") -> "Belize",
     FederationId("BLR") -> "Belarus",
+    FederationId("BLZ") -> "Belize",
     FederationId("BOL") -> "Bolivia",
     FederationId("BOT") -> "Botswana",
     FederationId("BRA") -> "Brazil",
@@ -171,6 +299,7 @@ object Federation:
     FederationId("CPV") -> "Cape Verde",
     FederationId("CRC") -> "Costa Rica",
     FederationId("CRO") -> "Croatia",
+    FederationId("CSR") -> "Czechoslovakia",
     FederationId("CUB") -> "Cuba",
     FederationId("CYP") -> "Cyprus",
     FederationId("CZE") -> "Czech Republic",
@@ -191,9 +320,12 @@ object Federation:
     FederationId("FIJ") -> "Fiji",
     FederationId("FIN") -> "Finland",
     FederationId("FRA") -> "France",
+    FederationId("FRG") -> "West Germany",
     FederationId("GAB") -> "Gabon",
     FederationId("GAM") -> "Gambia",
+    FederationId("GBR") -> "Great Britain",
     FederationId("GCI") -> "Guernsey",
+    FederationId("GDR") -> "East Germany",
     FederationId("GEO") -> "Georgia",
     FederationId("GEQ") -> "Equatorial Guinea",
     FederationId("GER") -> "Germany",
@@ -236,6 +368,7 @@ object Federation:
     FederationId("LAT") -> "Latvia",
     FederationId("LBA") -> "Libya",
     FederationId("LBN") -> "Lebanon",
+    FederationId("LIB") -> "Lebanon",
     FederationId("LBR") -> "Liberia",
     FederationId("LCA") -> "Saint Lucia",
     FederationId("LES") -> "Lesotho",
@@ -246,6 +379,7 @@ object Federation:
     FederationId("MAD") -> "Madagascar",
     FederationId("MAR") -> "Morocco",
     FederationId("MAS") -> "Malaysia",
+    FederationId("MAU") -> "Mauritania",
     FederationId("MAW") -> "Malawi",
     FederationId("MDA") -> "Moldova",
     FederationId("MDV") -> "Maldives",
@@ -284,14 +418,17 @@ object Federation:
     FederationId("POR") -> "Portugal",
     FederationId("PUR") -> "Puerto Rico",
     FederationId("QAT") -> "Qatar",
+    FederationId("ROM") -> "Romania",
     FederationId("ROU") -> "Romania",
     FederationId("RSA") -> "South Africa",
     FederationId("RUS") -> "Russia",
     FederationId("RWA") -> "Rwanda",
+    FederationId("SAA") -> "Saarland",
     FederationId("SCO") -> "Scotland",
     FederationId("SEN") -> "Senegal",
     FederationId("SEY") -> "Seychelles",
     FederationId("SGP") -> "Singapore",
+    FederationId("SIN") -> "Singapore",
     FederationId("SKN") -> "Saint Kitts and Nevis",
     FederationId("SLE") -> "Sierra Leone",
     FederationId("SLO") -> "Slovenia",
@@ -317,12 +454,14 @@ object Federation:
     FederationId("TLS") -> "Timor-Leste",
     FederationId("TOG") -> "Togo",
     FederationId("TPE") -> "Chinese Taipei",
+    FederationId("TRI") -> "Trinidad & Tobago",
     FederationId("TTO") -> "Trinidad & Tobago",
     FederationId("TUN") -> "Tunisia",
     FederationId("TUR") -> "Turkiye",
     FederationId("UAE") -> "United Arab Emirates",
     FederationId("UGA") -> "Uganda",
     FederationId("UKR") -> "Ukraine",
+    FederationId("URS") -> "Soviet Union",
     FederationId("URU") -> "Uruguay",
     FederationId("USA") -> "United States of America",
     FederationId("UZB") -> "Uzbekistan",
@@ -332,6 +471,8 @@ object Federation:
     FederationId("VIN") -> "Saint Vincent and the Grenadines",
     FederationId("WLS") -> "Wales",
     FederationId("YEM") -> "Yemen",
+    FederationId("YUG") -> "Yugoslavia",
+    FederationId("ZAI") -> "Zaire",
     FederationId("ZAM") -> "Zambia",
     FederationId("ZIM") -> "Zimbabwe"
   )

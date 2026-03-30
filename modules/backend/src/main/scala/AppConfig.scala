@@ -18,14 +18,16 @@ object AppConfig:
     HttpServerConfig.config,
     CrawlerConfig.config,
     CrawlerJobConfig.config,
-    PostgresConfig.config
+    PostgresConfig.config,
+    HistoryConfig.config
   ).parMapN(AppConfig.apply)
 
 case class AppConfig(
     server: HttpServerConfig,
     crawler: fide.crawler.CrawlerConfig,
     crawlerJob: CrawlerJobConfig,
-    postgres: db.PostgresConfig
+    postgres: db.PostgresConfig,
+    history: HistoryConfig
 )
 
 case class HttpServerConfig(host: Host, port: Port, shutdownTimeout: PositiveInt)
@@ -49,7 +51,7 @@ object CrawlerConfig:
   private def chunkSize =
     env("CRAWLER_CHUNK_SIZE").or(prop("crawler.chunk.size")).as[PositiveInt].default(100)
   private def concurrentUpsert =
-    env("CRAWLER_CONCURRENT_UPSERT").or(prop("crawler.concurrent.upsert")).as[PositiveInt].default(40)
+    env("CRAWLER_CONCURRENT_UPSERT").or(prop("crawler.concurrent.upsert")).as[PositiveInt].default(10)
   def config = (chunkSize, concurrentUpsert).parMapN(crawler.CrawlerConfig.apply)
 
 object PostgresConfig:
@@ -67,3 +69,9 @@ object PostgresConfig:
 
   def config =
     (host, port, user, password, database, max, schema, debug, ssl).parMapN(db.PostgresConfig.apply)
+
+case class HistoryConfig(insertSize: PositiveInt)
+object HistoryConfig:
+  private def insertSize =
+    env("HISTORY_INSERT_SIZE").or(prop("history.insert.size")).as[PositiveInt].default(100)
+  def config = insertSize.map(HistoryConfig.apply)

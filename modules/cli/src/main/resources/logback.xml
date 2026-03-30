@@ -1,0 +1,16 @@
+<configuration>
+
+    <variable name="APP_LOG_LEVEL" value="${APP_LOG_LEVEL:-INFO}" />
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date [%thread] %-5level %logger{20} - %msg%n%xException</pattern>
+        </encoder>
+    </appender>
+
+    <root level="${APP_LOG_LEVEL}">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+    <logger name="http4s"/>
+</configuration>

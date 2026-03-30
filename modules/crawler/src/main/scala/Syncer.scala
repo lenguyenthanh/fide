@@ -30,8 +30,11 @@ object Syncer:
 
   def apply(store: KVStore, scraper: UpdateChecker)(using Logger[IO]): Syncer = new:
     def fetchStatus: IO[Status] =
-      (lastLocalUpdate, scraper.lastUpdate).flatMapN: (local, remote) =>
-        info"last local update: $local, last remote update: $remote".as(Status(local, remote))
+      (lastLocalUpdate, scraper.lastUpdate)
+        .flatMapN: (local, remote) =>
+          info"last local update: $local, last remote update: $remote".as(Status(local, remote))
+        .handleErrorWith: e =>
+          Logger[IO].error(e)(s"Failed to check remote update status, skipping crawl").as(Status.UpToDate)
 
     private def lastLocalUpdate: IO[Option[String]] =
       store.get(fideLastUpdateKey)

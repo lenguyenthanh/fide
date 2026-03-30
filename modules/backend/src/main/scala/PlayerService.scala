@@ -2,7 +2,7 @@ package fide
 
 import cats.effect.*
 import cats.syntax.all.*
-import fide.db.Db
+import fide.db.{ Db, HistoryDb }
 import fide.domain.Models
 import fide.spec.{
   BirthYear as _,
@@ -21,7 +21,7 @@ import smithy4s.Timestamp
 
 import java.time.OffsetDateTime
 
-class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
+class PlayerServiceImpl(db: Db, historyDb: HistoryDb)(using Logger[IO]) extends PlayerService[IO]:
 
   import PlayerTransformers.*
 
@@ -90,6 +90,31 @@ class PlayerServiceImpl(db: Db)(using Logger[IO]) extends PlayerService[IO]:
           IO.raiseError(InternalServerError("Internal server error"))
       .map(_.map(p => p.id.toString -> p.transform).toMap)
       .map(GetPlayerByIdsOutput.apply)
+
+  override def getPlayerHistory(
+      id: PlayerId,
+      page: PageNumber,
+      pageSize: PageSize,
+      since: Option[YearMonth],
+      until: Option[YearMonth]
+  ): IO[GetPlayerHistoryOutput] =
+    val paging = Models.Pagination(page, pageSize)
+    historyDb
+      .playerInfoExists(id)
+      .flatMap:
+        if _ then
+          historyDb
+            .playerRatingHistory(id, since, until, paging)
+            .map: entries =>
+              val items = entries.map: e =>
+                RatingHistoryEntry(e.yearMonth, e.standard, e.rapid, e.blitz)
+              GetPlayerHistoryOutput(items, Option.when(items.size == pageSize)(page.succ))
+        else IO.raiseError(PlayerNotFound(id))
+      .handleErrorWith:
+        case e: PlayerNotFound => IO.raiseError(e)
+        case e                 =>
+          error"Error in getPlayerHistory: $id, $e" *>
+            IO.raiseError(InternalServerError("Internal server error"))
 
 object PlayerTransformers:
   given Transformer.Derived[OffsetDateTime, Timestamp] =

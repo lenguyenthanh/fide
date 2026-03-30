@@ -1,6 +1,6 @@
 package fide.spec
 
-import fide.types.{ NonEmptySet, PageNumber, PageSize }
+import fide.types.{ NonEmptySet, PageNumber, PageSize, YearMonth }
 import smithy4s.*
 
 object providers:
@@ -24,6 +24,9 @@ object providers:
 
   given RefinementProvider[FederationIdFormat, String, fide.types.FederationId] =
     Refinement.drivenBy(fide.types.FederationId.either, _.value)
+
+  given RefinementProvider[YearMonthFormat, String, YearMonth] =
+    Refinement.drivenBy(YearMonth.fromString, _.format)
 
   given [A]: RefinementProvider[NonEmptySetFormat, Set[A], NonEmptySet[A]] =
     Refinement.drivenBy[NonEmptySetFormat](

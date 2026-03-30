@@ -21,6 +21,12 @@ trait Db:
   def countFederationsSummary: IO[Long]
   def countFederations: IO[Long]
   def federationSummaryById(id: FederationId): IO[Option[FederationSummary]]
+  def upsertFederations(feds: List[NewFederation]): IO[Unit]
+  def upsertPlayersWithHash(xs: List[(NewPlayer, Long)]): IO[Unit]
+  def allPlayerHashes: IO[Map[PlayerId, Long]]
+  def updateLastSeenAt(ids: List[PlayerId]): IO[Unit]
+  def markInactive(ids: Set[PlayerId]): IO[Unit]
+  def refreshFederationsSummary: IO[Unit]
 
 object Db:
 
@@ -51,7 +57,7 @@ object Db:
 
     def allPlayers(sorting: Sorting, paging: Pagination, filter: PlayerFilter): IO[List[PlayerInfo]] =
       val f = Sql.allPlayers(sorting, paging, filter)
-      val q = f.fragment.query(Codecs.playerInfo)
+      val q = f.fragment.query(DbCodecs.playerInfo)
       postgres.use(_.execute(q)(f.argument))
 
     def countPlayers(filter: PlayerFilter): IO[Long] =
@@ -63,16 +69,18 @@ object Db:
       postgres.use(_.execute(Sql.allFederations))
 
     def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]] =
-      val f = Sql.playersByIds(ids.size)
-      val q = f.query(Codecs.playerInfo)
-      postgres.use(_.execute(q)(ids.toList))
+      if ids.isEmpty then IO.pure(Nil)
+      else
+        val f = Sql.playersByIds(ids.size)
+        val q = f.query(DbCodecs.playerInfo)
+        postgres.use(_.execute(q)(ids.toList))
 
     def playersByFederationId(id: FederationId): IO[List[PlayerInfo]] =
       postgres.use(_.execute(Sql.playersByFederationId)(id))
 
     def allFederationsSummary(paging: Pagination): IO[List[FederationSummary]] =
       val f = Sql.allFederationsSummary(paging)
-      val q = f.fragment.query(Codecs.federationSummary)
+      val q = f.fragment.query(DbCodecs.federationSummary)
       postgres.use(_.execute(q)(f.argument))
 
     def countFederationsSummary: IO[Long] =
@@ -84,55 +92,45 @@ object Db:
     def federationSummaryById(id: FederationId): IO[Option[FederationSummary]] =
       postgres.use(_.option(Sql.federationSummaryById)(id))
 
-private object Codecs:
+    def upsertFederations(feds: List[NewFederation]): IO[Unit] =
+      feds.grouped(1500).toList.traverse_ { chunk =>
+        val cmd = Sql.upsertFederations(chunk.size)
+        postgres.use(_.execute(cmd)(chunk)).void
+      }
 
-  import skunk.codec.all.*
-  import skunk.data.{ Arr, Type }
+    def upsertPlayersWithHash(xs: List[(NewPlayer, Long)]): IO[Unit] =
+      xs.grouped(2000).toList.traverse_ { chunk =>
+        val cmd = Sql.upsertPlayersWithHash(chunk.size)
+        postgres.use(_.execute(cmd)(chunk)).void
+      }
 
-  import io.github.iltotore.iron.constraint.all.*
-  import fide.db.iron.*
+    def allPlayerHashes: IO[Map[PlayerId, Long]] =
+      fs2.Stream
+        .resource(postgres)
+        .flatMap(_.stream(Sql.allPlayerHashes)(Void, 4096))
+        .compile
+        .fold(Map.empty[PlayerId, Long])(_ + _)
 
-  val title: Codec[Title]           = `enum`[Title](_.value, Title.apply, Type("title"))
-  val otherTitle: Codec[OtherTitle] = `enum`[OtherTitle](_.value, OtherTitle.apply, Type("other_title"))
-  val gender: Codec[Gender]         = `enum`[Gender](_.value, Gender.apply, Type("sex"))
-  val ratingCodec: Codec[Rating]    = int4.refined[RatingConstraint].imap(Rating.apply)(_.value)
-  val federationIdCodec: Codec[FederationId] = text.refined[NonEmpty].imap(FederationId.apply)(_.value)
-  val playerIdCodec: Codec[PlayerId]         = int4.refined[Positive].imap(PlayerId.apply)(_.value)
+    def updateLastSeenAt(ids: List[PlayerId]): IO[Unit] =
+      ids.grouped(5000).toList.traverse_ { chunk =>
+        val cmd = Sql.updateLastSeenAt(chunk.size)
+        postgres.use(_.execute(cmd)(chunk)).void
+      }
 
-  val otherTitleArr: Codec[Arr[OtherTitle]] =
-    Codec.array(
-      _.value,
-      OtherTitle(_).toRight("invalid title"),
-      Type("_other_title", List(Type("other_title")))
-    )
+    def markInactive(ids: Set[PlayerId]): IO[Unit] =
+      ids.toList.grouped(5000).toList.traverse_ { chunk =>
+        val cmd = Sql.markInactive(chunk.size)
+        postgres.use(_.execute(cmd)(chunk)).void
+      }
 
-  val otherTitles: Codec[List[OtherTitle]] = otherTitleArr.opt.imap(_.fold(Nil)(_.toList))(Arr(_*).some)
-
-  val newPlayer: Codec[NewPlayer] =
-    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: federationIdCodec.opt)
-      .to[NewPlayer]
-
-  val newFederation: Codec[NewFederation] =
-    (federationIdCodec *: text).to[NewFederation]
-
-  val federationInfo: Codec[FederationInfo] =
-    (federationIdCodec *: text).to[FederationInfo]
-
-  val stats: Codec[Stats] =
-    (int4 *: int4 *: int4).to[Stats]
-
-  val federationSummary: Codec[FederationSummary] =
-    (federationIdCodec *: text *: int4 *: stats *: stats *: stats).to[FederationSummary]
-
-  val playerInfo: Codec[PlayerInfo] =
-    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
-      .to[PlayerInfo]
+    def refreshFederationsSummary: IO[Unit] =
+      postgres.use(_.execute(Sql.refreshFederationsSummary)).void
 
 private object Sql:
 
   import skunk.codec.all.*
   import skunk.implicits.*
-  import Codecs.*
+  import DbCodecs.*
 
   val upsertPlayer: Command[NewPlayer] =
     sql"""
@@ -183,86 +181,25 @@ private object Sql:
     sql"SELECT count(*) FROM federations".query(codec.all.int8)
 
   val countFederationsSummary: Query[Void, Long] =
-    sql"SELECT count(*) FROM federations".query(codec.all.int8)
+    sql"SELECT count(*) FROM federations_summary".query(codec.all.int8)
 
   def playersByIds(n: Int): Fragment[List[PlayerId]] =
     val ids = playerIdCodec.values.list(n)
     sql"$allPlayersFragment WHERE p.id IN ($ids)"
 
   def allFederationsSummary(paging: Pagination): AppliedFragment =
-    allFederationsSummaryFragment(Void) |+| pagingFragment(paging)
+    allFederationsSummaryFragment(Void) |+|
+      sql""" ORDER BY avg_top_standard DESC NULLS LAST""".apply(Void) |+| pagingFragment(paging)
 
   lazy val federationSummaryById: Query[FederationId, FederationSummary] =
     sql"""$allFederationsSummaryFragment
         WHERE id = $federationIdCodec""".query(federationSummary)
 
   private val void: AppliedFragment  = sql"".apply(Void)
-  private val and: AppliedFragment   = sql" AND ".apply(Void)
   private val where: AppliedFragment = sql"WHERE ".apply(Void)
 
-  private def between(column: String, range: RatingRange): Option[AppliedFragment] =
-    between(column, range.min, range.max)
-
-  private def between[A <: Int](column: String, min: Option[A], max: Option[A]): Option[AppliedFragment] =
-    val _column = s"p.$column"
-    (min, max) match
-      case (Some(min), Some(max)) =>
-        sql"""
-            #$_column BETWEEN ${int4} AND ${int4}""".apply(min, max).some
-      case (Some(min), None) =>
-        sql"""
-            #$_column >= ${int4}""".apply(min).some
-      case (None, Some(max)) =>
-        sql"""
-            #$_column <= ${int4}""".apply(max).some
-      case (None, None) => none
-
   private def filterFragment(filter: PlayerFilter): Option[AppliedFragment] =
-    List.concat(
-      filter.name.map(nameLikeFragment),
-      between("standard", filter.standard),
-      between("rapid", filter.rapid),
-      between("blitz", filter.blitz),
-      filter.isActive.map(filterActive),
-      filter.federationId.map(federationIdFragment),
-      filter.titles.map(xs => playersByTitles(xs.size)(xs, xs)),
-      filter.otherTitles.map(xs => playersByOtherTitles(xs.size)(xs)),
-      filter.gender.map(filterGender),
-      between("birth_year", filter.birthYearMin, filter.birthYearMax),
-      filter.hasTitle.map(hasTitle),
-      filter.hasWomenTitle.map(hasWomenTitle),
-      filter.hasOtherTitle.map(hasOtherTitle)
-    ) match
-      case Nil => none
-      case xs  => xs.intercalate(and).some
-
-  private lazy val filterActive: Fragment[Boolean] =
-    sql"p.active = $bool"
-
-  private lazy val filterGender: Fragment[Gender] =
-    sql"p.sex = $gender"
-
-  def playersByTitles(n: Int): Fragment[(List[Title], List[Title])] =
-    val titles = title.values.list(n)
-    sql"(p.title IN ($titles) OR p.women_title in ($titles))"
-
-  private def hasTitle: Boolean => AppliedFragment =
-    case true  => sql"p.title IS NOT NULL".apply(Void)
-    case false => sql"p.title IS NULL".apply(Void)
-
-  private def hasWomenTitle: Boolean => AppliedFragment =
-    case true  => sql"p.women_title IS NOT NULL".apply(Void)
-    case false => sql"p.women_title IS NULL".apply(Void)
-
-  private def hasOtherTitle: Boolean => AppliedFragment =
-    case true  => sql"cardinality(p.other_titles) != 0".apply(Void)
-    case false => sql"cardinality(p.other_titles) = 0".apply(Void)
-
-  // https://www.postgresql.org/docs/current/functions-array.html#FUNCTIONS-ARRAY
-  // select * from player where other_titles && array['IA','FA']::other_title[]
-  def playersByOtherTitles(n: Int): Fragment[List[OtherTitle]] =
-    val otherTitles = otherTitle.values.list(n)
-    sql"p.other_titles && array[$otherTitles]::other_title[]"
+    FilterSql.filterFragment(TableAliases.players)(filter)
 
   private lazy val insertIntoPlayer =
     sql"""INSERT INTO players (id, name, title, women_title, other_titles, standard, standard_kfactor, rapid,
@@ -279,23 +216,54 @@ private object Sql:
   private val onConflictDoNothing  = sql"ON CONFLICT DO NOTHING"
   private val insertIntoFederation = sql"INSERT INTO federations (id, name)"
 
-  private def nameLikeFragment(name: String): AppliedFragment =
-    sql"""
-        p.name % $text""".apply(name)
-
   private def pagingFragment(page: Pagination): AppliedFragment =
     sql"""
         LIMIT ${int4} OFFSET ${int4}""".apply(page.size, page.offset)
 
-  private def federationIdFragment(id: FederationId): AppliedFragment =
-    if id.value.toLowerCase == "non" then sql"p.federation_id IS NULL".apply(Void)
-    else sql"""p.federation_id = $federationIdCodec""".apply(id)
-
   private def sortingFragment(sorting: Sorting): AppliedFragment =
-    val column  = s"p.${sorting.sortBy.value}"
-    val orderBy = sorting.orderBy.value
+    val column = sorting.sortBy match
+      case SortBy.Name      => "p.name"
+      case SortBy.Standard  => "p.standard"
+      case SortBy.Rapid     => "p.rapid"
+      case SortBy.Blitz     => "p.blitz"
+      case SortBy.BirthYear => "p.birth_year"
+    val orderBy = sorting.orderBy match
+      case Order.Asc  => "ASC"
+      case Order.Desc => "DESC"
     sql"""
         ORDER BY #$column #$orderBy NULLS LAST""".apply(Void)
+
+  lazy val allPlayerHashes: Query[Void, (PlayerId, Long)] =
+    sql"SELECT id, hash FROM players".query(playerIdCodec *: int8)
+
+  private val newPlayerWithHash: Codec[(NewPlayer, Long)] =
+    (newPlayer *: int8).imap[(NewPlayer, Long)] { case p *: h *: EmptyTuple => (p, h) } { case (p, h) =>
+      p *: h *: EmptyTuple
+    }
+
+  def upsertPlayersWithHash(n: Int): Command[List[(NewPlayer, Long)]] =
+    val players = newPlayerWithHash.values.list(n)
+    sql"""
+        INSERT INTO players (id, name, title, women_title, other_titles, standard, standard_kfactor, rapid,
+          rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id, hash)
+        VALUES $players
+        ON CONFLICT (id) DO UPDATE SET (name, title, women_title, other_titles, standard, standard_kfactor, rapid,
+          rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id, hash) =
+        (EXCLUDED.name, EXCLUDED.title, EXCLUDED.women_title, EXCLUDED.other_titles, EXCLUDED.standard,
+          EXCLUDED.standard_kfactor, EXCLUDED.rapid, EXCLUDED.rapid_kfactor, EXCLUDED.blitz, EXCLUDED.blitz_kfactor,
+          EXCLUDED.sex, EXCLUDED.birth_year, EXCLUDED.active, EXCLUDED.federation_id, EXCLUDED.hash)
+       """.command
+
+  def updateLastSeenAt(n: Int): Command[List[PlayerId]] =
+    val ids = playerIdCodec.values.list(n)
+    sql"UPDATE players SET last_seen_at = now() WHERE id IN ($ids)".command
+
+  def markInactive(n: Int): Command[List[PlayerId]] =
+    val ids = playerIdCodec.values.list(n)
+    sql"UPDATE players SET active = false WHERE id IN ($ids)".command
+
+  val refreshFederationsSummary: Command[Void] =
+    sql"REFRESH MATERIALIZED VIEW CONCURRENTLY federations_summary".command
 
   private lazy val allPlayersFragment: Fragment[Void] =
     sql"""

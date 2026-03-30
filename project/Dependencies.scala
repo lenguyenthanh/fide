@@ -6,7 +6,9 @@ object Dependencies {
   object V {
     val catsEffect = "3.7.0"
     val ciris      = "3.12.0"
+    val decline    = "2.6.0"
     val fs2        = "3.13.0"
+    val fs2Data    = "1.12.0"
     val http4s     = "0.23.33"
     val iron       = "3.3.0"
     val gatling    = "3.15.0"
@@ -19,9 +21,14 @@ object Dependencies {
   val catsCore   = "org.typelevel" %% "cats-core"   % "2.13.0"
   val catsEffect = "org.typelevel" %% "cats-effect" % V.catsEffect
 
-  val fs2         = "co.fs2"  %% "fs2-core"           % V.fs2
-  val fs2IO       = "co.fs2"  %% "fs2-io"             % V.fs2
-  val fs2Compress = "de.lhns" %% "fs2-compress-zip4j" % "2.3.2"
+  val fs2           = "co.fs2"    %% "fs2-core"             % V.fs2
+  val fs2IO         = "co.fs2"    %% "fs2-io"               % V.fs2
+  val fs2Compress   = "de.lhns"   %% "fs2-compress-zip4j"   % "2.3.2"
+  val fs2DataCsv    = "org.gnieh" %% "fs2-data-csv"         % V.fs2Data
+  val fs2DataCsvGen = "org.gnieh" %% "fs2-data-csv-generic" % V.fs2Data
+
+  val declineCore       = "com.monovore" %% "decline"        % V.decline
+  val declineCatsEffect = "com.monovore" %% "decline-effect" % V.decline
 
   val cirisCore  = "is.cir" %% "ciris"        % V.ciris
   val cirisHtt4s = "is.cir" %% "ciris-http4s" % V.ciris

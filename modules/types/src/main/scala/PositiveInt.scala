@@ -22,7 +22,7 @@ object PageNumber extends RefinedSubtype[Int, Positive]:
       if self.value > other.value then self else other
 
 type PlayerId = PlayerId.T
-object PlayerId extends RefinedType[Int, Positive]
+object PlayerId extends RefinedType[Int, Not[StrictEqual[0]]]
 
 type BirthYear = BirthYear.T
 object BirthYear extends RefinedSubtype[Int, Positive]
