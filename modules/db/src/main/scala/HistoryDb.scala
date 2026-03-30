@@ -60,7 +60,9 @@ object HistoryDb:
           val cmd = sql"""
             INSERT INTO player_info (id, name, sex, birth_year, hash)
             VALUES $codec
-            ON CONFLICT (id) DO NOTHING""".command
+            ON CONFLICT (id) DO UPDATE SET
+              name = EXCLUDED.name, sex = EXCLUDED.sex,
+              birth_year = EXCLUDED.birth_year, hash = EXCLUDED.hash""".command
           postgres.use(_.execute(cmd)(chunk)).void
         }
 
