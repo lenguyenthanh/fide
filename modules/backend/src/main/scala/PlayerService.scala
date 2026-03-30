@@ -99,15 +99,17 @@ class PlayerServiceImpl(db: Db, historyDb: HistoryDb)(using Logger[IO]) extends 
       until: Option[YearMonth]
   ): IO[GetPlayerHistoryOutput] =
     val paging = Models.Pagination(page, pageSize)
-    db.playerById(id)
+    historyDb
+      .playerInfoExists(id)
       .flatMap:
-        _.fold(IO.raiseError(PlayerNotFound(id))): _ =>
+        if _ then
           historyDb
             .playerRatingHistory(id, since, until, paging)
             .map: entries =>
               val items = entries.map: e =>
                 RatingHistoryEntry(e.yearMonth, e.standard, e.rapid, e.blitz)
               GetPlayerHistoryOutput(items, Option.when(items.size == pageSize)(page.succ))
+        else IO.raiseError(PlayerNotFound(id))
       .handleErrorWith:
         case e: PlayerNotFound => IO.raiseError(e)
         case e                 =>

@@ -26,6 +26,7 @@ trait HistoryDb:
   def federationsSummary(month: YearMonth, paging: Pagination): IO[List[FederationSummary]]
   def countFederationsSummary(month: YearMonth): IO[Long]
   def federationSummaryById(id: FederationId, month: YearMonth): IO[Option[FederationSummary]]
+  def playerInfoExists(id: PlayerId): IO[Boolean]
   def playerRatingHistory(
       id: PlayerId,
       since: Option[YearMonth],
@@ -116,6 +117,9 @@ object HistoryDb:
         val f = Sql.historicalFederationSummaryById(id, month)
         val q = f.fragment.query(DbCodecs.federationSummary)
         postgres.use(_.option(q)(f.argument))
+
+      def playerInfoExists(id: PlayerId): IO[Boolean] =
+        postgres.use(_.option(Sql.playerInfoExists)(id)).map(_.isDefined)
 
       def playerRatingHistory(
           id: PlayerId,
@@ -248,6 +252,9 @@ object HistoryDb:
           FROM active_players ap
           GROUP BY ap.federation_id
         )""".apply(Void)
+
+    lazy val playerInfoExists: Query[PlayerId, Int] =
+      sql"SELECT 1 FROM player_info WHERE id = $playerIdCodec".query(int4)
 
     def playerRatingHistory(
         id: PlayerId,
