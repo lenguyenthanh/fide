@@ -33,7 +33,14 @@ object DbResource:
         .withDatabase(c.database)
         .withSSL(if c.ssl then SSL.Trusted else SSL.None)
         .withTypingStrategy(TypingStrategy.SearchPath)
-        .withConnectionParameters(Map("search_path" -> c.schema) ++ Session.DefaultConnectionParameters)
+        .withConnectionParameters(
+          Map(
+            "search_path" -> c.schema,
+            // Kill sessions that are idle inside a transaction after 30 s.
+            // Prevents stalled Skunk sessions from holding locks indefinitely.
+            "idle_in_transaction_session_timeout" -> "30000"
+          ) ++ Session.DefaultConnectionParameters
+        )
         .pooled(c.max)
         .evalTap(checkPostgresConnection)
 

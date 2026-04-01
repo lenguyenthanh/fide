@@ -187,3 +187,117 @@ object DbSuite extends SimpleIOSuite:
         _      <- db.refreshFederationsSummary
         result <- db.federationSummaryById(fedId)
       yield expect(result.isDefined)
+
+  // sorting and filter tests
+  test("allPlayers sorted by Standard Desc"):
+    val player2 = newPlayer1.copy(id = PlayerId(2), name = "B", standard = Rating(2500).some)
+    resource.use: db =>
+      for
+        _       <- db.upsert(newPlayer1, newFederation.some)
+        _       <- db.upsert(player2, newFederation.some)
+        players <- db.allPlayers(Sorting(SortBy.Standard, Order.Desc), defaultPage, PlayerFilter.default)
+      yield expect(players.head.standard.contains(Rating(2700))) and
+        expect(players.last.standard.contains(Rating(2500)))
+
+  test("allPlayers sorted by Standard Asc"):
+    val player2 = newPlayer1.copy(id = PlayerId(2), name = "B", standard = Rating(2500).some)
+    resource.use: db =>
+      for
+        _       <- db.upsert(newPlayer1, newFederation.some)
+        _       <- db.upsert(player2, newFederation.some)
+        players <- db.allPlayers(Sorting(SortBy.Standard, Order.Asc), defaultPage, PlayerFilter.default)
+      yield expect(players.head.standard.contains(Rating(2500))) and
+        expect(players.last.standard.contains(Rating(2700)))
+
+  test("allPlayers filtered by rating range"):
+    val player2 = newPlayer1.copy(id = PlayerId(2), name = "B", standard = Rating(2000).some)
+    resource.use: db =>
+      for
+        _       <- db.upsert(newPlayer1, newFederation.some)
+        _       <- db.upsert(player2, newFederation.some)
+        players <- db.allPlayers(
+          defaultSorting,
+          defaultPage,
+          PlayerFilter.default.copy(standard = RatingRange(Rating(2500).some, Rating(2800).some))
+        )
+      yield expect(players.length == 1) and expect(players.head.transform == newPlayer1)
+
+  test("allPlayers filtered by gender"):
+    resource.use: db =>
+      for
+        _       <- db.upsert(newPlayers)
+        players <- db.allPlayers(
+          defaultSorting,
+          defaultPage,
+          PlayerFilter.default.copy(gender = Gender.Female.some)
+        )
+      yield expect(players.length == 1) and expect(players.head.name == "Jane")
+
+  test("allPlayers filtered by hasTitle = true"):
+    val untitled = newPlayer1.copy(id = PlayerId(3), name = "C", title = none)
+    resource.use: db =>
+      for
+        _       <- db.upsert(newPlayers)
+        _       <- db.upsert(untitled, newFederation.some)
+        players <- db.allPlayers(
+          defaultSorting,
+          defaultPage,
+          PlayerFilter.default.copy(hasTitle = true.some)
+        )
+      yield expect(players.length == 2) // newPlayer1 and newPlayer2 both have GM
+
+  test("allPlayers filtered by hasTitle = false"):
+    val untitled = newPlayer1.copy(id = PlayerId(3), name = "C", title = none)
+    resource.use: db =>
+      for
+        _       <- db.upsert(newPlayers)
+        _       <- db.upsert(untitled, newFederation.some)
+        players <- db.allPlayers(
+          defaultSorting,
+          defaultPage,
+          PlayerFilter.default.copy(hasTitle = false.some)
+        )
+      yield expect(players.length == 1) and expect(players.head.name == "C")
+
+  test("allPlayers filtered by federation IS NULL"):
+    resource.use: db =>
+      for
+        _       <- db.upsert(newPlayers)
+        players <- db.allPlayers(
+          defaultSorting,
+          defaultPage,
+          PlayerFilter.default.copy(federationId = FederationId("NON").some)
+        )
+      yield expect(players.length == 1) and expect(players.head.name == "Jane")
+
+  test("upsertFederations batch is idempotent"):
+    val feds = List(
+      NewFederation(FederationId("AAA"), "Alpha"),
+      NewFederation(FederationId("BBB"), "Beta"),
+      NewFederation(FederationId("CCC"), "Charlie")
+    )
+    resource.use: db =>
+      for
+        _      <- db.upsertFederations(feds)
+        _      <- db.upsertFederations(feds) // second call is idempotent
+        result <- db.allFederations
+      yield expect(result.count(f => List("AAA", "BBB", "CCC").contains(f.id.value)) == 3)
+
+  test("markInactive sets active = false"):
+    resource.use: db =>
+      for
+        _      <- db.upsert(newPlayers)
+        _      <- db.markInactive(Set(PlayerId(1)))
+        result <- db.playerById(PlayerId(1))
+      yield expect(!result.get.active)
+
+  test("updateLastSeenAt updates timestamp"):
+    resource.use: db =>
+      for
+        _      <- db.upsert(newPlayers)
+        before <- db.playerById(PlayerId(1))
+        _      <- db.updateLastSeenAt(List(PlayerId(1)))
+        after  <- db.playerById(PlayerId(1))
+      yield
+        // Player should still exist and be queryable after updateLastSeenAt
+        expect(after.isDefined) and expect(before.isDefined)

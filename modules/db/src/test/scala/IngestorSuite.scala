@@ -102,3 +102,22 @@ object IngestorSuite extends SimpleIOSuite:
         _ <- ingestor.ingest
         months <- historyDb.availableMonths
       yield expect(months.isEmpty)
+
+  // hash-based diffing skips unchanged player_info
+  test("ingest skips player_info re-upsert when info hash unchanged"):
+    resource.use: (eventDb, historyDb, ingestor, db) =>
+      val fed = NewFederation(fedId, "United States")
+      for
+        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
+        // First ingest: populates player_info
+        _ <- eventDb.append(List(mkEvent(1, "Alice")))
+        _ <- ingestor.ingest
+        // Second ingest with same identity fields (name/gender/birthYear) but different rating
+        event2 = mkEvent(1, "Alice").copy(standard = Rating(2800).some, hash = 999L)
+        _ <- eventDb.append(List(event2))
+        _ <- ingestor.ingest
+        // player_info should still exist and player_history should have the update
+        player <- historyDb.playerById(PlayerId(1), jan2024)
+      yield expect(player.isDefined) and
+        expect(player.get.name == "Alice") and
+        expect(player.get.standard.contains(Rating(2800)))

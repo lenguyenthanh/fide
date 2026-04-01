@@ -11,11 +11,13 @@ enum Title(val value: String):
   case GM  extends Title("GM")
   case IM  extends Title("IM")
   case FM  extends Title("FM")
+  case CM  extends Title("CM")
+  case NM  extends Title("NM")
   case WGM extends Title("WGM")
   case WIM extends Title("WIM")
   case WFM extends Title("WFM")
-  case CM  extends Title("CM")
   case WCM extends Title("WCM")
+  case WNM extends Title("WNM")
 
 object Title:
   def apply(value: String): Option[Title] =

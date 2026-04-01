@@ -109,13 +109,15 @@ integer PageSize
 
 enum Title {
   GM = "GM"
-  WGM = "WGM"
   IM = "IM"
-  WIM = "WIM"
   FM = "FM"
-  WFM = "WFM"
   CM = "CM"
+  NM = "NM"
+  WGM = "WGM"
+  WIM = "WIM"
+  WFM = "WFM"
   WCM = "WCM"
+  WNM = "WNM"
 }
 
 enum OtherTitle {
