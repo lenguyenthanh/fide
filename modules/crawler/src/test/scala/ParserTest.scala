@@ -4,7 +4,7 @@ package test
 
 import cats.effect.IO
 import cats.syntax.all.*
-import fide.domain.OtherTitle
+import fide.domain.{ Gender, OtherTitle, Title }
 import org.typelevel.log4cats.Logger
 import weaver.*
 
@@ -49,5 +49,51 @@ object ParserTest extends SimpleIOSuite:
       expect.same(Downloader.sanitizeName(",alfaifi,Wael ali qasim"), "alfaifi Wael ali qasim".some) &&
       expect.same(Downloader.sanitizeName("Amar,, Kahtan"), "Amar Kahtan".some) &&
       expect.same(Downloader.sanitizeName("-,-"), none)
+
+  test("player with no federation"):
+    parse(
+      "1478800        Aagaard, Christian                                               M                                                                       1999      "
+    ).map: result =>
+      expect(result.get.federationId.isEmpty)
+
+  test("player with NON federation is excluded"):
+    parse(
+      "1478800        Aagaard, Christian                                           NON M                                                                       1999      "
+    ).map: result =>
+      expect(result.get.federationId.isEmpty)
+
+  test("player with title and women title"):
+    parse(
+      "10001492       Ojok, Patrick                                                UGA F   GM   WGM                     1638      20 1932      20 1926      20 1974          "
+    ).map: result =>
+      val p = result.get
+      expect(p.title.contains(Title.GM)) and
+        expect(p.womenTitle.contains(Title.WGM))
+
+  test("empty line is skipped"):
+    parse("").map(result => expect(result.isEmpty))
+
+  test("whitespace-only line is skipped"):
+    parse("                                                                       ").map(result =>
+      expect(result.isEmpty)
+    )
+
+  test("birth year below 1000 is excluded"):
+    parse(
+      "10001492       Ojok, Patrick                                                UGA M                                1638  0   20 1932  0   20 1926  0   20 0999      "
+    ).map: result =>
+      expect(result.get.birthYear.isEmpty)
+
+  test("birth year above current year is excluded"):
+    parse(
+      "10001492       Ojok, Patrick                                                UGA M                                1638  0   20 1932  0   20 1926  0   20 9999      "
+    ).map: result =>
+      expect(result.get.birthYear.isEmpty)
+
+  test("gender is parsed"):
+    parse(
+      "10001492       Ojok, Patrick                                                UGA F                                1638  0   20 1932  0   20 1926  0   20 1974      "
+    ).map: result =>
+      expect(result.get.gender.contains(Gender.Female))
 
   private def parse(s: String) = Downloader.parseLine(s).map(_.map(_._1))

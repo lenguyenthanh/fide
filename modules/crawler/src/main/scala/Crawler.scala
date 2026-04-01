@@ -54,8 +54,8 @@ object Crawler:
           case _ => info"Skipping crawling as the data is up to date".as(CrawlStatus.Skipped)
 
       def fetchAndSave(timestamp: Option[String]): IO[Unit] =
-        val now = OffsetDateTime.now()
         for
+          now          <- IO.realTimeZonedDateTime.map(_.toOffsetDateTime)
           _            <- info"Start crawling"
           startAt      <- IO.monotonic
           cachedHashes <- playerHashCache.get

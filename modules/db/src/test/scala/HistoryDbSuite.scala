@@ -164,3 +164,67 @@ object HistoryDbSuite extends SimpleIOSuite:
       yield expect(result.isDefined) and
         expect(result.get.nbPlayers == 1) and
         expect(missing.isEmpty)
+
+  test("playerRatingHistory returns entries in DESC order"):
+    val mar2024 = YearMonth(2024, 3)
+    resourceWithFeds.use: (historyDb, db) =>
+      for
+        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true), none)
+        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
+        _ <- historyDb.upsertPlayerHistory(
+          List(mkHistory(1, jan2024, 2700), mkHistory(1, feb2024, 2710), mkHistory(1, mar2024, 2720))
+        )
+        all <- historyDb.playerRatingHistory(
+          PlayerId(1),
+          none,
+          none,
+          Pagination(PageNumber(1), PageSize(30))
+        )
+      yield expect(all.size == 3) and
+        expect(all.head.yearMonth == mar2024) and
+        expect(all.last.yearMonth == jan2024)
+
+  test("playerRatingHistory with since/until range"):
+    val mar2024 = YearMonth(2024, 3)
+    resourceWithFeds.use: (historyDb, db) =>
+      for
+        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true), none)
+        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
+        _ <- historyDb.upsertPlayerHistory(
+          List(mkHistory(1, jan2024, 2700), mkHistory(1, feb2024, 2710), mkHistory(1, mar2024, 2720))
+        )
+        filtered <- historyDb.playerRatingHistory(
+          PlayerId(1),
+          jan2024.some,
+          feb2024.some,
+          Pagination(PageNumber(1), PageSize(30))
+        )
+      yield expect(filtered.size == 2) and
+        expect(filtered.head.yearMonth == feb2024) and
+        expect(filtered.last.yearMonth == jan2024)
+
+  test("playerRatingHistory with pagination"):
+    val mar2024 = YearMonth(2024, 3)
+    resourceWithFeds.use: (historyDb, db) =>
+      for
+        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true), none)
+        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
+        _ <- historyDb.upsertPlayerHistory(
+          List(mkHistory(1, jan2024, 2700), mkHistory(1, feb2024, 2710), mkHistory(1, mar2024, 2720))
+        )
+        page1 <- historyDb.playerRatingHistory(
+          PlayerId(1),
+          none,
+          none,
+          Pagination(PageNumber(1), PageSize(2))
+        )
+        page2 <- historyDb.playerRatingHistory(
+          PlayerId(1),
+          none,
+          none,
+          Pagination(PageNumber(2), PageSize(2))
+        )
+      yield expect(page1.size == 2) and
+        expect(page2.size == 1) and
+        expect(page1.head.yearMonth == mar2024) and
+        expect(page2.head.yearMonth == jan2024)

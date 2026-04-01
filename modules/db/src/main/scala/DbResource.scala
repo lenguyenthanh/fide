@@ -35,7 +35,7 @@ object DbResource:
         .withTypingStrategy(TypingStrategy.SearchPath)
         .withConnectionParameters(
           Map(
-            "search_path"                         -> c.schema,
+            "search_path" -> c.schema,
             // Kill sessions that are idle inside a transaction after 30 s.
             // Prevents stalled Skunk sessions from holding locks indefinitely.
             "idle_in_transaction_session_timeout" -> "30000"
