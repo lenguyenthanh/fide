@@ -129,10 +129,11 @@ object HistoryDbSuite extends SimpleIOSuite:
 
   test("availableMonths returns distinct sorted months"):
     resourceWithFeds.use: (historyDb, db) =>
+      val fed = NewFederation(fedId, "United States")
       for
-        _      <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true), none)
-        _      <- historyDb.insertPlayerInfo(List(playerInfo1))
-        _      <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024), mkHistory(1, feb2024)))
+        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
+        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
+        _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024), mkHistory(1, feb2024)))
         months <- historyDb.availableMonths
       yield expect(months.size == 2) and
         expect(months.head == feb2024) and // DESC order
@@ -168,8 +169,9 @@ object HistoryDbSuite extends SimpleIOSuite:
   test("playerRatingHistory returns entries in DESC order"):
     val mar2024 = YearMonth(2024, 3)
     resourceWithFeds.use: (historyDb, db) =>
+      val fed = NewFederation(fedId, "United States")
       for
-        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true), none)
+        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
         _ <- historyDb.insertPlayerInfo(List(playerInfo1))
         _ <- historyDb.upsertPlayerHistory(
           List(mkHistory(1, jan2024, 2700), mkHistory(1, feb2024, 2710), mkHistory(1, mar2024, 2720))
@@ -187,8 +189,9 @@ object HistoryDbSuite extends SimpleIOSuite:
   test("playerRatingHistory with since/until range"):
     val mar2024 = YearMonth(2024, 3)
     resourceWithFeds.use: (historyDb, db) =>
+      val fed = NewFederation(fedId, "United States")
       for
-        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true), none)
+        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
         _ <- historyDb.insertPlayerInfo(List(playerInfo1))
         _ <- historyDb.upsertPlayerHistory(
           List(mkHistory(1, jan2024, 2700), mkHistory(1, feb2024, 2710), mkHistory(1, mar2024, 2720))
@@ -206,8 +209,9 @@ object HistoryDbSuite extends SimpleIOSuite:
   test("playerRatingHistory with pagination"):
     val mar2024 = YearMonth(2024, 3)
     resourceWithFeds.use: (historyDb, db) =>
+      val fed = NewFederation(fedId, "United States")
       for
-        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true), none)
+        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
         _ <- historyDb.insertPlayerInfo(List(playerInfo1))
         _ <- historyDb.upsertPlayerHistory(
           List(mkHistory(1, jan2024, 2700), mkHistory(1, feb2024, 2710), mkHistory(1, mar2024, 2720))
