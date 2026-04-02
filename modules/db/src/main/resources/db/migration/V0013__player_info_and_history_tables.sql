@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS player_history (
     rapid_kfactor   integer,
     blitz           integer,
     blitz_kfactor   integer,
-    federation_id   text,
+    federation_id   text REFERENCES federations(id),
     active          boolean NOT NULL,
     created_at      timestamptz NOT NULL DEFAULT NOW(),
     updated_at      timestamptz NOT NULL DEFAULT NOW(),

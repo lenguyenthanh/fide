@@ -127,9 +127,5 @@ DROP INDEX IF EXISTS fed_sum_rapid_players_desc_idx;
 DROP INDEX IF EXISTS fed_sum_blitz_players_desc_idx;
 DROP INDEX IF EXISTS fed_sum_players_desc_idx;
 
--- Document intentional lack of FK on player_history.federation_id
-COMMENT ON COLUMN player_history.federation_id IS
-  'No FK to federations: historical records may reference dissolved federations (e.g. YUG, URS) that are not in the federations table. The LEFT JOIN in queries handles this gracefully.';
-
 -- Refresh materialized view to pick up view changes
 REFRESH MATERIALIZED VIEW CONCURRENTLY federations_summary;
