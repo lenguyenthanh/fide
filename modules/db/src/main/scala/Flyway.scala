@@ -6,6 +6,7 @@ import cats.syntax.all.*
 import dumbo.logging.{ LogLevel, Logger as DumboLogger }
 import dumbo.{ ConnectionConfig, Dumbo }
 import org.typelevel.log4cats.Logger
+import org.typelevel.otel4s.metrics.Meter
 import org.typelevel.otel4s.trace.Tracer
 
 trait Flyway:
@@ -17,7 +18,7 @@ object Flyway:
     case (LogLevel.Info, msg) => Logger[IO].info(msg)
     case (LogLevel.Warn, msg) => Logger[IO].warn(msg)
 
-  def apply(config: PostgresConfig)(using Tracer[IO], Logger[IO]): Flyway = new:
+  def apply(config: PostgresConfig)(using Tracer[IO], Meter[IO], Logger[IO]): Flyway = new:
     def migrate =
       Dumbo
         .withResourcesIn[IO]("db/migration")

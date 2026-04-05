@@ -13,7 +13,8 @@ class DbResource private (val postgres: Resource[IO, Session[IO]])
 
 object DbResource:
 
-  given org.typelevel.otel4s.trace.Tracer[IO] = org.typelevel.otel4s.trace.Tracer.noop[IO]
+  given org.typelevel.otel4s.trace.Tracer[IO]  = org.typelevel.otel4s.trace.Tracer.noop[IO]
+  given org.typelevel.otel4s.metrics.Meter[IO] = org.typelevel.otel4s.metrics.Meter.noop[IO]
 
   def instance(postgresConf: PostgresConfig)(using Logger[IO]): Resource[IO, DbResource] =
 
