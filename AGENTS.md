@@ -20,14 +20,15 @@ For full workflow details: `bd prime`
 - Always save any plan/optimization session in `<project-root>/.claude/docs/` directory instead of just writing in the console
 - Omit `Co-Authored-By` lines from git commits
 
+
 ## Skills
 
-**Always** use these skills:
+Load these skills **before writing, planning or reviewing any Scala code**:
 
- - General Scala 3/FP standards are in the `/scala3-fp` skill.
- - cats-effect best practices are in the `cats-effect-io` and `cats-effect-resource`
- - typed error with cats-mtl best practices are in the `cats-mtl-typed-errors`
- - SBT and Metals workflow is in the `/scala-sbt` skill.
+- `/scala3-fp` — General Scala 3/FP standards
+- `/cats-effect-io` and `/cats-effect-resource` — cats-effect best practices
+- `/cats-mtl-typed-errors` — typed error handling with cats-mtl
+- `/scala-sbt` — SBT and Metals workflow
 
 ## Modules Structure
 
