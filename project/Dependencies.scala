@@ -9,7 +9,7 @@ object Dependencies {
     val decline    = "2.6.1"
     val fs2        = "3.13.0"
     val fs2Data    = "1.13.0"
-    val http4s     = "0.23.33"
+    val http4s     = "0.23.34"
     val iron       = "3.3.0"
     val gatling    = "3.15.0"
   }
