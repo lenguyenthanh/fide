@@ -132,6 +132,8 @@ structure GetHistoricalPlayerByIdOutput {
   @required
   id: PlayerId
 
+  fideId: FideId
+
   @required
   name: String
 

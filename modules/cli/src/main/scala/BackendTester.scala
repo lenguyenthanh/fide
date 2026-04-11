@@ -2,7 +2,7 @@ package fide.cli
 
 import cats.effect.*
 import cats.syntax.all.*
-import fide.domain.NewPlayer
+import fide.domain.HistoricalPlayer
 import fide.spec.HistoryService
 import fide.types.*
 import fs2.Stream
@@ -86,7 +86,7 @@ object BackendTester:
 
     private def testHistoricalPlayer(
         ym: YearMonth,
-        csv: NewPlayer,
+        csv: HistoricalPlayer,
         report: Ref[IO, TestReport]
     ): IO[Unit] =
       val endpoint = "history/players"

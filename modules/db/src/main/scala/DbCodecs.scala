@@ -17,7 +17,8 @@ private[db] object DbCodecs:
   val gender: Codec[Gender]         = `enum`[Gender](_.value, Gender.apply, Type("sex"))
   val ratingCodec: Codec[Rating]    = int4.refined[RatingConstraint].imap(Rating.apply)(_.value)
   val federationIdCodec: Codec[FederationId] = text.refined[NonEmpty].imap(FederationId.apply)(_.value)
-  val playerIdCodec: Codec[PlayerId]         = int4.refined[Not[StrictEqual[0]]].imap(PlayerId.apply)(_.value)
+  val fideIdCodec: Codec[FideId]             = text.refined[NonEmpty].imap(FideId.apply)(_.value)
+  val playerIdCodec: Codec[PlayerId]         = int4.refined[Positive].imap(PlayerId.apply)(_.value)
   val yearMonthCodec: Codec[YearMonth]       = date.imap(YearMonth.apply)(_.toLocalDate)
 
   val otherTitleArr: Codec[Arr[OtherTitle]] =
@@ -29,9 +30,9 @@ private[db] object DbCodecs:
 
   val otherTitles: Codec[List[OtherTitle]] = otherTitleArr.opt.imap(_.fold(Nil)(_.toList))(Arr(_*).some)
 
-  val newPlayer: Codec[NewPlayer] =
-    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: federationIdCodec.opt)
-      .to[NewPlayer]
+  val crawlPlayer: Codec[CrawlPlayer] =
+    (fideIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: federationIdCodec.opt)
+      .to[CrawlPlayer]
 
   val newFederation: Codec[NewFederation] =
     (federationIdCodec *: text).to[NewFederation]
@@ -46,27 +47,27 @@ private[db] object DbCodecs:
     (federationIdCodec *: text *: int4 *: stats *: stats *: stats).to[FederationSummary]
 
   val playerInfo: Codec[PlayerInfo] =
-    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
+    (playerIdCodec *: fideIdCodec.opt *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: timestamptz *: timestamptz *: federationInfo.opt)
       .to[PlayerInfo]
 
   val newPlayerEvent: Codec[NewPlayerEvent] =
-    (playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: federationIdCodec.opt *: int8 *: timestamptz *: text.opt)
+    (fideIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: federationIdCodec.opt *: int8 *: timestamptz *: text.opt)
       .to[NewPlayerEvent]
 
   val playerEvent: Codec[PlayerEvent] =
-    (int8 *: playerIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: federationIdCodec.opt *: int8 *: timestamptz *: text.opt *: bool *: timestamptz)
+    (int8 *: fideIdCodec *: text *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: federationIdCodec.opt *: int8 *: timestamptz *: text.opt *: bool *: timestamptz)
       .to[PlayerEvent]
 
   val playerInfoRow: Codec[PlayerInfoRow] =
-    (playerIdCodec *: text *: gender.opt *: int4.opt).to[PlayerInfoRow]
+    (playerIdCodec *: fideIdCodec.opt *: text *: gender.opt *: int4.opt).to[PlayerInfoRow]
 
   val playerHistoryRow: Codec[PlayerHistoryRow] =
-    (playerIdCodec *: yearMonthCodec *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: federationIdCodec.opt *: bool)
+    (playerIdCodec *: fideIdCodec.opt *: yearMonthCodec *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: federationIdCodec.opt *: bool)
       .to[PlayerHistoryRow]
 
   val ratingHistoryEntry: Codec[RatingHistoryEntry] =
     (yearMonthCodec *: ratingCodec.opt *: ratingCodec.opt *: ratingCodec.opt).to[RatingHistoryEntry]
 
   val historicalPlayerInfo: Codec[HistoricalPlayerInfo] =
-    (playerIdCodec *: text *: yearMonthCodec *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: federationInfo.opt)
+    (playerIdCodec *: fideIdCodec.opt *: text *: yearMonthCodec *: title.opt *: title.opt *: otherTitles *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: ratingCodec.opt *: int4.opt *: gender.opt *: int4.opt *: bool *: federationInfo.opt)
       .to[HistoricalPlayerInfo]

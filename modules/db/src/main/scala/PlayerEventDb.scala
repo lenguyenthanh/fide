@@ -25,7 +25,7 @@ object PlayerEventDb:
       events.grouped(ChunkSize).toList.traverse_ { chunk =>
         val codec = DbCodecs.newPlayerEvent.values.list(chunk.size)
         val cmd   = sql"""
-          INSERT INTO player_events (player_id, name, title, women_title, other_titles, standard, standard_kfactor,
+          INSERT INTO player_events (fide_id, name, title, women_title, other_titles, standard, standard_kfactor,
             rapid, rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id, hash,
             crawled_at, source_last_modified)
           VALUES $codec""".command
@@ -34,7 +34,7 @@ object PlayerEventDb:
 
     def ungestedStream(batchSize: Int): fs2.Stream[IO, PlayerEvent] =
       val q = sql"""
-        SELECT id, player_id, name, title, women_title, other_titles, standard, standard_kfactor,
+        SELECT id, fide_id, name, title, women_title, other_titles, standard, standard_kfactor,
           rapid, rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id, hash,
           crawled_at, source_last_modified, ingested, created_at
         FROM player_events

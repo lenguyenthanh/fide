@@ -13,7 +13,7 @@ import org.typelevel.log4cats.syntax.*
 import scala.concurrent.duration.*
 
 trait Downloader:
-  def fetch: fs2.Stream[IO, (NewPlayer, Option[NewFederation], String)]
+  def fetch: fs2.Stream[IO, (CrawlPlayer, Option[NewFederation], String)]
 
 object Downloader:
   val downloadUrl     = uri"http://ratings.fide.com/download/players_list.zip"
@@ -39,15 +39,15 @@ object Downloader:
           parseLine(line).map(_.map((player, fed) => (player, fed, line)))
         .interruptAfter(downloadTimeout)
 
-  def parseLine(line: String): Logger[IO] ?=> IO[Option[(NewPlayer, Option[NewFederation])]] =
+  def parseLine(line: String): Logger[IO] ?=> IO[Option[(CrawlPlayer, Option[NewFederation])]] =
 
-    inline def parse(line: String): IO[Option[(NewPlayer, Option[NewFederation])]] =
+    inline def parse(line: String): IO[Option[(CrawlPlayer, Option[NewFederation])]] =
       parsePlayer(line).traverse: player =>
-        player.federationId.traverse(findFederation(_, player.id)).map(player -> _)
+        player.federationId.traverse(findFederation(_, player.fideId.some)).map(player -> _)
 
-    def findFederation(id: FederationId, playerId: PlayerId): IO[NewFederation] =
+    def findFederation(id: FederationId, fideId: Option[FideId]): IO[NewFederation] =
       Federation.all.get(id) match
-        case None       => warn"Unknown federation: $id for player: $playerId".as(NewFederation(id, id.value))
+        case None       => warn"Unknown federation: $id for player: $fideId".as(NewFederation(id, id.value))
         case Some(name) => NewFederation(id, name).pure
 
     IO(line.trim.nonEmpty)
@@ -55,20 +55,20 @@ object Downloader:
       .handleErrorWith(e => Logger[IO].error(e)(s"Error while parsing line: $line").as(none))
 
   // shamelessly copied (with some minor modificaton) from: https://github.com/lichess-org/lila/blob/8033c4c5a15cf9bb2b36377c3480f3b64074a30f/modules/fide/src/main/FidePlayerSync.scala#L131
-  def parsePlayer(line: String): Option[NewPlayer] =
+  def parsePlayer(line: String): Option[CrawlPlayer] =
     inline def string(start: Int, end: Int): Option[String] =
       line.substring(start, end).trim.some.filter(_.nonEmpty)
     inline def number(start: Int, end: Int): Option[Int]    = string(start, end).flatMap(_.toIntOption)
     inline def rating(start: Int, end: Int): Option[Rating] = string(start, end) >>= Rating.fromString
     inline def kFactor(start: Int)                          = number(start, start + 2).filter(_ > 0)
     inline def playerName(): Option[String]                 = sanitizeName(line.substring(15, 76))
-    inline def playerId(): Option[PlayerId]                 = number(0, 15) >>= PlayerId.option
+    inline def fideId(): Option[FideId]                     = string(0, 15) >>= FideId.option
     inline def federationId(): Option[FederationId]         =
       string(76, 79).map(_.toUpperCase).filter(_ != FederationId.NoneFederationId) >>= FederationId.option
 
-    (playerId(), playerName()).mapN: (id, name) =>
-      NewPlayer(
-        id = id,
+    (fideId(), playerName()).mapN: (fid, name) =>
+      CrawlPlayer(
+        fideId = fid,
         name = name,
         title = string(84, 89) >>= Title.apply,
         womenTitle = string(89, 94) >>= Title.apply,

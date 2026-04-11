@@ -127,5 +127,6 @@ object PlayerTransformers:
           Field.const(
             _.otherTitles,
             if p.otherTitles.isEmpty then none else p.otherTitles.map(_.to[OtherTitle]).some
-          )
+          ),
+          Field.const(_.fideId, p.fideId)
         )

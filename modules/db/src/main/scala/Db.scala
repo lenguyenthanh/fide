@@ -9,8 +9,10 @@ import fide.types.*
 import skunk.*
 
 trait Db:
-  def upsert(player: NewPlayer, federation: Option[NewFederation]): IO[Unit]
-  def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit]
+  def upsertCrawlPlayers(
+      xs: List[(CrawlPlayer, Option[NewFederation], Long)],
+      yearMonth: YearMonth
+  ): IO[Unit]
   def playerById(id: PlayerId): IO[Option[PlayerInfo]]
   def countPlayers(filter: PlayerFilter): IO[Long]
   def allPlayers(sorting: Sorting, paging: Pagination, filter: PlayerFilter): IO[List[PlayerInfo]]
@@ -22,34 +24,33 @@ trait Db:
   def countFederations: IO[Long]
   def federationSummaryById(id: FederationId): IO[Option[FederationSummary]]
   def upsertFederations(feds: List[NewFederation]): IO[Unit]
-  def upsertPlayersWithHash(xs: List[(NewPlayer, Long)]): IO[Unit]
-  def allPlayerHashes: IO[Map[PlayerId, Long]]
-  def updateLastSeenAt(ids: List[PlayerId]): IO[Unit]
-  def markInactive(ids: Set[PlayerId]): IO[Unit]
+  def allPlayerHashesByFideId: IO[Map[FideId, Long]]
   def refreshFederationsSummary: IO[Unit]
 
 object Db:
 
   def apply(postgres: Resource[IO, Session[IO]]): Db = new:
-    def upsert(player: NewPlayer, federation: Option[NewFederation]): IO[Unit] =
-      postgres.use: s =>
-        for
-          playerCmd     <- s.prepare(Sql.upsertPlayer)
-          federationCmd <- s.prepare(Sql.upsertFederation)
-          _             <- s.transaction.use: _ =>
-            federation.traverse(federationCmd.execute) *>
-              playerCmd.execute(player)
-        yield ()
-
-    def upsert(xs: List[(NewPlayer, Option[NewFederation])]): IO[Unit] =
+    def upsertCrawlPlayers(
+        xs: List[(CrawlPlayer, Option[NewFederation], Long)],
+        yearMonth: YearMonth
+    ): IO[Unit] =
       val feds = xs.mapFilter(_._2).distinctBy(_.id)
       postgres.use: s =>
         for
           federationCmd <- s.prepare(Sql.upsertFederation)
           _             <- feds.traverse_(federationCmd.execute)
-          playerCmd     <- s.prepare(Sql.upsertPlayers(xs.size))
+          upsertInfoCmd <- s.prepare(Sql.upsertPlayerInfo)
+          upsertCmd     <- s.prepare(Sql.upsertPlayerFromCrawl)
+          historyCmd    <- s.prepare(Sql.upsertPlayerHistoryFromCrawl)
           _             <- s.transaction.use: _ =>
-            playerCmd.execute(xs.map(_._1))
+            xs.traverse_ { case (player, _, hash) =>
+              val infoHash = CrawlPlayer.computeInfoHash(player)
+              for
+                playerId <- upsertInfoCmd.unique((player, infoHash))
+                _        <- upsertCmd.execute((playerId, player, hash))
+                _        <- historyCmd.execute((playerId, player, yearMonth))
+              yield ()
+            }
         yield ()
 
     def playerById(id: PlayerId): IO[Option[PlayerInfo]] =
@@ -93,35 +94,17 @@ object Db:
       postgres.use(_.option(Sql.federationSummaryById)(id))
 
     def upsertFederations(feds: List[NewFederation]): IO[Unit] =
-      feds.grouped(1500).toList.traverse_ { chunk =>
+      feds.grouped(1000).toList.traverse_ { chunk =>
         val cmd = Sql.upsertFederations(chunk.size)
         postgres.use(_.execute(cmd)(chunk)).void
       }
 
-    def upsertPlayersWithHash(xs: List[(NewPlayer, Long)]): IO[Unit] =
-      xs.grouped(2000).toList.traverse_ { chunk =>
-        val cmd = Sql.upsertPlayersWithHash(chunk.size)
-        postgres.use(_.execute(cmd)(chunk)).void
-      }
-
-    def allPlayerHashes: IO[Map[PlayerId, Long]] =
+    def allPlayerHashesByFideId: IO[Map[FideId, Long]] =
       fs2.Stream
         .resource(postgres)
-        .flatMap(_.stream(Sql.allPlayerHashes)(Void, 4096))
+        .flatMap(_.stream(Sql.allPlayerHashesByFideId)(Void, 4096))
         .compile
-        .fold(Map.empty[PlayerId, Long])(_ + _)
-
-    def updateLastSeenAt(ids: List[PlayerId]): IO[Unit] =
-      ids.grouped(5000).toList.traverse_ { chunk =>
-        val cmd = Sql.updateLastSeenAt(chunk.size)
-        postgres.use(_.execute(cmd)(chunk)).void
-      }
-
-    def markInactive(ids: Set[PlayerId]): IO[Unit] =
-      ids.toList.grouped(5000).toList.traverse_ { chunk =>
-        val cmd = Sql.markInactive(chunk.size)
-        postgres.use(_.execute(cmd)(chunk)).void
-      }
+        .fold(Map.empty[FideId, Long])(_ + _)
 
     def refreshFederationsSummary: IO[Unit] =
       postgres.use(_.execute(Sql.refreshFederationsSummary)).void
@@ -132,21 +115,60 @@ private object Sql:
   import skunk.implicits.*
   import DbCodecs.*
 
-  val upsertPlayer: Command[NewPlayer] =
+  /** Step 1: Upsert player_info — returns the (possibly new) PlayerId. Uses DO UPDATE SET fide_id =
+    * EXCLUDED.fide_id as a no-op update to guarantee RETURNING always produces a row. The actual biographical
+    * fields are only updated when the hash differs.
+    */
+  val upsertPlayerInfo: Query[(CrawlPlayer, Long), PlayerId] =
     sql"""
-        $insertIntoPlayer
-        VALUES ($newPlayer)
-        $onPlayerConflictDoUpdate
-       """.command
+        INSERT INTO player_info (id, fide_id, name, sex, birth_year, hash)
+        VALUES (nextval('player_info_id_seq'), $fideIdCodec, $text, ${gender.opt}, ${int4.opt}, $int8)
+        ON CONFLICT (fide_id) DO UPDATE SET
+          fide_id = EXCLUDED.fide_id,
+          name = CASE WHEN player_info.hash != EXCLUDED.hash THEN EXCLUDED.name ELSE player_info.name END,
+          sex = CASE WHEN player_info.hash != EXCLUDED.hash THEN EXCLUDED.sex ELSE player_info.sex END,
+          birth_year = CASE WHEN player_info.hash != EXCLUDED.hash THEN EXCLUDED.birth_year ELSE player_info.birth_year END,
+          hash = CASE WHEN player_info.hash != EXCLUDED.hash THEN EXCLUDED.hash ELSE player_info.hash END
+        RETURNING id
+       """
+      .query(playerIdCodec)
+      .contramap[(CrawlPlayer, Long)]: (p, infoHash) =>
+        p.fideId *: p.name *: p.gender *: p.birthYear *: infoHash *: EmptyTuple
 
-  // TODO use returning
-  def upsertPlayers(n: Int): Command[List[NewPlayer]] =
-    val players = newPlayer.values.list(n)
+  /** Step 2: Upsert players — uses resolved PlayerId from step 1. */
+  val upsertPlayerFromCrawl: Command[(PlayerId, CrawlPlayer, Long)] =
     sql"""
-        $insertIntoPlayer
-        VALUES $players
-        $onPlayerConflictDoUpdate
+        INSERT INTO players (id, fide_id, name, title, women_title, other_titles, standard, standard_kfactor, rapid,
+          rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id, hash)
+        VALUES ($playerIdCodec, $fideIdCodec, $text, ${title.opt}, ${title.opt}, $otherTitles, ${ratingCodec.opt},
+          ${int4.opt}, ${ratingCodec.opt}, ${int4.opt}, ${ratingCodec.opt}, ${int4.opt}, ${gender.opt}, ${int4.opt},
+          $bool, ${federationIdCodec.opt}, $int8)
+        ON CONFLICT (fide_id) DO UPDATE SET (name, title, women_title, other_titles, standard, standard_kfactor, rapid,
+          rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id, hash) =
+        (EXCLUDED.name, EXCLUDED.title, EXCLUDED.women_title, EXCLUDED.other_titles, EXCLUDED.standard,
+          EXCLUDED.standard_kfactor, EXCLUDED.rapid, EXCLUDED.rapid_kfactor, EXCLUDED.blitz, EXCLUDED.blitz_kfactor,
+          EXCLUDED.sex, EXCLUDED.birth_year, EXCLUDED.active, EXCLUDED.federation_id, EXCLUDED.hash)
        """.command
+      .contramap[(PlayerId, CrawlPlayer, Long)]: (id, p, hash) =>
+        id *: p.fideId *: p.name *: p.title *: p.womenTitle *: p.otherTitles *: p.standard *: p.standardK *:
+          p.rapid *: p.rapidK *: p.blitz *: p.blitzK *: p.gender *: p.birthYear *: p.active *: p.federationId *: hash *: EmptyTuple
+
+  /** Step 3: Upsert player_history — monthly snapshot from crawl. */
+  val upsertPlayerHistoryFromCrawl: Command[(PlayerId, CrawlPlayer, YearMonth)] =
+    sql"""
+        INSERT INTO player_history (player_id, fide_id, year_month, title, women_title, other_titles, standard,
+          standard_kfactor, rapid, rapid_kfactor, blitz, blitz_kfactor, federation_id, active)
+        VALUES ($playerIdCodec, $fideIdCodec, $yearMonthCodec, ${title.opt}, ${title.opt}, $otherTitles, ${ratingCodec.opt},
+          ${int4.opt}, ${ratingCodec.opt}, ${int4.opt}, ${ratingCodec.opt}, ${int4.opt}, ${federationIdCodec.opt}, $bool)
+        ON CONFLICT (player_id, year_month) DO UPDATE SET
+          fide_id = EXCLUDED.fide_id, title = EXCLUDED.title, women_title = EXCLUDED.women_title,
+          other_titles = EXCLUDED.other_titles, standard = EXCLUDED.standard, standard_kfactor = EXCLUDED.standard_kfactor,
+          rapid = EXCLUDED.rapid, rapid_kfactor = EXCLUDED.rapid_kfactor, blitz = EXCLUDED.blitz,
+          blitz_kfactor = EXCLUDED.blitz_kfactor, federation_id = EXCLUDED.federation_id, active = EXCLUDED.active
+       """.command
+      .contramap[(PlayerId, CrawlPlayer, YearMonth)]: (id, p, ym) =>
+        id *: p.fideId *: ym *: p.title *: p.womenTitle *: p.otherTitles *: p.standard *: p.standardK *:
+          p.rapid *: p.rapidK *: p.blitz *: p.blitzK *: p.federationId *: p.active *: EmptyTuple
 
   lazy val playerById: Query[PlayerId, PlayerInfo] =
     sql"$allPlayersFragment WHERE p.id = $playerIdCodec".query(playerInfo)
@@ -201,18 +223,6 @@ private object Sql:
   private def filterFragment(filter: PlayerFilter): Option[AppliedFragment] =
     FilterSql.filterFragment(TableAliases.players)(filter)
 
-  private lazy val insertIntoPlayer =
-    sql"""INSERT INTO players (id, name, title, women_title, other_titles, standard, standard_kfactor, rapid,
-      rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id)"""
-
-  private lazy val onPlayerConflictDoUpdate =
-    sql"""
-        ON CONFLICT (id) DO UPDATE SET (name, title, women_title, other_titles, standard, standard_kfactor, rapid,
-          rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id) =
-        (EXCLUDED.name, EXCLUDED.title, EXCLUDED.women_title, EXCLUDED.other_titles, EXCLUDED.standard,
-          EXCLUDED.standard_kfactor, EXCLUDED.rapid, EXCLUDED.rapid_kfactor, EXCLUDED.blitz, EXCLUDED.blitz_kfactor,
-          EXCLUDED.sex, EXCLUDED.birth_year, EXCLUDED.active, EXCLUDED.federation_id)"""
-
   private val onConflictDoNothing  = sql"ON CONFLICT DO NOTHING"
   private val insertIntoFederation = sql"INSERT INTO federations (id, name)"
 
@@ -233,41 +243,15 @@ private object Sql:
     sql"""
         ORDER BY #$column #$orderBy NULLS LAST""".apply(Void)
 
-  lazy val allPlayerHashes: Query[Void, (PlayerId, Long)] =
-    sql"SELECT id, hash FROM players".query(playerIdCodec *: int8)
-
-  private val newPlayerWithHash: Codec[(NewPlayer, Long)] =
-    (newPlayer *: int8).imap[(NewPlayer, Long)] { case p *: h *: EmptyTuple => (p, h) } { case (p, h) =>
-      p *: h *: EmptyTuple
-    }
-
-  def upsertPlayersWithHash(n: Int): Command[List[(NewPlayer, Long)]] =
-    val players = newPlayerWithHash.values.list(n)
-    sql"""
-        INSERT INTO players (id, name, title, women_title, other_titles, standard, standard_kfactor, rapid,
-          rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id, hash)
-        VALUES $players
-        ON CONFLICT (id) DO UPDATE SET (name, title, women_title, other_titles, standard, standard_kfactor, rapid,
-          rapid_kfactor, blitz, blitz_kfactor, sex, birth_year, active, federation_id, hash) =
-        (EXCLUDED.name, EXCLUDED.title, EXCLUDED.women_title, EXCLUDED.other_titles, EXCLUDED.standard,
-          EXCLUDED.standard_kfactor, EXCLUDED.rapid, EXCLUDED.rapid_kfactor, EXCLUDED.blitz, EXCLUDED.blitz_kfactor,
-          EXCLUDED.sex, EXCLUDED.birth_year, EXCLUDED.active, EXCLUDED.federation_id, EXCLUDED.hash)
-       """.command
-
-  def updateLastSeenAt(n: Int): Command[List[PlayerId]] =
-    val ids = playerIdCodec.values.list(n)
-    sql"UPDATE players SET last_seen_at = now() WHERE id IN ($ids)".command
-
-  def markInactive(n: Int): Command[List[PlayerId]] =
-    val ids = playerIdCodec.values.list(n)
-    sql"UPDATE players SET active = false WHERE id IN ($ids)".command
+  lazy val allPlayerHashesByFideId: Query[Void, (FideId, Long)] =
+    sql"SELECT fide_id, hash FROM players WHERE fide_id IS NOT NULL".query(fideIdCodec *: int8)
 
   val refreshFederationsSummary: Command[Void] =
     sql"REFRESH MATERIALIZED VIEW CONCURRENTLY federations_summary".command
 
   private lazy val allPlayersFragment: Fragment[Void] =
     sql"""
-        SELECT p.id, p.name, p.title, p.women_title, p.other_titles, p.standard, p.standard_kfactor, p.rapid,
+        SELECT p.id, p.fide_id, p.name, p.title, p.women_title, p.other_titles, p.standard, p.standard_kfactor, p.rapid,
         p.rapid_kfactor, p.blitz, p.blitz_kfactor, p.sex, p.birth_year, p.active, p.updated_at, p.created_at, f.id, f.name
         FROM players AS p LEFT JOIN federations AS f ON p.federation_id = f.id
       """

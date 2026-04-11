@@ -42,7 +42,7 @@ object HistoryIngestorSuite extends SimpleIOSuite:
       ()
 
   private val csvHeader =
-    "id,name,title,womenTitle,otherTitles,standard,standardK,rapid,rapidK,blitz,blitzK,gender,birthYear,active,federationId"
+    "id,fide_id,name,title,womenTitle,otherTitles,standard,standardK,rapid,rapidK,blitz,blitzK,gender,birthYear,active,federationId"
 
   private def playerRow(
       id: Int,
@@ -51,7 +51,7 @@ object HistoryIngestorSuite extends SimpleIOSuite:
       standard: Int = 2700,
       active: Boolean = true
   ) =
-    s"$id,$name,GM,,,${standard},40,2600,40,2500,40,M,1990,$active,$fedId"
+    s"$id,${id + 100000},$name,GM,,,${standard},40,2600,40,2500,40,M,1990,$active,$fedId"
 
   test("discovers only yyyy-MM.csv files, ignores others"):
     resourceWithFeds.use: (historyDb, db) =>

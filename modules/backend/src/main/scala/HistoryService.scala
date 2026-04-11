@@ -124,6 +124,7 @@ object HistoryTransformers:
       p.into[GetHistoricalPlayerByIdOutput]
         .transform(
           Field.const(_.month, p.yearMonth),
+          Field.const(_.fideId, p.fideId),
           Field.const(
             _.otherTitles,
             if p.otherTitles.isEmpty then none else p.otherTitles.map(_.to[OtherTitle]).some

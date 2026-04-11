@@ -1,13 +1,14 @@
 package fide.cli
 
-import fide.domain.NewPlayer
+import fide.domain.HistoricalPlayer
 import fide.spec.GetHistoricalPlayerByIdOutput
 
 object FieldComparer:
 
-  def compareHistorical(csv: NewPlayer, api: GetHistoricalPlayerByIdOutput): List[FieldDiff] =
+  def compareHistorical(csv: HistoricalPlayer, api: GetHistoricalPlayerByIdOutput): List[FieldDiff] =
     List(
       compareName(csv.name, api.name),
+      compareField("fideId", csv.fideId, api.fideId),
       compareField("title", csv.title.map(_.value), api.title.map(_.value)),
       compareField("womenTitle", csv.womenTitle.map(_.value), api.womenTitle.map(_.value)),
       compareField(

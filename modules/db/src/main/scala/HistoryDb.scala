@@ -16,6 +16,7 @@ trait HistoryDb:
   def upsertPlayerHistory(snapshots: List[PlayerHistoryRow]): IO[Unit]
   def allPlayerInfoHashes: IO[Map[PlayerId, Long]]
   def playerById(id: PlayerId, month: YearMonth): IO[Option[HistoricalPlayerInfo]]
+  def playerByFideId(fideId: FideId, month: YearMonth): IO[Option[HistoricalPlayerInfo]]
   def allPlayers(
       month: YearMonth,
       sorting: Sorting,
@@ -34,6 +35,7 @@ trait HistoryDb:
       paging: Pagination
   ): IO[List[RatingHistoryEntry]]
   def availableMonths: IO[List[YearMonth]]
+  def resetPlayerIdSequence: IO[Unit]
 
 object HistoryDb:
 
@@ -44,7 +46,7 @@ object HistoryDb:
         players.grouped(chunkSize).toList.traverse_ { chunk =>
           val codec = DbCodecs.playerInfoRow.values.list(chunk.size)
           val cmd   = sql"""
-            INSERT INTO player_info (id, name, sex, birth_year)
+            INSERT INTO player_info (id, fide_id, name, sex, birth_year)
             VALUES $codec
             ON CONFLICT (id) DO NOTHING""".command
           postgres.use(_.execute(cmd)(chunk)).void
@@ -59,10 +61,10 @@ object HistoryDb:
             .values
             .list(chunk.size)
           val cmd = sql"""
-            INSERT INTO player_info (id, name, sex, birth_year, hash)
+            INSERT INTO player_info (id, fide_id, name, sex, birth_year, hash)
             VALUES $codec
             ON CONFLICT (id) DO UPDATE SET
-              name = EXCLUDED.name, sex = EXCLUDED.sex,
+              fide_id = EXCLUDED.fide_id, name = EXCLUDED.name, sex = EXCLUDED.sex,
               birth_year = EXCLUDED.birth_year, hash = EXCLUDED.hash""".command
           postgres.use(_.execute(cmd)(chunk)).void
         }
@@ -71,10 +73,11 @@ object HistoryDb:
         snapshots.grouped(chunkSize).toList.traverse_ { chunk =>
           val codec = DbCodecs.playerHistoryRow.values.list(chunk.size)
           val cmd   = sql"""
-            INSERT INTO player_history (player_id, year_month, title, women_title, other_titles, standard,
+            INSERT INTO player_history (player_id, fide_id, year_month, title, women_title, other_titles, standard,
               standard_kfactor, rapid, rapid_kfactor, blitz, blitz_kfactor, federation_id, active)
             VALUES $codec
             ON CONFLICT (player_id, year_month) DO UPDATE SET
+              fide_id = EXCLUDED.fide_id,
               title = EXCLUDED.title, women_title = EXCLUDED.women_title, other_titles = EXCLUDED.other_titles,
               standard = EXCLUDED.standard, standard_kfactor = EXCLUDED.standard_kfactor,
               rapid = EXCLUDED.rapid, rapid_kfactor = EXCLUDED.rapid_kfactor,
@@ -85,6 +88,11 @@ object HistoryDb:
 
       def playerById(id: PlayerId, month: YearMonth): IO[Option[HistoricalPlayerInfo]] =
         val f = Sql.playerByIdQuery(month, id)
+        val q = f.fragment.query(DbCodecs.historicalPlayerInfo)
+        postgres.use(_.option(q)(f.argument))
+
+      def playerByFideId(fideId: FideId, month: YearMonth): IO[Option[HistoricalPlayerInfo]] =
+        val f = Sql.playerByFideIdQuery(month, fideId)
         val q = f.fragment.query(DbCodecs.historicalPlayerInfo)
         postgres.use(_.option(q)(f.argument))
 
@@ -141,6 +149,9 @@ object HistoryDb:
       def availableMonths: IO[List[YearMonth]] =
         postgres.use(_.execute(Sql.availableMonths))
 
+      def resetPlayerIdSequence: IO[Unit] =
+        postgres.use(_.unique(Sql.resetPlayerIdSequence)).void
+
   private object Sql:
 
     import DbCodecs.*
@@ -152,12 +163,16 @@ object HistoryDb:
       allHistoricalPlayersFragment(month) |+| and |+|
         sql"ph.player_id = ${DbCodecs.playerIdCodec}".apply(id)
 
+    def playerByFideIdQuery(month: YearMonth, fideId: FideId): AppliedFragment =
+      allHistoricalPlayersFragment(month) |+| and |+|
+        sql"pi.fide_id = ${DbCodecs.fideIdCodec}".apply(fideId)
+
     // The base fragment selects from player_history joined with player_info and federations.
     // Column aliases: ph = player_history, pi = player_info, f = federations
     // The WHERE ph.year_month = $month is always applied.
     def allHistoricalPlayersFragment(month: YearMonth): AppliedFragment =
       sql"""
-        SELECT pi.id, pi.name, ph.year_month, ph.title, ph.women_title, ph.other_titles,
+        SELECT pi.id, pi.fide_id, pi.name, ph.year_month, ph.title, ph.women_title, ph.other_titles,
           ph.standard, ph.standard_kfactor, ph.rapid, ph.rapid_kfactor, ph.blitz, ph.blitz_kfactor,
           pi.sex, pi.birth_year, ph.active, f.id, f.name
         FROM player_history AS ph
@@ -276,6 +291,9 @@ object HistoryDb:
 
     lazy val availableMonths: Query[Void, YearMonth] =
       sql"SELECT DISTINCT year_month FROM player_history ORDER BY year_month DESC".query(yearMonthCodec)
+
+    lazy val resetPlayerIdSequence: Query[Void, Long] =
+      sql"SELECT setval('player_info_id_seq', (SELECT coalesce(max(id), 1) FROM player_info))".query(int8)
 
     private def filterFragment(filter: PlayerFilter): Option[AppliedFragment] =
       FilterSql.filterFragment(TableAliases.history)(filter)

@@ -52,13 +52,13 @@ Opaque/refined domain types using Iron. `FederationId`, `Rating`, `PlayerId`, `B
 Smithy4s code generation and refinement providers. Bridges Smithy API specs with Iron types so generated code validates at (de)serialization boundaries. Depends on `types`.
 
 ### domain (`modules/domain`)
-Core domain models and enumerations. `Title`/`OtherTitle`/`Gender` enums, `PlayerInfo`/`NewPlayer`/`Federation`/`FederationSummary` case classes, query models (`SortBy`, `Order`, `Sorting`, `Pagination`, `RatingRange`, `PlayerFilter`). Depends on `types`.
+Core domain models and enumerations. `Title`/`OtherTitle`/`Gender` enums, `PlayerInfo`/`CrawlPlayer`/`HistoricalPlayer`/`Federation`/`FederationSummary` case classes, query models (`SortBy`, `Order`, `Sorting`, `Pagination`, `RatingRange`, `PlayerFilter`). Depends on `types`.
 
 ### db (`modules/db`)
 Persistence layer with Skunk (PostgreSQL). `Db` trait (upsert, query, filter players/federations), `KVStore` (key-value metadata), `Health` (connectivity probe), `DbResource` (connection pool + migrations via Dumbo), Iron-Skunk codec integration. Depends on `domain`.
 
 ### crawler (`modules/crawler`)
-FIDE data synchronization. Downloads `players_list.zip` from `ratings.fide.com`, decompresses, parses fixed-width text into `NewPlayer`, bulk-upserts via `Db`. `Syncer` detects updates via `Last-Modified` header vs `KVStore`. Configurable chunk size and concurrency. Depends on `domain`, `db`.
+FIDE data synchronization. Downloads `players_list.zip` from `ratings.fide.com`, decompresses, parses fixed-width text into `CrawlPlayer`, appends change events to `PlayerEventDb`. `Syncer` detects updates via `Last-Modified` header vs `KVStore`. Configurable chunk size and concurrency. Depends on `domain`, `db`.
 
 ### backend (`modules/backend`)
 HTTP server and orchestration. Ember server with Smithy4s routes (`PlayerService`, `FederationService`, `HealthService`), Swagger docs, middleware (auto-slash, 60s timeout). Services query `Db` and transform to API DTOs. `CrawlerJob` runs crawler on a background schedule. Config via Ciris. Entry point: `App extends IOApp.Simple`. Depends on `api`, `domain`, `db`, `crawler`.

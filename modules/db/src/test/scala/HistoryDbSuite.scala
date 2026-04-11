@@ -24,24 +24,33 @@ object HistoryDbSuite extends SimpleIOSuite:
   val jan2024 = YearMonth(2024, 1)
   val feb2024 = YearMonth(2024, 2)
 
-  val playerInfo1 = PlayerInfoRow(PlayerId(1), "Alice", Gender.Female.some, 1990.some)
-  val playerInfo2 = PlayerInfoRow(PlayerId(2), "Bob", Gender.Male.some, 1985.some)
+  val playerInfo1 = PlayerInfoRow(PlayerId(1), FideId("100001").some, "Alice", Gender.Female.some, 1990.some)
+  val playerInfo2 = PlayerInfoRow(PlayerId(2), FideId("100002").some, "Bob", Gender.Male.some, 1985.some)
 
   def mkHistory(playerId: Int, month: YearMonth, rating: Int = 2700, active: Boolean = true) =
     PlayerHistoryRow(
       playerId = PlayerId.applyUnsafe(playerId),
+      fideId = FideId.applyUnsafe(s"10000$playerId").some,
       yearMonth = month,
       title = Title.GM.some,
+      womenTitle = none,
+      otherTitles = Nil,
       standard = Rating.applyUnsafe(rating).some,
+      standardK = none,
       rapid = Rating.applyUnsafe(rating).some,
+      rapidK = none,
       blitz = Rating.applyUnsafe(rating).some,
-      active = active,
-      federationId = fedId.some
+      blitzK = none,
+      federationId = fedId.some,
+      active = active
     )
 
-  // Need federations table populated for joins
   private def resourceWithFeds: Resource[IO, (HistoryDb, Db)] =
     Containers.createResource.map(x => (HistoryDb(x.postgres, 100), Db(x.postgres)))
+
+  private def setupFedAndInfo(db: Db, historyDb: HistoryDb, infos: List[PlayerInfoRow]): IO[Unit] =
+    val fed = NewFederation(fedId, "United States")
+    db.upsertFederations(List(fed)) *> historyDb.insertPlayerInfo(infos)
 
   test("upsertPlayerInfo is idempotent"):
     resource.use: historyDb =>
@@ -52,23 +61,18 @@ object HistoryDbSuite extends SimpleIOSuite:
 
   test("upsertPlayerHistory with ON CONFLICT updates"):
     resourceWithFeds.use: (historyDb, db) =>
-      val fed = NewFederation(fedId, "United States")
       for
-        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
-        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
+        _ <- setupFedAndInfo(db, historyDb, List(playerInfo1))
         _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024, 2700)))
-        _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024, 2750))) // update same month
+        _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024, 2750)))
       yield success
 
   test("allPlayers returns players for specific month"):
     resourceWithFeds.use: (historyDb, db) =>
-      val fed = NewFederation(fedId, "United States")
       for
-        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
-        _ <- db.upsert(NewPlayer(PlayerId(2), "Bob", active = true), none)
-        _ <- historyDb.insertPlayerInfo(List(playerInfo1, playerInfo2))
-        _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024), mkHistory(2, jan2024)))
-        _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, feb2024)))
+        _          <- setupFedAndInfo(db, historyDb, List(playerInfo1, playerInfo2))
+        _          <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024), mkHistory(2, jan2024)))
+        _          <- historyDb.upsertPlayerHistory(List(mkHistory(1, feb2024)))
         janPlayers <- historyDb.allPlayers(
           jan2024,
           Sorting(SortBy.Name, Order.Asc),
@@ -88,22 +92,17 @@ object HistoryDbSuite extends SimpleIOSuite:
 
   test("countPlayers returns correct count for month"):
     resourceWithFeds.use: (historyDb, db) =>
-      val fed = NewFederation(fedId, "United States")
       for
-        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
-        _ <- db.upsert(NewPlayer(PlayerId(2), "Bob", active = true), none)
-        _ <- historyDb.insertPlayerInfo(List(playerInfo1, playerInfo2))
-        _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024), mkHistory(2, jan2024)))
+        _     <- setupFedAndInfo(db, historyDb, List(playerInfo1, playerInfo2))
+        _     <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024), mkHistory(2, jan2024)))
         count <- historyDb.countPlayers(jan2024, PlayerFilter.default)
       yield expect(count == 2L)
 
   test("playerById returns player for specific month"):
     resourceWithFeds.use: (historyDb, db) =>
-      val fed = NewFederation(fedId, "United States")
       for
-        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
-        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
-        _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024, 2700)))
+        _       <- setupFedAndInfo(db, historyDb, List(playerInfo1))
+        _       <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024, 2700)))
         result  <- historyDb.playerById(PlayerId(1), jan2024)
         missing <- historyDb.playerById(PlayerId(1), feb2024)
       yield expect(result.isDefined) and
@@ -113,12 +112,9 @@ object HistoryDbSuite extends SimpleIOSuite:
 
   test("allPlayers with filter"):
     resourceWithFeds.use: (historyDb, db) =>
-      val fed = NewFederation(fedId, "United States")
       for
-        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
-        _ <- db.upsert(NewPlayer(PlayerId(2), "Bob", active = true), none)
-        _ <- historyDb.insertPlayerInfo(List(playerInfo1, playerInfo2))
-        _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024), mkHistory(2, jan2024)))
+        _        <- setupFedAndInfo(db, historyDb, List(playerInfo1, playerInfo2))
+        _        <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024), mkHistory(2, jan2024)))
         filtered <- historyDb.allPlayers(
           jan2024,
           Sorting(SortBy.Name, Order.Asc),
@@ -129,23 +125,19 @@ object HistoryDbSuite extends SimpleIOSuite:
 
   test("availableMonths returns distinct sorted months"):
     resourceWithFeds.use: (historyDb, db) =>
-      val fed = NewFederation(fedId, "United States")
       for
-        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
-        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
-        _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024), mkHistory(1, feb2024)))
+        _      <- setupFedAndInfo(db, historyDb, List(playerInfo1))
+        _      <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024), mkHistory(1, feb2024)))
         months <- historyDb.availableMonths
       yield expect(months.size == 2) and
-        expect(months.head == feb2024) and // DESC order
+        expect(months.head == feb2024) and
         expect(months.last == jan2024)
 
   test("federationsSummary computes on the fly"):
     resourceWithFeds.use: (historyDb, db) =>
-      val fed = NewFederation(fedId, "United States")
       for
-        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
-        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
-        _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024, 2700)))
+        _         <- setupFedAndInfo(db, historyDb, List(playerInfo1))
+        _         <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024, 2700)))
         summaries <- historyDb.federationsSummary(jan2024, Pagination(PageNumber(1), PageSize(30)))
         count     <- historyDb.countFederationsSummary(jan2024)
       yield expect(summaries.size == 1) and
@@ -155,11 +147,9 @@ object HistoryDbSuite extends SimpleIOSuite:
 
   test("federationSummaryById returns specific federation"):
     resourceWithFeds.use: (historyDb, db) =>
-      val fed = NewFederation(fedId, "United States")
       for
-        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
-        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
-        _ <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024, 2700)))
+        _       <- setupFedAndInfo(db, historyDb, List(playerInfo1))
+        _       <- historyDb.upsertPlayerHistory(List(mkHistory(1, jan2024, 2700)))
         result  <- historyDb.federationSummaryById(fedId, jan2024)
         missing <- historyDb.federationSummaryById(FederationId("XXX"), jan2024)
       yield expect(result.isDefined) and
@@ -169,10 +159,8 @@ object HistoryDbSuite extends SimpleIOSuite:
   test("playerRatingHistory returns entries in DESC order"):
     val mar2024 = YearMonth(2024, 3)
     resourceWithFeds.use: (historyDb, db) =>
-      val fed = NewFederation(fedId, "United States")
       for
-        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
-        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
+        _ <- setupFedAndInfo(db, historyDb, List(playerInfo1))
         _ <- historyDb.upsertPlayerHistory(
           List(mkHistory(1, jan2024, 2700), mkHistory(1, feb2024, 2710), mkHistory(1, mar2024, 2720))
         )
@@ -189,10 +177,8 @@ object HistoryDbSuite extends SimpleIOSuite:
   test("playerRatingHistory with since/until range"):
     val mar2024 = YearMonth(2024, 3)
     resourceWithFeds.use: (historyDb, db) =>
-      val fed = NewFederation(fedId, "United States")
       for
-        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
-        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
+        _ <- setupFedAndInfo(db, historyDb, List(playerInfo1))
         _ <- historyDb.upsertPlayerHistory(
           List(mkHistory(1, jan2024, 2700), mkHistory(1, feb2024, 2710), mkHistory(1, mar2024, 2720))
         )
@@ -209,10 +195,8 @@ object HistoryDbSuite extends SimpleIOSuite:
   test("playerRatingHistory with pagination"):
     val mar2024 = YearMonth(2024, 3)
     resourceWithFeds.use: (historyDb, db) =>
-      val fed = NewFederation(fedId, "United States")
       for
-        _ <- db.upsert(NewPlayer(PlayerId(1), "Alice", active = true, federationId = fedId.some), fed.some)
-        _ <- historyDb.insertPlayerInfo(List(playerInfo1))
+        _ <- setupFedAndInfo(db, historyDb, List(playerInfo1))
         _ <- historyDb.upsertPlayerHistory(
           List(mkHistory(1, jan2024, 2700), mkHistory(1, feb2024, 2710), mkHistory(1, mar2024, 2720))
         )

@@ -24,7 +24,8 @@ object HistoryIngestor:
         csvFiles <- discoverCsvFiles
         _        <- info"Found ${csvFiles.size} CSV files to ingest"
         _        <- csvFiles.traverse_(ingestFile)
-        _        <- info"Ingest complete"
+        _        <- historyDb.resetPlayerIdSequence
+        _        <- info"Ingest complete, player ID sequence reset"
       yield ()
 
     private def discoverCsvFiles: IO[List[(YearMonth, Path)]] =
@@ -58,9 +59,10 @@ object HistoryIngestor:
         .chunkN(ChunkSize)
         .evalScan(0L): (acc, chunk) =>
           val players     = chunk.toList
-          val historyRows = players.map: p =>
+          val historyRows = players.map: (p: HistoricalPlayer) =>
             PlayerHistoryRow(
               playerId = p.id,
+              fideId = p.fideId,
               yearMonth = ym,
               title = p.title,
               womenTitle = p.womenTitle,
@@ -74,9 +76,10 @@ object HistoryIngestor:
               federationId = p.federationId,
               active = p.active
             )
-          val infoRows = players.map: p =>
+          val infoRows = players.map: (p: HistoricalPlayer) =>
             PlayerInfoRow(
               id = p.id,
+              fideId = p.fideId,
               name = p.name,
               gender = p.gender,
               birthYear = p.birthYear

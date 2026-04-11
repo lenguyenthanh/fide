@@ -37,6 +37,17 @@ structure PlayerIdFormat {}
 @unwrap
 integer PlayerId
 
+@trait(selector: "string")
+@refinement(
+   targetType: "fide.types.FideId"
+   providerImport: "fide.spec.providers.given"
+)
+structure FideIdFormat {}
+
+@FideIdFormat
+@unwrap
+string FideId
+
 @BirthYearFormat
 @unwrap
 integer BirthYear
@@ -151,6 +162,8 @@ structure Federation {
 structure GetPlayerByIdOutput {
   @required
   id: PlayerId
+
+  fideId: FideId
 
   @required
   name: String
