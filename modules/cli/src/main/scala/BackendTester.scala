@@ -91,7 +91,7 @@ object BackendTester:
     ): IO[Unit] =
       val endpoint = "history/players"
       historyService
-        .getHistoricalPlayerById(csv.id, ym)
+        .getHistoricalPlayerByInternalId(csv.id, ym)
         .flatMap: api =>
           val diffs  = FieldComparer.compareHistorical(csv, api)
           val result =

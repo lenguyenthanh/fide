@@ -7,6 +7,7 @@ import fide.domain.{ HistoricalPlayerInfo, Models }
 import fide.spec.{
   BirthYear as _,
   FederationId as _,
+  FideId as _,
   PageNumber as _,
   PageSize as _,
   PlayerId as _,
@@ -75,14 +76,17 @@ class HistoryServiceImpl(historyDb: HistoryDb)(using Logger[IO]) extends History
         error"Error in getHistoricalPlayers: $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
 
-  override def getHistoricalPlayerById(id: PlayerId, month: YearMonth): IO[GetHistoricalPlayerByIdOutput] =
+  override def getHistoricalPlayerByFideId(
+      fideId: FideId,
+      month: YearMonth
+  ): IO[GetHistoricalPlayerByIdOutput] =
     historyDb
-      .playerById(id, month)
+      .playerByFideId(fideId, month)
       .handleErrorWith: e =>
-        error"Error in getHistoricalPlayerById: $id, $month, $e" *>
+        error"Error in getHistoricalPlayerByFideId: $fideId, $month, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
       .flatMap:
-        _.fold(IO.raiseError(PlayerNotFound(id)))(_.transform.pure[IO])
+        _.fold(IO.raiseError(PlayerFideIdNotFound(fideId)))(_.transform.pure[IO])
 
   override def getHistoricalFederationsSummary(
       month: YearMonth,
@@ -116,6 +120,18 @@ class HistoryServiceImpl(historyDb: HistoryDb)(using Logger[IO]) extends History
       .handleErrorWith: e =>
         error"Error in getAvailableMonths: $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
+
+  override def getHistoricalPlayerByInternalId(
+      id: PlayerId,
+      month: YearMonth
+  ): IO[GetHistoricalPlayerByIdOutput] =
+    historyDb
+      .playerById(id, month)
+      .handleErrorWith: e =>
+        error"Error in getHistoricalPlayerByInternalId: $id, $month, $e" *>
+          IO.raiseError(InternalServerError("Internal server error"))
+      .flatMap:
+        _.fold(IO.raiseError(PlayerNotFound(id)))(_.transform.pure[IO])
 
 object HistoryTransformers:
 

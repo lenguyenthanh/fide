@@ -28,8 +28,15 @@ trait HistoryDb:
   def countFederationsSummary(month: YearMonth): IO[Long]
   def federationSummaryById(id: FederationId, month: YearMonth): IO[Option[FederationSummary]]
   def playerInfoExists(id: PlayerId): IO[Boolean]
+  def playerInfoExistsByFideId(fideId: FideId): IO[Boolean]
   def playerRatingHistory(
       id: PlayerId,
+      since: Option[YearMonth],
+      until: Option[YearMonth],
+      paging: Pagination
+  ): IO[List[RatingHistoryEntry]]
+  def playerRatingHistoryByFideId(
+      fideId: FideId,
       since: Option[YearMonth],
       until: Option[YearMonth],
       paging: Pagination
@@ -129,6 +136,9 @@ object HistoryDb:
       def playerInfoExists(id: PlayerId): IO[Boolean] =
         postgres.use(_.option(Sql.playerInfoExists)(id)).map(_.isDefined)
 
+      def playerInfoExistsByFideId(fideId: FideId): IO[Boolean] =
+        postgres.use(_.option(Sql.playerInfoExistsByFideId)(fideId)).map(_.isDefined)
+
       def playerRatingHistory(
           id: PlayerId,
           since: Option[YearMonth],
@@ -136,6 +146,16 @@ object HistoryDb:
           paging: Pagination
       ): IO[List[RatingHistoryEntry]] =
         val f = Sql.playerRatingHistory(id, since, until, paging)
+        val q = f.fragment.query(DbCodecs.ratingHistoryEntry)
+        postgres.use(_.execute(q)(f.argument))
+
+      def playerRatingHistoryByFideId(
+          fideId: FideId,
+          since: Option[YearMonth],
+          until: Option[YearMonth],
+          paging: Pagination
+      ): IO[List[RatingHistoryEntry]] =
+        val f = Sql.playerRatingHistoryByFideId(fideId, since, until, paging)
         val q = f.fragment.query(DbCodecs.ratingHistoryEntry)
         postgres.use(_.execute(q)(f.argument))
 
@@ -271,6 +291,9 @@ object HistoryDb:
     lazy val playerInfoExists: Query[PlayerId, Int] =
       sql"SELECT 1 FROM player_info WHERE id = $playerIdCodec".query(int4)
 
+    lazy val playerInfoExistsByFideId: Query[FideId, Int] =
+      sql"SELECT 1 FROM player_info WHERE fide_id = $fideIdCodec".query(int4)
+
     def playerRatingHistory(
         id: PlayerId,
         since: Option[YearMonth],
@@ -285,6 +308,22 @@ object HistoryDb:
       val untilF = until.fold(void)(u => sql" AND year_month <= $yearMonthCodec".apply(u))
       base |+| sinceF |+| untilF |+|
         sql" ORDER BY year_month DESC".apply(Void) |+| pagingFragment(paging)
+
+    def playerRatingHistoryByFideId(
+        fideId: FideId,
+        since: Option[YearMonth],
+        until: Option[YearMonth],
+        paging: Pagination
+    ): AppliedFragment =
+      val base = sql"""
+        SELECT ph.year_month, ph.standard, ph.rapid, ph.blitz
+        FROM player_history AS ph
+        JOIN player_info AS pi ON ph.player_id = pi.id
+        WHERE pi.fide_id = ${DbCodecs.fideIdCodec}""".apply(fideId)
+      val sinceF = since.fold(void)(s => sql" AND ph.year_month >= $yearMonthCodec".apply(s))
+      val untilF = until.fold(void)(u => sql" AND ph.year_month <= $yearMonthCodec".apply(u))
+      base |+| sinceF |+| untilF |+|
+        sql" ORDER BY ph.year_month DESC".apply(Void) |+| pagingFragment(paging)
 
     lazy val allPlayerInfoHashes: Query[Void, (PlayerId, Long)] =
       sql"SELECT id, hash FROM player_info".query(playerIdCodec *: int8)

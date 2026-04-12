@@ -9,7 +9,7 @@ use smithy4s.meta#unwrap
 @simpleRestJson
 service PlayerService {
   version: "0.0.1"
-  operations: [GetPlayers, GetPlayerById, GetPlayerByIds, GetPlayerHistory],
+  operations: [GetPlayers, GetPlayerByFideId, GetPlayerByFideIds, GetPlayerHistoryByFideId, GetPlayerByInternalId, GetPlayerByInternalIds, GetPlayerHistoryByInternalId],
 }
 
 @readonly
@@ -44,8 +44,103 @@ operation GetPlayers {
 }
 
 @readonly
-@http(method: "GET", uri: "/api/players/{id}", code: 200)
-operation GetPlayerById {
+@http(method: "GET", uri: "/api/players/fide/{fide_id}", code: 200)
+operation GetPlayerByFideId {
+  input := {
+    @httpLabel
+    @required
+    fide_id: FideId
+  }
+
+  output: GetPlayerByIdOutput
+  errors: [PlayerFideIdNotFound, InternalServerError]
+}
+
+@readonly
+@http(method: "POST", uri: "/api/players/fide", code: 200)
+operation GetPlayerByFideIds {
+  input := {
+    @required
+    ids: SetFideIds
+  }
+
+  output := {
+    @required
+    players: PlayerFideMap
+  }
+
+  errors: [InternalServerError, TooManyIds]
+}
+
+map PlayerFideMap {
+  key: String
+  value: GetPlayerByIdOutput
+}
+
+@error("client")
+@httpError(404)
+structure PlayerNotFound {
+  @required
+  id: PlayerId
+}
+
+@readonly
+@paginated(inputToken: "page", outputToken: "nextPage", pageSize: "pageSize")
+@http(method: "GET", uri: "/api/players/fide/{fide_id}/history", code: 200)
+operation GetPlayerHistoryByFideId {
+  input :=
+    @scalaImports(["fide.spec.providers.given"]) {
+
+    @httpLabel
+    @required
+    fide_id: FideId
+
+    @httpQuery("since")
+    since: YearMonthString
+
+    @httpQuery("until")
+    until: YearMonthString
+
+    @httpQuery("page")
+    page: PageNumber = "1"
+
+    @httpQuery("page_size")
+    @range(min: 1, max: 100)
+    pageSize: PageSize = 30
+  }
+
+  output := {
+    @required
+    items: RatingHistory
+    nextPage: PageNumber
+  }
+
+  errors: [PlayerFideIdNotFound, InternalServerError]
+}
+
+structure RatingHistoryEntry {
+  @required
+  month: YearMonthString
+
+  standard: Rating
+  rapid: Rating
+  blitz: Rating
+}
+
+list RatingHistory {
+  member: RatingHistoryEntry
+}
+
+@error("client")
+@httpError(400)
+structure TooManyIds {
+  @required
+  message: String
+}
+
+@readonly
+@http(method: "GET", uri: "/api/players/internal/{id}", code: 200)
+operation GetPlayerByInternalId {
   input := {
     @httpLabel
     @required
@@ -57,8 +152,8 @@ operation GetPlayerById {
 }
 
 @readonly
-@http(method: "POST", uri: "/api/players", code: 200)
-operation GetPlayerByIds {
+@http(method: "POST", uri: "/api/players/internal", code: 200)
+operation GetPlayerByInternalIds {
   input := {
     @required
     ids: SetPlayerIds
@@ -85,17 +180,10 @@ list SetPlayerIds {
   member: PlayerId
 }
 
-@error("client")
-@httpError(404)
-structure PlayerNotFound {
-  @required
-  id: PlayerId
-}
-
 @readonly
 @paginated(inputToken: "page", outputToken: "nextPage", pageSize: "pageSize")
-@http(method: "GET", uri: "/api/players/{id}/history", code: 200)
-operation GetPlayerHistory {
+@http(method: "GET", uri: "/api/players/internal/{id}/history", code: 200)
+operation GetPlayerHistoryByInternalId {
   input :=
     @scalaImports(["fide.spec.providers.given"]) {
 
@@ -124,24 +212,4 @@ operation GetPlayerHistory {
   }
 
   errors: [PlayerNotFound, InternalServerError]
-}
-
-structure RatingHistoryEntry {
-  @required
-  month: YearMonthString
-
-  standard: Rating
-  rapid: Rating
-  blitz: Rating
-}
-
-list RatingHistory {
-  member: RatingHistoryEntry
-}
-
-@error("client")
-@httpError(400)
-structure TooManyIds {
-  @required
-  message: String
 }

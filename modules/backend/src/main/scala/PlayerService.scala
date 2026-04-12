@@ -7,6 +7,7 @@ import fide.domain.Models
 import fide.spec.{
   BirthYear as _,
   FederationId as _,
+  FideId as _,
   PageNumber as _,
   PageSize as _,
   PlayerId as _,
@@ -74,30 +75,72 @@ class PlayerServiceImpl(db: Db, historyDb: HistoryDb)(using Logger[IO]) extends 
         error"Error in getPlayers with $filter, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
 
-  override def getPlayerById(id: PlayerId): IO[GetPlayerByIdOutput] =
+  override def getPlayerByFideId(fideId: FideId): IO[GetPlayerByIdOutput] =
+    db.playerByFideId(fideId)
+      .handleErrorWith: e =>
+        error"Error in getPlayerByFideId: $fideId, $e" *>
+          IO.raiseError(InternalServerError("Internal server error"))
+      .flatMap:
+        _.fold(IO.raiseError(PlayerFideIdNotFound(fideId))):
+          _.transform.pure[IO]
+
+  override def getPlayerByFideIds(ids: NonEmptySet[FideId]): IO[GetPlayerByFideIdsOutput] =
+    db.playersByFideIds(ids.value)
+      .handleErrorWith: e =>
+        error"Error in getPlayerByFideIds: $ids, $e" *>
+          IO.raiseError(InternalServerError("Internal server error"))
+      .map(_.map(p => p.fideId.fold(p.id.toString)(_.toString) -> p.transform).toMap)
+      .map(GetPlayerByFideIdsOutput.apply)
+
+  override def getPlayerHistoryByFideId(
+      fideId: FideId,
+      page: PageNumber,
+      pageSize: PageSize,
+      since: Option[YearMonth],
+      until: Option[YearMonth]
+  ): IO[GetPlayerHistoryByFideIdOutput] =
+    val paging = Models.Pagination(page, pageSize)
+    historyDb
+      .playerInfoExistsByFideId(fideId)
+      .flatMap:
+        if _ then
+          historyDb
+            .playerRatingHistoryByFideId(fideId, since, until, paging)
+            .map: entries =>
+              val items = entries.map: e =>
+                RatingHistoryEntry(e.yearMonth, e.standard, e.rapid, e.blitz)
+              GetPlayerHistoryByFideIdOutput(items, Option.when(items.size == pageSize)(page.succ))
+        else IO.raiseError(PlayerFideIdNotFound(fideId))
+      .handleErrorWith:
+        case e: PlayerFideIdNotFound => IO.raiseError(e)
+        case e                       =>
+          error"Error in getPlayerHistoryByFideId: $fideId, $e" *>
+            IO.raiseError(InternalServerError("Internal server error"))
+
+  override def getPlayerByInternalId(id: PlayerId): IO[GetPlayerByIdOutput] =
     db.playerById(id)
       .handleErrorWith: e =>
-        error"Error in getPlayerById: $id, $e" *>
+        error"Error in getPlayerByInternalId: $id, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
       .flatMap:
         _.fold(IO.raiseError(PlayerNotFound(id))):
           _.transform.pure[IO]
 
-  override def getPlayerByIds(ids: NonEmptySet[PlayerId]): IO[GetPlayerByIdsOutput] =
+  override def getPlayerByInternalIds(ids: NonEmptySet[PlayerId]): IO[GetPlayerByInternalIdsOutput] =
     db.playersByIds(ids.value)
       .handleErrorWith: e =>
-        error"Error in getPlayersByIds: $ids, $e" *>
+        error"Error in getPlayerByInternalIds: $ids, $e" *>
           IO.raiseError(InternalServerError("Internal server error"))
       .map(_.map(p => p.id.toString -> p.transform).toMap)
-      .map(GetPlayerByIdsOutput.apply)
+      .map(GetPlayerByInternalIdsOutput.apply)
 
-  override def getPlayerHistory(
+  override def getPlayerHistoryByInternalId(
       id: PlayerId,
       page: PageNumber,
       pageSize: PageSize,
       since: Option[YearMonth],
       until: Option[YearMonth]
-  ): IO[GetPlayerHistoryOutput] =
+  ): IO[GetPlayerHistoryByInternalIdOutput] =
     val paging = Models.Pagination(page, pageSize)
     historyDb
       .playerInfoExists(id)
@@ -108,12 +151,12 @@ class PlayerServiceImpl(db: Db, historyDb: HistoryDb)(using Logger[IO]) extends 
             .map: entries =>
               val items = entries.map: e =>
                 RatingHistoryEntry(e.yearMonth, e.standard, e.rapid, e.blitz)
-              GetPlayerHistoryOutput(items, Option.when(items.size == pageSize)(page.succ))
+              GetPlayerHistoryByInternalIdOutput(items, Option.when(items.size == pageSize)(page.succ))
         else IO.raiseError(PlayerNotFound(id))
       .handleErrorWith:
         case e: PlayerNotFound => IO.raiseError(e)
         case e                 =>
-          error"Error in getPlayerHistory: $id, $e" *>
+          error"Error in getPlayerHistoryByInternalId: $id, $e" *>
             IO.raiseError(InternalServerError("Internal server error"))
 
 object PlayerTransformers:

@@ -14,10 +14,12 @@ trait Db:
       yearMonth: YearMonth
   ): IO[Unit]
   def playerById(id: PlayerId): IO[Option[PlayerInfo]]
+  def playerByFideId(fideId: FideId): IO[Option[PlayerInfo]]
   def countPlayers(filter: PlayerFilter): IO[Long]
   def allPlayers(sorting: Sorting, paging: Pagination, filter: PlayerFilter): IO[List[PlayerInfo]]
   def allFederations: IO[List[FederationInfo]]
   def playersByIds(ids: Set[PlayerId]): IO[List[PlayerInfo]]
+  def playersByFideIds(ids: Set[FideId]): IO[List[PlayerInfo]]
   def playersByFederationId(id: FederationId): IO[List[PlayerInfo]]
   def allFederationsSummary(paging: Pagination): IO[List[FederationSummary]]
   def countFederationsSummary: IO[Long]
@@ -56,6 +58,9 @@ object Db:
     def playerById(id: PlayerId): IO[Option[PlayerInfo]] =
       postgres.use(_.option(Sql.playerById)(id))
 
+    def playerByFideId(fideId: FideId): IO[Option[PlayerInfo]] =
+      postgres.use(_.option(Sql.playerByFideId)(fideId))
+
     def allPlayers(sorting: Sorting, paging: Pagination, filter: PlayerFilter): IO[List[PlayerInfo]] =
       val f = Sql.allPlayers(sorting, paging, filter)
       val q = f.fragment.query(DbCodecs.playerInfo)
@@ -73,6 +78,13 @@ object Db:
       if ids.isEmpty then IO.pure(Nil)
       else
         val f = Sql.playersByIds(ids.size)
+        val q = f.query(DbCodecs.playerInfo)
+        postgres.use(_.execute(q)(ids.toList))
+
+    def playersByFideIds(ids: Set[FideId]): IO[List[PlayerInfo]] =
+      if ids.isEmpty then IO.pure(Nil)
+      else
+        val f = Sql.playersByFideIds(ids.size)
         val q = f.query(DbCodecs.playerInfo)
         postgres.use(_.execute(q)(ids.toList))
 
@@ -173,6 +185,9 @@ private object Sql:
   lazy val playerById: Query[PlayerId, PlayerInfo] =
     sql"$allPlayersFragment WHERE p.id = $playerIdCodec".query(playerInfo)
 
+  lazy val playerByFideId: Query[FideId, PlayerInfo] =
+    sql"$allPlayersFragment WHERE p.fide_id = $fideIdCodec".query(playerInfo)
+
   lazy val playersByFederationId: Query[FederationId, PlayerInfo] =
     sql"$allPlayersFragment WHERE p.federation_id = $federationIdCodec".query(playerInfo)
 
@@ -208,6 +223,10 @@ private object Sql:
   def playersByIds(n: Int): Fragment[List[PlayerId]] =
     val ids = playerIdCodec.values.list(n)
     sql"$allPlayersFragment WHERE p.id IN ($ids)"
+
+  def playersByFideIds(n: Int): Fragment[List[FideId]] =
+    val ids = fideIdCodec.values.list(n)
+    sql"$allPlayersFragment WHERE p.fide_id IN ($ids)"
 
   def allFederationsSummary(paging: Pagination): AppliedFragment =
     allFederationsSummaryFragment(Void) |+|
