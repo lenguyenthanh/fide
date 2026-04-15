@@ -44,7 +44,7 @@ object Dependencies {
   val smithy4sHttp4s        = smithy4s("http4s")
   val smithy4sHttp4sSwagger = smithy4s("http4s-swagger")
 
-  val skunk = "org.tpolecat" %% "skunk-core" % "1.0.0-M12"
+  val skunk = "org.tpolecat" %% "skunk-core" % "1.0.0"
   val dumbo = "dev.rolang"   %% "dumbo"      % "0.8.1"
 
   val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.8.0"
