@@ -12,7 +12,7 @@ trait Ingestor:
 
 object Ingestor:
 
-  private val BatchSize = 10_000
+  private val BatchSize = Db.MaxBatchSize
 
   def apply(
       eventDb: PlayerEventDb,

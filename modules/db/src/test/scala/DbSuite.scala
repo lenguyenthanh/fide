@@ -263,3 +263,38 @@ object DbSuite extends SimpleIOSuite:
           PlayerFilter.default.copy(otherTitles = List(OtherTitle.IA).some)
         )
       yield expect(players.length == 1)
+
+  test("batch upsert correlates fide_id to PlayerId correctly"):
+    val feds = List(
+      NewFederation(FederationId("AAA"), "Alpha"),
+      NewFederation(FederationId("BBB"), "Beta")
+    )
+    val players = (1 to 30).toList.map: i =>
+      val fid    = FederationId.applyUnsafe(if i % 2 == 0 then "AAA" else "BBB")
+      val player = CrawlPlayer(
+        FideId.applyUnsafe(s"F${1000 + i}"),
+        s"Player$i",
+        if i % 3 == 0 then Title.GM.some else none,
+        none,
+        Nil,
+        Rating.applyUnsafe(2000 + i).some,
+        40.some,
+        Rating.applyUnsafe(1900 + i).some,
+        40.some,
+        Rating.applyUnsafe(1800 + i).some,
+        40.some,
+        if i % 2 == 0 then Gender.Female.some else Gender.Male.some,
+        (1980 + (i % 20)).some,
+        true,
+        fid.some
+      )
+      (player, feds.find(_.id == fid), CrawlPlayer.computeHash(player))
+    resource.use: db =>
+      for
+        _       <- db.upsertCrawlPlayers(players, jan2024)
+        results <- players.traverse: (p, _, _) =>
+          db.playerByFideId(p.fideId).map(p.fideId -> _)
+      yield results.foldMap: (fideId, info) =>
+        val pi = info.get
+        expect(pi.name == s"Player${fideId.value.drop(1).toInt - 1000}") and
+          expect(pi.fideId.contains(fideId))
