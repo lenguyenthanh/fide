@@ -123,7 +123,7 @@ You can use the pre-built CLI Docker image from [GitHub Container Registry](http
 
 ### CSV Format
 
-The CLI expects CSV files from [fide-rating-csv](https://github.com/lenguyenthanh/fide-rating-csv) with the following 16-column format:
+The CLI expects CSV files from [fide-rating-database](https://github.com/lenguyenthanh/fide-rating-database) with the following 16-column format:
 
 ```
 id,fide_id,name,title,womenTitle,otherTitles,standard,standardK,rapid,rapidK,blitz,blitzK,gender,birthYear,active,federationId
