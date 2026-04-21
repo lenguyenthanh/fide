@@ -18,7 +18,7 @@ import fide.types.*
 import io.github.arainko.ducktape.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
-import smithy4s.Timestamp
+import smithy4s.time.Timestamp
 
 import java.time.OffsetDateTime
 

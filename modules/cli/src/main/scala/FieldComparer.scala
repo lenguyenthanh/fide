@@ -9,12 +9,12 @@ object FieldComparer:
     List(
       compareName(csv.name, api.name),
       compareField("fideId", csv.fideId, api.fideId),
-      compareField("title", csv.title.map(_.value), api.title.map(_.value)),
-      compareField("womenTitle", csv.womenTitle.map(_.value), api.womenTitle.map(_.value)),
+      compareField("title", csv.title.map(_.value), api.title.map(_.stringValue)),
+      compareField("womenTitle", csv.womenTitle.map(_.value), api.womenTitle.map(_.stringValue)),
       compareField(
         "otherTitles",
         csv.otherTitles.map(_.value).sorted,
-        api.otherTitles.getOrElse(Nil).map(_.value).sorted
+        api.otherTitles.getOrElse(Nil).map(_.stringValue).sorted
       ),
       compareField("standard", csv.standard, api.standard),
       compareField("standardK", csv.standardK, api.standardK),
@@ -22,7 +22,7 @@ object FieldComparer:
       compareField("rapidK", csv.rapidK, api.rapidK),
       compareField("blitz", csv.blitz, api.blitz),
       compareField("blitzK", csv.blitzK, api.blitzK),
-      compareField("gender", csv.gender.map(_.value), api.gender.map(_.value)),
+      compareField("gender", csv.gender.map(_.value), api.gender.map(_.stringValue)),
       compareField("birthYear", csv.birthYear, api.birthYear),
       compareField("active", csv.active, api.active),
       compareField("federationId", csv.federationId, api.federation.map(_.id))
