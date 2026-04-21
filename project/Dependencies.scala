@@ -5,11 +5,11 @@ object Dependencies {
 
   object V {
     val catsEffect = "3.7.0"
-    val ciris      = "3.12.0"
-    val decline    = "2.6.1"
+    val ciris      = "3.14.1"
+    val decline    = "2.6.2"
     val fs2        = "3.13.0"
     val fs2Data    = "1.13.0"
-    val http4s     = "0.23.33"
+    val http4s     = "0.23.34"
     val iron       = "3.3.0"
     val gatling    = "3.15.0"
   }
@@ -44,8 +44,8 @@ object Dependencies {
   val smithy4sHttp4s        = smithy4s("http4s")
   val smithy4sHttp4sSwagger = smithy4s("http4s-swagger")
 
-  val skunk = "org.tpolecat" %% "skunk-core" % "1.0.0-M12"
-  val dumbo = "dev.rolang"   %% "dumbo"      % "0.8.1"
+  val skunk = "org.tpolecat" %% "skunk-core" % "1.1.0-RC1"
+  val dumbo = "dev.rolang"   %% "dumbo"      % "0.9.0"
 
   val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.8.0"
   val logback  = "ch.qos.logback" % "logback-classic" % "1.5.32"
