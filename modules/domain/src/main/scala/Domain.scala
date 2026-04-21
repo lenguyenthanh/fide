@@ -56,159 +56,187 @@ object Gender:
 
 case class PlayerInfo(
     id: PlayerId,
+    fideId: Option[FideId],
     name: String,
-    title: Option[Title] = None,
-    womenTitle: Option[Title] = None,
-    otherTitles: List[OtherTitle] = Nil,
-    standard: Option[Rating] = None,
-    standardK: Option[Int] = None,
-    rapid: Option[Rating] = None,
-    rapidK: Option[Int] = None,
-    blitz: Option[Rating] = None,
-    blitzK: Option[Int] = None,
-    gender: Option[Gender] = None,
-    birthYear: Option[Int] = None,
+    title: Option[Title],
+    womenTitle: Option[Title],
+    otherTitles: List[OtherTitle],
+    standard: Option[Rating],
+    standardK: Option[Int],
+    rapid: Option[Rating],
+    rapidK: Option[Int],
+    blitz: Option[Rating],
+    blitzK: Option[Int],
+    gender: Option[Gender],
+    birthYear: Option[Int],
     active: Boolean,
     updatedAt: OffsetDateTime,
     createdAt: OffsetDateTime,
-    federation: Option[FederationInfo] = None
+    federation: Option[FederationInfo]
 )
 
-case class NewPlayer(
-    id: PlayerId,
+/** Crawl path: always has FideId, no PlayerId at construction time. */
+case class CrawlPlayer(
+    fideId: FideId,
     name: String,
-    title: Option[Title] = None,
-    womenTitle: Option[Title] = None,
-    otherTitles: List[OtherTitle] = Nil,
-    standard: Option[Rating] = None,
-    standardK: Option[Int] = None,
-    rapid: Option[Rating] = None,
-    rapidK: Option[Int] = None,
-    blitz: Option[Rating] = None,
-    blitzK: Option[Int] = None,
-    gender: Option[Gender] = None,
-    birthYear: Option[Int] = None,
+    title: Option[Title],
+    womenTitle: Option[Title],
+    otherTitles: List[OtherTitle],
+    standard: Option[Rating],
+    standardK: Option[Int],
+    rapid: Option[Rating],
+    rapidK: Option[Int],
+    blitz: Option[Rating],
+    blitzK: Option[Int],
+    gender: Option[Gender],
+    birthYear: Option[Int],
     active: Boolean,
-    federationId: Option[FederationId] = None
+    federationId: Option[FederationId]
 )
 
-object NewPlayer:
-  private val seed2 = 0x9e3779b9
+object CrawlPlayer:
 
-  /** Hash all mutable fields for change detection. Two-pass MurmurHash3 combined into Long. */
-  def computeHash(p: NewPlayer): Long =
-    val fields = (
-      p.name,
-      p.title,
-      p.womenTitle,
-      p.otherTitles,
-      p.standard,
-      p.standardK,
-      p.rapid,
-      p.rapidK,
-      p.blitz,
-      p.blitzK,
-      p.gender,
-      p.birthYear,
-      p.active,
-      p.federationId
+  /** Hash all mutable fields for change detection. */
+  def computeHash(p: CrawlPlayer): Long =
+    hash64(
+      (
+        p.name,
+        p.title,
+        p.womenTitle,
+        p.otherTitles,
+        p.standard,
+        p.standardK,
+        p.rapid,
+        p.rapidK,
+        p.blitz,
+        p.blitzK,
+        p.gender,
+        p.birthYear,
+        p.active,
+        p.federationId
+      )
     )
-    val hi = MurmurHash3.productHash(fields, MurmurHash3.productSeed)
-    val lo = MurmurHash3.productHash(fields, seed2)
-    (hi.toLong << 32) | (lo.toLong & 0xffffffffL)
 
   /** Hash identity fields only (name, gender, birthYear) for player_info change detection. */
-  def computeInfoHash(p: NewPlayer): Long =
-    val fields = (p.name, p.gender, p.birthYear)
-    val hi     = MurmurHash3.productHash(fields, MurmurHash3.productSeed)
-    val lo     = MurmurHash3.productHash(fields, seed2)
-    (hi.toLong << 32) | (lo.toLong & 0xffffffffL)
+  def computeInfoHash(p: CrawlPlayer): Long =
+    hash64((p.name, p.gender, p.birthYear))
+
+/** Historical ingest path: has PlayerId from source, optional FideId. */
+case class HistoricalPlayer(
+    id: PlayerId,
+    fideId: Option[FideId],
+    name: String,
+    title: Option[Title],
+    womenTitle: Option[Title],
+    otherTitles: List[OtherTitle],
+    standard: Option[Rating],
+    standardK: Option[Int],
+    rapid: Option[Rating],
+    rapidK: Option[Int],
+    blitz: Option[Rating],
+    blitzK: Option[Int],
+    gender: Option[Gender],
+    birthYear: Option[Int],
+    active: Boolean,
+    federationId: Option[FederationId]
+)
+
+private[domain] val hashSeed2 = 0x9e3779b9
+
+/** Two-pass MurmurHash3 combined into a 64-bit Long. */
+private[domain] def hash64(fields: Product): Long =
+  val hi = MurmurHash3.productHash(fields, MurmurHash3.productSeed)
+  val lo = MurmurHash3.productHash(fields, hashSeed2)
+  (hi.toLong << 32) | (lo.toLong & 0xffffffffL)
 
 case class NewPlayerEvent(
-    playerId: PlayerId,
+    fideId: FideId,
     name: String,
-    title: Option[Title] = None,
-    womenTitle: Option[Title] = None,
-    otherTitles: List[OtherTitle] = Nil,
-    standard: Option[Rating] = None,
-    standardK: Option[Int] = None,
-    rapid: Option[Rating] = None,
-    rapidK: Option[Int] = None,
-    blitz: Option[Rating] = None,
-    blitzK: Option[Int] = None,
-    gender: Option[Gender] = None,
-    birthYear: Option[Int] = None,
+    title: Option[Title],
+    womenTitle: Option[Title],
+    otherTitles: List[OtherTitle],
+    standard: Option[Rating],
+    standardK: Option[Int],
+    rapid: Option[Rating],
+    rapidK: Option[Int],
+    blitz: Option[Rating],
+    blitzK: Option[Int],
+    gender: Option[Gender],
+    birthYear: Option[Int],
     active: Boolean,
-    federationId: Option[FederationId] = None,
+    federationId: Option[FederationId],
     hash: Long,
     crawledAt: OffsetDateTime,
-    sourceLastModified: Option[String] = None
+    sourceLastModified: Option[String]
 )
 
 case class PlayerEvent(
     id: Long,
-    playerId: PlayerId,
+    fideId: FideId,
     name: String,
-    title: Option[Title] = None,
-    womenTitle: Option[Title] = None,
-    otherTitles: List[OtherTitle] = Nil,
-    standard: Option[Rating] = None,
-    standardK: Option[Int] = None,
-    rapid: Option[Rating] = None,
-    rapidK: Option[Int] = None,
-    blitz: Option[Rating] = None,
-    blitzK: Option[Int] = None,
-    gender: Option[Gender] = None,
-    birthYear: Option[Int] = None,
+    title: Option[Title],
+    womenTitle: Option[Title],
+    otherTitles: List[OtherTitle],
+    standard: Option[Rating],
+    standardK: Option[Int],
+    rapid: Option[Rating],
+    rapidK: Option[Int],
+    blitz: Option[Rating],
+    blitzK: Option[Int],
+    gender: Option[Gender],
+    birthYear: Option[Int],
     active: Boolean,
-    federationId: Option[FederationId] = None,
+    federationId: Option[FederationId],
     hash: Long,
     crawledAt: OffsetDateTime,
-    sourceLastModified: Option[String] = None,
-    ingested: Boolean = false,
+    sourceLastModified: Option[String],
+    ingested: Boolean,
     createdAt: OffsetDateTime
 )
 
 case class PlayerInfoRow(
     id: PlayerId,
+    fideId: Option[FideId],
     name: String,
-    gender: Option[Gender] = None,
-    birthYear: Option[Int] = None
+    gender: Option[Gender],
+    birthYear: Option[Int]
 )
 
 case class PlayerHistoryRow(
     playerId: PlayerId,
+    fideId: Option[FideId],
     yearMonth: YearMonth,
-    title: Option[Title] = None,
-    womenTitle: Option[Title] = None,
-    otherTitles: List[OtherTitle] = Nil,
-    standard: Option[Rating] = None,
-    standardK: Option[Int] = None,
-    rapid: Option[Rating] = None,
-    rapidK: Option[Int] = None,
-    blitz: Option[Rating] = None,
-    blitzK: Option[Int] = None,
-    federationId: Option[FederationId] = None,
+    title: Option[Title],
+    womenTitle: Option[Title],
+    otherTitles: List[OtherTitle],
+    standard: Option[Rating],
+    standardK: Option[Int],
+    rapid: Option[Rating],
+    rapidK: Option[Int],
+    blitz: Option[Rating],
+    blitzK: Option[Int],
+    federationId: Option[FederationId],
     active: Boolean
 )
 
 case class HistoricalPlayerInfo(
     id: PlayerId,
+    fideId: Option[FideId],
     name: String,
     yearMonth: YearMonth,
-    title: Option[Title] = None,
-    womenTitle: Option[Title] = None,
-    otherTitles: List[OtherTitle] = Nil,
-    standard: Option[Rating] = None,
-    standardK: Option[Int] = None,
-    rapid: Option[Rating] = None,
-    rapidK: Option[Int] = None,
-    blitz: Option[Rating] = None,
-    blitzK: Option[Int] = None,
-    gender: Option[Gender] = None,
-    birthYear: Option[Int] = None,
+    title: Option[Title],
+    womenTitle: Option[Title],
+    otherTitles: List[OtherTitle],
+    standard: Option[Rating],
+    standardK: Option[Int],
+    rapid: Option[Rating],
+    rapidK: Option[Int],
+    blitz: Option[Rating],
+    blitzK: Option[Int],
+    gender: Option[Gender],
+    birthYear: Option[Int],
     active: Boolean,
-    federation: Option[FederationInfo] = None
+    federation: Option[FederationInfo]
 )
 
 case class RatingHistoryEntry(

@@ -4,6 +4,7 @@ import cats.effect.*
 import cats.syntax.all.*
 import fide.crawler.Crawler
 import fide.db.{ Db, DbResource, HashCache, Health, HistoryDb, Ingestor, KVStore, PlayerEventDb }
+import fide.types.*
 import org.http4s.client.Client
 import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.log4cats.Logger
@@ -15,8 +16,7 @@ class AppResources private (
     val crawler: Crawler,
     val historyDb: HistoryDb,
     val ingestor: Ingestor,
-    val playerHashCache: HashCache,
-    val playerInfoHashCache: HashCache
+    val playerHashCache: HashCache[FideId]
 )
 
 object AppResources:
@@ -29,14 +29,11 @@ object AppResources:
       health    = Health(res.postgres)
       eventDb   = PlayerEventDb(res.postgres)
       historyDb = HistoryDb(res.postgres, conf.history.insertSize)
-      playerHashCache     <- HashCache(db.allPlayerHashes).toResource
-      playerInfoHashCache <- HashCache(historyDb.allPlayerInfoHashes).toResource
+      playerHashCache <- HashCache(db.allPlayerHashesByFideId).toResource
       ingestor = Ingestor(
         eventDb,
-        historyDb,
         db,
-        playerHashCache,
-        playerInfoHashCache
+        playerHashCache
       )
     yield AppResources(
       db,
@@ -45,8 +42,7 @@ object AppResources:
       Crawler.instance(db, eventDb, store, client, conf.crawler, playerHashCache),
       historyDb,
       ingestor,
-      playerHashCache,
-      playerInfoHashCache
+      playerHashCache
     )
 
   def makeClient: Resource[IO, Client[IO]] =

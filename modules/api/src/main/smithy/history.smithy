@@ -9,7 +9,7 @@ use smithy4s.meta#unwrap
 @simpleRestJson
 service HistoryService {
   version: "0.0.1"
-  operations: [GetHistoricalPlayers, GetHistoricalPlayerById, GetHistoricalFederationsSummary, GetHistoricalFederationSummaryById, GetAvailableMonths],
+  operations: [GetHistoricalPlayers, GetHistoricalPlayerByFideId, GetHistoricalPlayerByInternalId, GetHistoricalFederationsSummary, GetHistoricalFederationSummaryById, GetAvailableMonths],
 }
 
 @readonly
@@ -47,13 +47,13 @@ operation GetHistoricalPlayers {
 }
 
 @readonly
-@http(method: "GET", uri: "/api/history/players/{id}", code: 200)
-operation GetHistoricalPlayerById {
+@http(method: "GET", uri: "/api/history/players/fide/{fide_id}", code: 200)
+operation GetHistoricalPlayerByFideId {
   input :=
     @scalaImports(["fide.spec.providers.given"]) {
     @httpLabel
     @required
-    id: PlayerId
+    fide_id: FideId
 
     @required
     @httpQuery("month")
@@ -61,7 +61,7 @@ operation GetHistoricalPlayerById {
   }
 
   output: GetHistoricalPlayerByIdOutput
-  errors: [PlayerNotFound, InternalServerError]
+  errors: [PlayerFideIdNotFound, InternalServerError]
 }
 
 @readonly
@@ -132,6 +132,8 @@ structure GetHistoricalPlayerByIdOutput {
   @required
   id: PlayerId
 
+  fideId: FideId
+
   @required
   name: String
 
@@ -159,4 +161,22 @@ structure GetHistoricalPlayerByIdOutput {
 
 list HistoricalPlayers {
   member: GetHistoricalPlayerByIdOutput
+}
+
+@readonly
+@http(method: "GET", uri: "/api/history/players/internal/{id}", code: 200)
+operation GetHistoricalPlayerByInternalId {
+  input :=
+    @scalaImports(["fide.spec.providers.given"]) {
+    @httpLabel
+    @required
+    id: PlayerId
+
+    @required
+    @httpQuery("month")
+    month: YearMonthString
+  }
+
+  output: GetHistoricalPlayerByIdOutput
+  errors: [PlayerNotFound, InternalServerError]
 }

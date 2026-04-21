@@ -25,6 +25,9 @@ object providers:
   given RefinementProvider[FederationIdFormat, String, fide.types.FederationId] =
     Refinement.drivenBy(fide.types.FederationId.either, _.value)
 
+  given RefinementProvider[FideIdFormat, String, fide.types.FideId] =
+    Refinement.drivenBy(fide.types.FideId.either, _.value)
+
   given RefinementProvider[YearMonthFormat, String, YearMonth] =
     Refinement.drivenBy(YearMonth.fromString, _.format)
 

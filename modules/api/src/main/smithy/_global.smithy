@@ -12,6 +12,21 @@ structure ValidationError {
   message: String
 }
 
+@error("client")
+@httpError(404)
+structure PlayerFideIdNotFound {
+  @required
+  fideId: FideId
+}
+
+@uniqueItems
+@length(min: 1, max: 100)
+@nonEmptySetFormat
+@unwrap
+list SetFideIds {
+  member: FideId
+}
+
 @error("server")
 @httpError(501)
 structure NotImplementedYetError {
@@ -36,6 +51,17 @@ structure PlayerIdFormat {}
 @PlayerIdFormat
 @unwrap
 integer PlayerId
+
+@trait(selector: "string")
+@refinement(
+   targetType: "fide.types.FideId"
+   providerImport: "fide.spec.providers.given"
+)
+structure FideIdFormat {}
+
+@FideIdFormat
+@unwrap
+string FideId
 
 @BirthYearFormat
 @unwrap
@@ -151,6 +177,8 @@ structure Federation {
 structure GetPlayerByIdOutput {
   @required
   id: PlayerId
+
+  fideId: FideId
 
   @required
   name: String

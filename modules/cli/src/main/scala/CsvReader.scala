@@ -11,14 +11,15 @@ import org.typelevel.log4cats.Logger
 
 object CsvReader:
 
-  given CsvRowDecoder[NewPlayer, String] = new:
-    def apply(row: CsvRow[String]): DecoderResult[NewPlayer] =
+  given CsvRowDecoder[HistoricalPlayer, String] = new:
+    def apply(row: CsvRow[String]): DecoderResult[HistoricalPlayer] =
       for
         id     <- row.as[Int]("id")
         name   <- row.as[String]("name")
         active <- row.as[Boolean]("active")
-      yield NewPlayer(
+      yield HistoricalPlayer(
         id = PlayerId.applyUnsafe(id),
+        fideId = optStr(row, "fide_id") >>= FideId.option,
         name = name,
         title = optStr(row, "title") >>= Title.apply,
         womenTitle = optStr(row, "womenTitle") >>= Title.apply,
@@ -36,11 +37,11 @@ object CsvReader:
         federationId = optStr(row, "federationId") >>= FederationId.option
       )
 
-  def readFile(path: Path)(using Logger[IO]): Stream[IO, NewPlayer] =
+  def readFile(path: Path)(using Logger[IO]): Stream[IO, HistoricalPlayer] =
     Files[IO]
       .readAll(path)
       .through(fs2.text.utf8.decode)
-      .through(lenient.attemptDecodeUsingHeaders[NewPlayer]())
+      .through(lenient.attemptDecodeUsingHeaders[HistoricalPlayer]())
       .evalMapFilter:
         case Left(err)     => Logger[IO].warn(s"Failed to parse CSV row: $err").as(none)
         case Right(player) => player.some.pure[IO]

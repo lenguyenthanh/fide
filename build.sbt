@@ -120,6 +120,8 @@ lazy val cli = (project in file("modules/cli"))
       fs2DataCsvGen,
       declineCore,
       declineCatsEffect,
+      smithy4sHttp4s,
+      http4sEmberClient,
       cirisCore,
       cirisHtt4s,
       ironCiris,
@@ -132,7 +134,7 @@ lazy val cli = (project in file("modules/cli"))
     Docker / dockerRepository    := Some("ghcr.io")
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
-  .dependsOn(domain, full(db))
+  .dependsOn(domain, full(db), api)
 
 lazy val gatling = (project in file("modules/gatling"))
   .settings(name := "gatling")

@@ -6,7 +6,7 @@ import cats.effect.std.AtomicCell
 import cats.syntax.all.*
 import fide.db.{ Db, HashCache, KVStore, PlayerEventDb }
 import fide.domain.*
-import io.github.arainko.ducktape.*
+import fide.types.*
 import org.http4s.client.Client
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
@@ -37,7 +37,7 @@ object Crawler:
       store: KVStore,
       client: Client[IO],
       config: CrawlerConfig,
-      playerHashCache: HashCache
+      playerHashCache: HashCache[FideId]
   )(using Logger[IO]) =
     val syncer     = Syncer.instance(store, client)
     val downloader = Downloader(client)
@@ -61,58 +61,56 @@ object Crawler:
           cachedHashes <- playerHashCache.get
           _            <- info"Loaded ${cachedHashes.size} player hashes for diffing"
           metrics      <- AtomicCell[IO].of(CrawlMetrics())
-          seenIds      <- AtomicCell[IO].of(Set.empty[fide.types.PlayerId])
-          newPlayerIds <- AtomicCell[IO].of(Set.empty[fide.types.PlayerId])
+          seenFideIds  <- AtomicCell[IO].of(Set.empty[FideId])
+          newFideIds   <- AtomicCell[IO].of(Set.empty[FideId])
           _            <- downloader.fetch
             .chunkN(config.chunkSize)
             .map(_.toList)
             .parEvalMapUnordered(config.concurrentUpsert): chunk =>
-              processChunk(chunk, cachedHashes, timestamp, now, metrics, seenIds, newPlayerIds, eventDb, db)
+              processChunk(chunk, cachedHashes, timestamp, now, metrics, seenFideIds, newFideIds, eventDb, db)
             .compile
             .drain
           elapsed <- IO.monotonic.map(_ - startAt)
           m       <- metrics.get
-          seen    <- seenIds.get
-          newIds  <- newPlayerIds.get
+          seen    <- seenFideIds.get
           disappeared = cachedHashes.keySet -- seen
           _ <-
             info"Crawl complete: total=${m.total}, new=${m.newPlayers}, changed=${m.changed}, unchanged=${m.unchanged}, disappeared=${disappeared.size}, duration=${elapsed.toSeconds}s"
-          _ <- if newIds.nonEmpty then db.updateLastSeenAt(newIds.toList) else IO.unit
-          _ <- if disappeared.nonEmpty then db.markInactive(disappeared) else IO.unit
+        // TODO: updateLastSeenAt and markInactive need to resolve FideId -> PlayerId
         yield ()
 
       private def processChunk(
-          chunk: List[(NewPlayer, Option[NewFederation], String)],
-          cachedHashes: Map[fide.types.PlayerId, Long],
+          chunk: List[(CrawlPlayer, Option[NewFederation], String)],
+          cachedHashes: Map[FideId, Long],
           timestamp: Option[String],
           now: OffsetDateTime,
           metrics: AtomicCell[IO, CrawlMetrics],
-          seenIds: AtomicCell[IO, Set[fide.types.PlayerId]],
-          newPlayerIds: AtomicCell[IO, Set[fide.types.PlayerId]],
+          seenFideIds: AtomicCell[IO, Set[FideId]],
+          newFideIds: AtomicCell[IO, Set[FideId]],
           eventDb: PlayerEventDb,
           db: Db
       ): IO[Unit] =
         val players = chunk.map(_._1)
-        val ids     = players.map(_.id)
+        val fideIds = players.map(_.fideId)
 
         // Upsert federations (still needed, idempotent)
         val feds = chunk.mapFilter(_._2).distinctBy(_.id)
 
         case class ChunkResult(
             events: List[NewPlayerEvent],
-            newIds: List[fide.types.PlayerId],
+            newFideIds: List[FideId],
             newCount: Long,
             changedCount: Long,
             unchangedCount: Long
         )
         val result = players.foldLeft(ChunkResult(Nil, Nil, 0L, 0L, 0L)):
           case (acc, player) =>
-            val hash = NewPlayer.computeHash(player)
-            cachedHashes.get(player.id) match
+            val hash = CrawlPlayer.computeHash(player)
+            cachedHashes.get(player.fideId) match
               case None =>
                 acc.copy(
                   events = toEvent(player, hash, now, timestamp) :: acc.events,
-                  newIds = player.id :: acc.newIds,
+                  newFideIds = player.fideId :: acc.newFideIds,
                   newCount = acc.newCount + 1
                 )
               case Some(existingHash) if existingHash != hash =>
@@ -134,21 +132,33 @@ object Crawler:
               unchanged = m.unchanged + result.unchangedCount
             )
           )
-          _ <- seenIds.update(_ ++ ids)
-          _ <- if result.newIds.nonEmpty then newPlayerIds.update(_ ++ result.newIds) else IO.unit
+          _ <- seenFideIds.update(_ ++ fideIds)
+          _ <- if result.newFideIds.nonEmpty then newFideIds.update(_ ++ result.newFideIds) else IO.unit
         yield ()
 
       private def toEvent(
-          player: NewPlayer,
+          player: CrawlPlayer,
           hash: Long,
           now: OffsetDateTime,
           timestamp: Option[String]
       ): NewPlayerEvent =
-        player
-          .into[NewPlayerEvent]
-          .transform(
-            Field.renamed(_.playerId, _.id),
-            Field.const(_.hash, hash),
-            Field.const(_.crawledAt, now),
-            Field.const(_.sourceLastModified, timestamp)
-          )
+        NewPlayerEvent(
+          fideId = player.fideId,
+          name = player.name,
+          title = player.title,
+          womenTitle = player.womenTitle,
+          otherTitles = player.otherTitles,
+          standard = player.standard,
+          standardK = player.standardK,
+          rapid = player.rapid,
+          rapidK = player.rapidK,
+          blitz = player.blitz,
+          blitzK = player.blitzK,
+          gender = player.gender,
+          birthYear = player.birthYear,
+          active = player.active,
+          federationId = player.federationId,
+          hash = hash,
+          crawledAt = now,
+          sourceLastModified = timestamp
+        )
