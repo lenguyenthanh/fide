@@ -30,6 +30,16 @@ Load these skills **before writing, planning or reviewing any Scala code**:
 - `/cats-mtl-typed-errors` — typed error handling with cats-mtl
 - `/scala-sbt` — SBT and Metals workflow
 
+## Smithy API specs
+
+The Smithy files at `modules/api/src/main/smithy/*.smithy` are the source of truth for the HTTP API and its generated docs. Operation `///` doc comments describe default-value behavior for every omitted input (pagination, sorting, filters, date bounds, etc.).
+
+**Rule:** Whenever you change how a request field is defaulted — whether in the Smithy spec (`@default`, inline `= value`) or in Scala code (e.g. `Models.Sorting.fromOption`, `Models.PlayerFilter.default`, service-layer `getOrElse`) — update the `///` doc comment on every operation that exposes that field. Mixin-level docs (`SortingMixin`, `FilterMixin`) do not propagate to the generated per-operation docs, so the defaults must be inlined on each operation that uses the mixin.
+
+Check these Scala locations when reviewing defaulting logic:
+- `modules/domain/src/main/scala/Models.scala` — `Sorting.fromOption`, `PlayerFilter.default`
+- `modules/backend/src/main/scala/PlayerService.scala`, `FederationService.scala`, `HistoryService.scala` — per-service default application
+
 ## Modules Structure
 
 ```

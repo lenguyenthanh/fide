@@ -6,12 +6,23 @@ use alloy#simpleRestJson
 use smithy4s.meta#scalaImports
 use smithy4s.meta#unwrap
 
+/// Historical (monthly-snapshot) variants of the player and federation endpoints, plus a months index.
+/// All historical lookups require a `month` query parameter in "YYYY-MM" form.
 @simpleRestJson
 service HistoryService {
   version: "0.0.1"
   operations: [GetHistoricalPlayers, GetHistoricalPlayerByFideId, GetHistoricalPlayerByInternalId, GetHistoricalFederationsSummary, GetHistoricalFederationSummaryById, GetAvailableMonths],
 }
 
+/// Paginated list of players as of a given month, with the same filters/sorting as GetPlayers.
+///
+/// Defaults when omitted:
+/// - page = "1", page_size = 30
+/// - sort_by = "name"; order_by = "asc" if sort_by is "name", otherwise "desc"
+/// - is_active, has_title, has_women_title, has_other_title: unset => no filter
+/// - name, title, other_title, gender, federation_id: unset => no filter
+/// - std[gte]/std[lte], rapid[gte]/rapid[lte], blitz[gte]/blitz[lte]: unset => no bound
+/// - birth_year[gte], birth_year[lte]: unset => no bound
 @readonly
 @paginated(inputToken: "page", outputToken: "nextPage", pageSize: "pageSize")
 @http(method: "GET", uri: "/api/history/players", code: 200)
@@ -25,11 +36,13 @@ operation GetHistoricalPlayers {
     month: YearMonthString
 
     @httpQuery("page")
-    page: PageNumber = "1"
+    @default("1")
+    page: PageNumber
 
     @httpQuery("page_size")
     @range(min: 1, max: 100)
-    pageSize: PageSize = 30
+    @default(30)
+    pageSize: PageSize
 
     @httpQuery("federation_id")
     federationId: FederationId
@@ -46,6 +59,7 @@ operation GetHistoricalPlayers {
   errors: [InternalServerError]
 }
 
+/// Snapshot of a single player (by FIDE id) for a given month.
 @readonly
 @http(method: "GET", uri: "/api/history/players/fide/{fide_id}", code: 200)
 operation GetHistoricalPlayerByFideId {
@@ -64,6 +78,10 @@ operation GetHistoricalPlayerByFideId {
   errors: [PlayerFideIdNotFound, InternalServerError]
 }
 
+/// Paginated federation summaries as of a given month.
+///
+/// Defaults when omitted:
+/// - page = "1", page_size = 30
 @readonly
 @paginated(inputToken: "page", outputToken: "nextPage", pageSize: "pageSize")
 @http(method: "GET", uri: "/api/history/federations/summary", code: 200)
@@ -76,10 +94,12 @@ operation GetHistoricalFederationsSummary {
     month: YearMonthString
 
     @httpQuery("page")
-    page: PageNumber = "1"
+    @default("1")
+    page: PageNumber
     @httpQuery("page_size")
     @range(min: 1, max: 100)
-    pageSize: PageSize = 30
+    @default(30)
+    pageSize: PageSize
   }
 
   output := {
@@ -93,6 +113,7 @@ operation GetHistoricalFederationsSummary {
   errors: [InternalServerError]
 }
 
+/// Snapshot of a federation summary for a given month.
 @readonly
 @http(method: "GET", uri: "/api/history/federations/summary/{id}", code: 200)
 operation GetHistoricalFederationSummaryById {
@@ -111,6 +132,7 @@ operation GetHistoricalFederationSummaryById {
   errors: [FederationNotFound, InternalServerError]
 }
 
+/// Lists all months for which a historical snapshot is available.
 @readonly
 @http(method: "GET", uri: "/api/history/months", code: 200)
 operation GetAvailableMonths {
@@ -120,14 +142,17 @@ operation GetAvailableMonths {
   }
 }
 
+/// Month identifier in "YYYY-MM" form (e.g. "2024-11").
 @YearMonthFormat
 @unwrap
 string YearMonthString
 
+/// Ordered list of months.
 list YearMonthList {
   member: YearMonthString
 }
 
+/// Historical player record: like GetPlayerByIdOutput, pinned to a specific month and including K-factor fields.
 structure GetHistoricalPlayerByIdOutput {
   @required
   id: PlayerId
@@ -159,10 +184,12 @@ structure GetHistoricalPlayerByIdOutput {
   federation: Federation
 }
 
+/// A page of historical player records.
 list HistoricalPlayers {
   member: GetHistoricalPlayerByIdOutput
 }
 
+/// Snapshot of a single player (by internal id) for a given month.
 @readonly
 @http(method: "GET", uri: "/api/history/players/internal/{id}", code: 200)
 operation GetHistoricalPlayerByInternalId {
