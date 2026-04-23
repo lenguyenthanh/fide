@@ -54,8 +54,12 @@ object DbIntegrationSuite extends IOSuite with Checkers:
         players  <- db.allPlayers(sorting, paging, filter)
         players1 <- players.map(_.id).traverseFilter(db.playerById)
         players2 <- players.nonEmpty.pure[IO].ifM(db.playersByIds(players.map(_.id).toSet), Nil.pure[IO])
+        total    <- db.countPlayers(filter)
       yield expect(
-        players1.toSet == players.toSet && players2.toSet == players.toSet && players.size <= paging.size.value
+        players1.toSet == players.toSet &&
+          players2.toSet == players.toSet &&
+          players.size <= paging.size.value &&
+          players.size.toLong <= total
       )
 
   test("allFederationsSummary & federationSummaryById"): db =>
