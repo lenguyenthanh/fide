@@ -48,16 +48,16 @@ object Arbitraries:
 
   def genMinRating: Gen[Option[Rating]] =
     Gen.frequency(
-      500 -> Gen.const(none),
-      10  -> Gen.choose(1400, 2000).map(Rating.option(_)),
-      1   -> Gen.choose(2000, 4000).map(Rating.option(_))
+      2 -> Gen.const(none),
+      3 -> Gen.choose(1400, 2000).map(Rating.option(_)),
+      1 -> Gen.choose(2000, 4000).map(Rating.option(_))
     )
 
   def genMaxRating: Gen[Option[Rating]] =
     Gen.frequency(
-      500 -> Gen.const(none),
-      10  -> Gen.choose(2700, 4000).map(Rating.option(_)),
-      1   -> Gen.choose(1400, 2700).map(Rating.option(_))
+      2 -> Gen.const(none),
+      3 -> Gen.choose(2700, 4000).map(Rating.option(_)),
+      1 -> Gen.choose(1400, 2700).map(Rating.option(_))
     )
 
   given Arbitrary[RatingRange] = Arbitrary:
@@ -68,8 +68,8 @@ object Arbitraries:
 
   lazy val genBirthYear: Gen[Option[BirthYear]] =
     Gen.frequency(
-      200 -> Gen.const(none),
-      1   -> Gen.choose(1900, 2025).map(BirthYear.option(_))
+      2 -> Gen.const(none),
+      1 -> Gen.choose(1900, 2025).map(BirthYear.option(_))
     )
 
   given Arbitrary[FederationId] = Arbitrary:
@@ -77,8 +77,8 @@ object Arbitraries:
 
   lazy val genFederationId: Gen[Option[FederationId]] =
     Gen.frequency(
-      1  -> Arbitrary.arbitrary[FederationId].map(_.some),
-      10 -> Gen.const(none)
+      1 -> Arbitrary.arbitrary[FederationId].map(_.some),
+      1 -> Gen.const(none)
     )
 
   lazy val genName: Gen[String] =
@@ -94,14 +94,14 @@ object Arbitraries:
 
   val genTitles: Gen[Option[List[Title]]] =
     Gen.frequency(
-      30 -> Gen.const(none),
-      1  -> Gen.listOfN(3, Arbitrary.arbitrary[Title]).map(makeTitles)
+      2 -> Gen.const(none),
+      1 -> Gen.listOfN(3, Arbitrary.arbitrary[Title]).map(makeTitles)
     )
 
   val genOtherTitles: Gen[Option[List[OtherTitle]]] =
     Gen.frequency(
-      50 -> Gen.const(none),
-      1  -> Gen.listOfN(3, Arbitrary.arbitrary[OtherTitle]).map(makeTitles)
+      2 -> Gen.const(none),
+      1 -> Gen.listOfN(3, Arbitrary.arbitrary[OtherTitle]).map(makeTitles)
     )
 
   val genGender: Gen[Option[Gender]] =
@@ -120,8 +120,9 @@ object Arbitraries:
 
   val genIsActive: Gen[Option[Boolean]] =
     Gen.frequency(
-      10 -> Gen.const(none),
-      1  -> Gen.oneOf(true, false).map(_.some)
+      2 -> Gen.const(none),
+      1 -> Gen.const(true.some),
+      1 -> Gen.const(false.some)
     )
 
   given Arbitrary[PlayerFilter] = Arbitrary:

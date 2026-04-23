@@ -152,6 +152,20 @@ object DbSuite extends SimpleIOSuite:
       yield expect(players.head.standard.contains(Rating(2700))) and
         expect(players.last.standard.contains(Rating(2500)))
 
+  test("allPlayers sorted by BirthYear Asc / Desc (regression for #115)"):
+    val older   = crawlPlayer1.copy(fideId = FideId("100097"), name = "Older", birthYear = 1970.some)
+    val younger = crawlPlayer1.copy(fideId = FideId("100098"), name = "Younger", birthYear = 2005.some)
+    resource.use: db =>
+      for
+        _    <- upsertOne(db, older, newFederation.some)
+        _    <- upsertOne(db, younger, newFederation.some)
+        asc  <- db.allPlayers(Sorting(SortBy.BirthYear, Order.Asc), defaultPage, PlayerFilter.default)
+        desc <- db.allPlayers(Sorting(SortBy.BirthYear, Order.Desc), defaultPage, PlayerFilter.default)
+      yield expect(asc.head.birthYear.contains(1970)) and
+        expect(asc.last.birthYear.contains(2005)) and
+        expect(desc.head.birthYear.contains(2005)) and
+        expect(desc.last.birthYear.contains(1970))
+
   test("allPlayers sorted by Standard Asc"):
     val player2 = crawlPlayer1.copy(fideId = FideId("100099"), name = "B", standard = Rating(2500).some)
     resource.use: db =>
