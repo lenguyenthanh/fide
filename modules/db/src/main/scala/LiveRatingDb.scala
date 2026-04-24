@@ -3,7 +3,6 @@ package db
 
 import cats.effect.*
 import cats.syntax.all.*
-import fide.db.LiveRatingCodecs.IngestedRoundRow
 import fide.domain.Models.*
 import fide.types.*
 import skunk.*

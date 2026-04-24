@@ -8,7 +8,6 @@ import skunk.*
 import skunk.codec.all.*
 import skunk.data.Type
 
-import java.time.Instant
 import java.time.ZoneOffset
 
 /** Skunk codecs for the live-rating tables (V0003). */
@@ -46,18 +45,6 @@ private[db] object LiveRatingCodecs:
         def entry(d: Option[Int], g: Option[Int], p: Option[Rating]): Option[LiveRatingEntry] =
           (d, g, p).mapN(LiveRatingEntry.apply)
         LiveRating(pid, entry(sd, sg, ps), entry(rd, rg, pr), entry(bd, bg, pb), Some(ua.toInstant))
-
-  /** Cursor-row type + codec for `ingested_rounds`. */
-  final case class IngestedRoundRow(
-      roundId: String,
-      tourId: String,
-      gameCount: Int,
-      ingestedAt: Instant,
-      finishedAtObserved: Option[Instant],
-      ratedObserved: Boolean,
-      failureCount: Int,
-      failedAt: Option[Instant]
-  )
 
   val ingestedRoundRow: Codec[IngestedRoundRow] =
     (text *: text *: int4 *: timestamptz *: timestamptz.opt *: bool *: int4 *: timestamptz.opt)
