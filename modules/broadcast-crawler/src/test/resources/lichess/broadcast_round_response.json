@@ -1,0 +1,37 @@
+{
+  "round": {
+    "id": "rnd11111",
+    "slug": "round-1",
+    "rated": true,
+    "finished": true,
+    "finishedAt": 1713993600000
+  },
+  "tour": {
+    "id": "abc12345",
+    "slug": "sinquefield-cup-2026",
+    "info": {
+      "fideTC": "standard"
+    },
+    "dates": [1713907200000, 1714512000000]
+  },
+  "games": [
+    {
+      "id": "game0001",
+      "name": "Carlsen vs Nakamura",
+      "players": [
+        { "name": "Carlsen, Magnus", "rating": 2830, "fideId": 1503014, "title": "GM", "fed": "NOR" },
+        { "name": "Nakamura, Hikaru", "rating": 2802, "fideId": 2016192, "title": "GM", "fed": "USA" }
+      ],
+      "status": "1-0"
+    },
+    {
+      "id": "game0002",
+      "name": "Caruana vs Ding",
+      "players": [
+        { "name": "Caruana, Fabiano", "rating": 2810, "fideId": 2020009, "fed": "USA" },
+        { "name": "Ding, Liren", "rating": 2780, "fideId": 8603677, "fed": "CHN" }
+      ],
+      "status": "1/2-1/2"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "active": [
+    {
+      "tour": {
+        "id": "act00001",
+        "slug": "active-event",
+        "dates": [1713907200000]
+      },
+      "round": {
+        "id": "actrnd01",
+        "slug": "round-3",
+        "rated": true,
+        "ongoing": true,
+        "finished": false
+      }
+    }
+  ],
+  "past": {
+    "currentPage": 1,
+    "maxPerPage": 20,
+    "currentPageResults": [
+      {
+        "tour": {
+          "id": "past0001",
+          "slug": "past-event-a",
+          "dates": [1711324800000, 1711929600000]
+        },
+        "round": {
+          "id": "pastrnd1",
+          "slug": "final",
+          "rated": true,
+          "finished": true,
+          "finishedAt": 1711929600000
+        }
+      }
+    ],
+    "previousPage": null,
+    "nextPage": 2
+  }
+}

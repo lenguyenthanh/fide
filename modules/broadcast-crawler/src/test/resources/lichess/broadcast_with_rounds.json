@@ -1,0 +1,30 @@
+{
+  "tour": {
+    "id": "abc12345",
+    "slug": "sinquefield-cup-2026",
+    "info": {
+      "tc": "90+30",
+      "fideTC": "standard"
+    },
+    "dates": [1713907200000, 1714512000000]
+  },
+  "rounds": [
+    {
+      "id": "rnd11111",
+      "slug": "round-1",
+      "rated": true,
+      "ongoing": false,
+      "finished": true,
+      "finishedAt": 1713993600000,
+      "startsAt": 1713907200000
+    },
+    {
+      "id": "rnd22222",
+      "slug": "round-2",
+      "rated": true,
+      "ongoing": true,
+      "finished": false,
+      "startsAt": 1713993600000
+    }
+  ]
+}
