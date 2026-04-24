@@ -5,10 +5,15 @@ import cats.syntax.all.*
 import ciris.*
 import ciris.http4s.*
 import com.comcast.ip4s.*
+import fide.broadcast.LichessConfig
 import fide.types.PositiveInt
 import io.github.iltotore.iron.*
 import io.github.iltotore.iron.ciris.given
 import io.github.iltotore.iron.constraint.all.*
+import org.http4s.Uri
+import org.http4s.implicits.*
+
+import scala.concurrent.duration.*
 
 object AppConfig:
 
@@ -19,7 +24,9 @@ object AppConfig:
     CrawlerConfig.config,
     CrawlerJobConfig.config,
     PostgresConfig.config,
-    HistoryConfig.config
+    HistoryConfig.config,
+    LichessConfigLoader.config,
+    LiveRatingJobConfig.config
   ).parMapN(AppConfig.apply)
 
 case class AppConfig(
@@ -27,8 +34,56 @@ case class AppConfig(
     crawler: fide.crawler.CrawlerConfig,
     crawlerJob: CrawlerJobConfig,
     postgres: db.PostgresConfig,
-    history: HistoryConfig
+    history: HistoryConfig,
+    lichess: LichessConfig,
+    liveRatingJob: LiveRatingJobConfig
 )
+
+/** Loader for the live-rating job (design §12). Poll interval defaults to 5 minutes. */
+case class LiveRatingJobConfig(
+    delayInSeconds: Int :| Positive0,
+    pollIntervalInMinutes: PositiveInt
+)
+
+object LiveRatingJobConfig:
+  private def delay =
+    env("LIVE_RATING_JOB_DELAY").or(prop("live.rating.job.delay")).as[Int :| Positive0].default(10)
+  private def interval =
+    env("LIVE_RATING_JOB_POLL_INTERVAL")
+      .or(prop("live.rating.job.poll.interval"))
+      .as[PositiveInt]
+      .default(5)
+  def config = (delay, interval).parMapN(LiveRatingJobConfig.apply)
+
+/** Ciris loader for `LichessConfig` (design §12 / decision #49).
+  *
+  * Env vars (5):
+  *   - `LICHESS_API_TOKEN`  — required, no default. Personal access token.
+  *   - `LICHESS_BASE_URI`   — default `https://lichess.org`.
+  *   - `LICHESS_REQUEST_TIMEOUT` — seconds, default 30.
+  *
+  * Other fields (user agent, max concurrent rounds, retry attempts/delay,
+  * retry logging) are compile-time defaults — decision #44.
+  */
+object LichessConfigLoader:
+  private def apiToken =
+    env("LICHESS_API_TOKEN").or(prop("lichess.api.token")).as[String].secret
+  private def baseUri =
+    env("LICHESS_BASE_URI").or(prop("lichess.base.uri")).as[Uri].default(uri"https://lichess.org")
+  private def requestTimeoutSeconds =
+    env("LICHESS_REQUEST_TIMEOUT").or(prop("lichess.request.timeout")).as[PositiveInt].default(30)
+
+  def config =
+    (apiToken, baseUri, requestTimeoutSeconds).parMapN: (token, uri, timeoutSec) =>
+      LichessConfig(
+        baseUri = uri,
+        apiToken = token.value,
+        requestTimeout = timeoutSec.seconds,
+        maxConcurrentRounds = 2,
+        retryMaxAttempts = 3,
+        retryBaseDelay = 1.second,
+        retryLoggingEnabled = true
+      )
 
 case class HttpServerConfig(host: Host, port: Port, shutdownTimeout: PositiveInt)
 

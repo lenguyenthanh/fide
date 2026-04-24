@@ -40,7 +40,17 @@ object DbIntegrationSuite extends IOSuite with Checkers:
     crawler = crawler.CrawlerConfig(100, 40),
     crawlerJob = CrawlerJobConfig(0, 1000),
     postgres = postgres,
-    history = HistoryConfig(100)
+    history = HistoryConfig(100),
+    lichess = broadcast.LichessConfig(
+      baseUri = org.http4s.Uri.unsafeFromString("https://lichess.org"),
+      apiToken = "test",
+      requestTimeout = scala.concurrent.duration.DurationInt(30).seconds,
+      maxConcurrentRounds = 2,
+      retryMaxAttempts = 3,
+      retryBaseDelay = scala.concurrent.duration.DurationInt(1).second,
+      retryLoggingEnabled = false
+    ),
+    liveRatingJob = LiveRatingJobConfig(0, 5)
   )
 
   given Show[Sorting]      = Show.fromToString

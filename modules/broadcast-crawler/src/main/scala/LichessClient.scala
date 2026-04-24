@@ -178,8 +178,17 @@ object LichessClient:
   /** Exception adapter used so the hand-written retry helper (which is `Throwable`-based)
     * can see typed Lichess errors and decide whether to retry.
     *
-    * `Raise[F, LichessError]` is converted to this wrapper via `.raise` when `F = IO`
-    * (cats-mtl's `Raise[IO, E]` instance routes through `IO.raiseError(LichessErrorException(e))`).
+    * `Raise[IO, LichessError]` is wired via `ioRaise` below: `.raise` routes through
+    * `IO.raiseError(LichessErrorException(e))`.
     */
   final case class LichessErrorException(err: LichessError)
       extends RuntimeException(s"Lichess error: $err", null, true, false)
+
+  /** `Raise[IO, LichessError]` instance — use by `import LichessClient.given` or
+    * `given Raise[IO, LichessError] = LichessClient.ioRaise`.
+    */
+  given ioRaise: cats.mtl.Raise[cats.effect.IO, LichessError] =
+    new cats.mtl.Raise[cats.effect.IO, LichessError]:
+      def functor                                        = cats.effect.IO.asyncForIO
+      def raise[E2 <: LichessError, A](e: E2): cats.effect.IO[A] =
+        cats.effect.IO.raiseError(LichessErrorException(e))
