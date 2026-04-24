@@ -11,6 +11,7 @@ import fs2.Stream
 import org.http4s.*
 import org.http4s.client.Client
 import org.http4s.headers.Authorization
+import org.typelevel.log4cats.Logger
 
 import scala.concurrent.duration.*
 
@@ -21,35 +22,63 @@ import scala.concurrent.duration.*
   * `LichessError.RateLimited` immediately; 4xx non-429 are raised without retry.
   */
 trait LichessClient[F[_]]:
-  /** NDJSON stream of official broadcasts from `/api/broadcast`, each with its full rounds list.
-    * Used by the backend's 5-min tick (design #12).
+  /** Stream official broadcasts.
+    *
+    * `GET /api/broadcast` — operation `broadcastsOfficial`.
+    * Returns an NDJSON stream where each line is a `BroadcastWithRounds` (tour + all of
+    * its rounds inline). Used by the backend's 5-min tick for discovery (design #12).
+    *
+    * Spec: https://lichess.org/api#tag/broadcasts/GET/api/broadcast
     */
   def listBroadcasts: Stream[F, BroadcastWithRounds]
 
-  /** Fetch one round's full response (`/api/broadcast/{tourSlug}/{roundSlug}/{roundId}`).
-    * `tourSlug` and `roundSlug` may be `"-"` per the Lichess spec.
+  /** Fetch one broadcast round with its games.
+    *
+    * `GET /api/broadcast/{broadcastTournamentSlug}/{broadcastRoundSlug}/{broadcastRoundId}`
+    * — operation `broadcastRoundGet`. Slugs may be `"-"` per the Lichess spec when the
+    * caller only has the round ID. Returns the round metadata, its parent tour (including
+    * `tour.info.fideTC` — our time-control signal), and the full games array with
+    * per-side `fideId`, `rating`, `title`, plus `status` for the result.
+    *
+    * Spec:
+    * https://lichess.org/api#tag/broadcasts/GET/api/broadcast/~1%7BbroadcastTournamentSlug%7D~1%7BbroadcastRoundSlug%7D~1%7BbroadcastRoundId%7D
     */
   def fetchRound(tourSlug: String, roundSlug: String, roundId: String): F[BroadcastRoundResponse]
 
-  /** Fetch tour detail (`/api/broadcast/{tourId}`) — returns all rounds inline.
-    * Used by the CLI's Phase 2 (design CLI §4).
+  /** Fetch tour detail with all rounds inlined.
+    *
+    * `GET /api/broadcast/{broadcastTournamentId}` — operation `broadcastTourGet`.
+    * Returns `BroadcastWithRounds` (identical shape to one line of `listBroadcasts`).
+    * Used by the CLI's Phase 2 after Phase 1 discovery collected tour IDs from
+    * `fetchTop` (design CLI §4).
+    *
+    * Spec: https://lichess.org/api#tag/broadcasts/GET/api/broadcast/~1%7BbroadcastTournamentId%7D
     */
   def fetchTour(tourId: String): F[BroadcastWithRounds]
 
-  /** Paginated past/active broadcasts (`/api/broadcast/top?page=$page`).
-    * Used by the CLI's Phase 1 discovery (design #51).
+  /** Paginated top broadcasts (active + past).
+    *
+    * `GET /api/broadcast/top?page=$page` — operation `broadcastsTop`.
+    * Returns `{ active[], upcoming[](deprecated), past{currentPage, maxPerPage,
+    * currentPageResults[], previousPage, nextPage} }`. Each item is a
+    * `BroadcastWithLastRound` — only the most recent round per tour (Phase 2 re-fetches
+    * the tour via `fetchTour` to get all rounds). `page` is 1-20; Lichess caps pagination
+    * at page 20 and exposes active broadcasts only on page 1. Used by the CLI's Phase 1
+    * for past-broadcast enumeration (design #51).
+    *
+    * Spec: https://lichess.org/api#tag/broadcasts/GET/api/broadcast/top
     */
   def fetchTop(page: Int): F[BroadcastTopResponse]
 
 object LichessClient:
 
-  def apply[F[_]: {Async, Random}](
+  def apply[F[_]: {Async, Random, Logger}](
       client: Client[F],
       config: LichessConfig
   )(using Raise[F, LichessError]): LichessClient[F] =
     new LichessClientImpl[F](client, config)
 
-  private final class LichessClientImpl[F[_]: {Async, Random}](
+  private final class LichessClientImpl[F[_]: {Async, Random, Logger}](
       client: Client[F],
       config: LichessConfig
   )(using R: Raise[F, LichessError])
@@ -135,7 +164,11 @@ object LichessClient:
       * Does NOT retry: 429 (caller rescues at tick/CLI boundary), 4xx non-429 (deterministic).
       */
     private def withRetry[A](fa: F[A]): F[A] =
-      RetryHelper.retryOn[F, A](config.retryMaxAttempts, config.retryBaseDelay)(isRetryable)(fa)
+      RetryHelper.retryOn[F, A](
+        maxRetries = config.retryMaxAttempts,
+        baseDelay = config.retryBaseDelay,
+        logRetries = config.retryLoggingEnabled
+      )(isRetryable)(fa)
 
     private def isRetryable(err: Throwable): Boolean = err match
       case LichessErrorException(LichessError.Http(s, _)) if s >= 500 => true

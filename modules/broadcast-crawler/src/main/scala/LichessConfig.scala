@@ -18,5 +18,6 @@ case class LichessConfig(
     requestTimeout: FiniteDuration,
     maxConcurrentRounds: Int,
     retryMaxAttempts: Int,
-    retryBaseDelay: FiniteDuration
+    retryBaseDelay: FiniteDuration,
+    retryLoggingEnabled: Boolean
 )
