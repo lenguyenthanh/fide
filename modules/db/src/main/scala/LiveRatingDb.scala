@@ -65,6 +65,23 @@ trait LiveRatingDb:
       rounds: List[(String, Option[Instant], Boolean)]
   ): IO[List[String]]
 
+  /** Leaderboard query: return up to `limit` players with highest projected rating
+    * for the requested time control, joined with player info + federation name.
+    * Ordered DESC NULLS LAST.
+    */
+  def getLeaderboard(
+      tc: TimeControl,
+      limit: Int,
+      offset: Int,
+      filter: PlayerFilter
+  ): IO[List[LeaderboardEntry]]
+
+  /** Total count matching leaderboard filter (for pagination). */
+  def countLeaderboard(tc: TimeControl, filter: PlayerFilter): IO[Long]
+
+  /** Current live-rating ingest lock holder, if any. */
+  def getLockState: IO[Option[LockState]]
+
 object LiveRatingDb:
 
   def apply(postgres: Resource[IO, Session[IO]]): LiveRatingDb = new:
@@ -120,14 +137,27 @@ object LiveRatingDb:
             .prepare(Sql.existingRounds(rounds.size))
             .flatMap(_.stream(rounds.map(_._1), 64).compile.toList)
             .map: existing =>
-              // Unprocessed = (not in existing) OR (tuple differs from observed).
               val existingMap = existing.map(r => r.roundId -> (r.finishedAtObserved, r.ratedObserved)).toMap
               rounds.collect:
                 case (rid, fa, rated) if existingMap.get(rid) match
-                    case None                     => true
+                    case None                      => true
                     case Some((storedFa, storedR)) =>
                       storedFa != fa || storedR != rated
                   => rid
+
+    def getLeaderboard(
+        tc: TimeControl,
+        limit: Int,
+        offset: Int,
+        filter: PlayerFilter
+    ): IO[List[LeaderboardEntry]] =
+      postgres.use(_.execute(Sql.getLeaderboard(tc))((limit, offset)))
+
+    def countLeaderboard(tc: TimeControl, filter: PlayerFilter): IO[Long] =
+      postgres.use(_.unique(Sql.countLeaderboard(tc))(()))
+
+    def getLockState: IO[Option[LockState]] =
+      postgres.use(_.option(Sql.getLockState))
 
   // ============================================================
   // SQL
@@ -339,6 +369,62 @@ object LiveRatingDb:
         FROM ingested_rounds
         WHERE round_id IN ($ids)
       """.query(ingestedRoundRow)
+
+    // ------------------------------------------------------------
+    // Leaderboard — sort by projected_{tc} DESC NULLS LAST, join to
+    // players + federations. Filter by active=true only (keeping scope
+    // narrow for v1 per task 14).
+    // ------------------------------------------------------------
+
+    private val leaderboardRowCodec: Decoder[LeaderboardEntry] =
+      (playerInfo *: int4 *: int4 *: ratingCodec).map:
+        case pi *: diff *: gamesPlayed *: projected *: EmptyTuple =>
+          LeaderboardEntry(pi, LiveRatingEntry(diff, gamesPlayed, projected))
+
+    def getLeaderboard(tc: TimeControl): Query[(Int, Int), LeaderboardEntry] =
+      val (diffCol, gamesCol, projCol) = tc match
+        case TimeControl.Standard => ("standard_diff", "standard_games_played", "projected_standard")
+        case TimeControl.Rapid    => ("rapid_diff",    "rapid_games_played",    "projected_rapid")
+        case TimeControl.Blitz    => ("blitz_diff",    "blitz_games_played",    "projected_blitz")
+      sql"""
+        SELECT
+          p.id, p.fide_id, p.name, p.title, p.women_title, p.other_titles,
+          p.standard, p.standard_kfactor, p.rapid, p.rapid_kfactor, p.blitz, p.blitz_kfactor,
+          p.sex, p.birth_year, p.active, p.updated_at, p.created_at,
+          f.id, f.name,
+          lr.#$diffCol, lr.#$gamesCol, lr.#$projCol
+        FROM live_ratings lr
+        JOIN players p       ON p.id = lr.player_id
+        LEFT JOIN federations f ON p.federation_id = f.id
+        WHERE lr.#$projCol IS NOT NULL AND p.active = true
+        ORDER BY lr.#$projCol DESC NULLS LAST
+        LIMIT $int4 OFFSET $int4
+      """.query(leaderboardRowCodec)
+
+    def countLeaderboard(tc: TimeControl): Query[Unit, Long] =
+      val projCol = tc match
+        case TimeControl.Standard => "projected_standard"
+        case TimeControl.Rapid    => "projected_rapid"
+        case TimeControl.Blitz    => "projected_blitz"
+      sql"""
+        SELECT count(*)
+        FROM live_ratings lr
+        JOIN players p ON p.id = lr.player_id
+        WHERE lr.#$projCol IS NOT NULL AND p.active = true
+      """.query(int8).contramap[Unit](_ => Void)
+
+    // ------------------------------------------------------------
+    // Lock state (for /api/live-ratings/status).
+    // ------------------------------------------------------------
+
+    val getLockState: Query[Void, LockState] =
+      sql"""
+        SELECT holder, acquired_at, expires_at
+        FROM live_rating_ingest_lock
+        WHERE lock_name = 'live_rating_ingest' AND expires_at > NOW()
+      """.query((text *: timestamptz *: timestamptz).map:
+        case h *: a *: e *: EmptyTuple =>
+          LockState(h, a.toInstant, e.toInstant))
 
   /** Internal Throwable wrapping `LiveRatingError.LockLost`. Kept private — callers should
     * convert to typed error at the boundary.

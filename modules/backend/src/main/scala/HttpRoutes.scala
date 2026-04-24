@@ -10,10 +10,12 @@ import smithy4s.http4s.SimpleRestJsonBuilder
 
 def Routes(resources: AppResources)(using Logger[IO]): Resource[IO, HttpApp[IO]] =
 
-  val playerServiceImpl: PlayerService[IO]         = PlayerServiceImpl(resources.db, resources.historyDb)
-  val federationServiceImpl: FederationService[IO] = FederationServiceImpl(resources.db)
-  val healthServiceImpl: HealthService[IO]         = HealthServiceImpl(resources.health)
-  val historyServiceImpl: HistoryService[IO]       = HistoryServiceImpl(resources.historyDb)
+  val playerServiceImpl: PlayerService[IO]             = PlayerServiceImpl(resources.db, resources.historyDb)
+  val federationServiceImpl: FederationService[IO]     = FederationServiceImpl(resources.db)
+  val healthServiceImpl: HealthService[IO]             = HealthServiceImpl(resources.health)
+  val historyServiceImpl: HistoryService[IO]           = HistoryServiceImpl(resources.historyDb)
+  val liveRatingServiceImpl: LiveRatingService[IO]     =
+    LiveRatingServiceImpl(resources.liveRatingDb, resources.db)
 
   val players: Resource[IO, HttpRoutes[IO]] =
     SimpleRestJsonBuilder.routes(playerServiceImpl).resource
@@ -27,8 +29,13 @@ def Routes(resources: AppResources)(using Logger[IO]): Resource[IO, HttpApp[IO]]
   val history: Resource[IO, HttpRoutes[IO]] =
     SimpleRestJsonBuilder.routes(historyServiceImpl).resource
 
-  val docs = smithy4s.http4s.swagger.docs[IO](PlayerService, FederationService, HealthService, HistoryService)
-  val serviceRoutes = NonEmptyList.of(players, federations, health, history).sequence.map(_.reduceK)
+  val liveRatings: Resource[IO, HttpRoutes[IO]] =
+    SimpleRestJsonBuilder.routes(liveRatingServiceImpl).resource
+
+  val docs = smithy4s.http4s.swagger
+    .docs[IO](PlayerService, FederationService, HealthService, HistoryService, LiveRatingService)
+  val serviceRoutes =
+    NonEmptyList.of(players, federations, health, history, liveRatings).sequence.map(_.reduceK)
   serviceRoutes
     .map(_ <+> docs)
     .map(ApplyMiddleware)

@@ -139,6 +139,16 @@ object Models:
       liveEntry: LiveRatingEntry
   )
 
+  /** Status of the live-rating ingest subsystem. Exposed via GET /api/live-ratings/status
+    * (design decision #35). Used by consumers (2700chess and similar) to distinguish
+    * "CLI backfill in progress" from "system stuck".
+    */
+  case class LockState(
+      holder: String,
+      acquiredAt: Instant,
+      expiresAt: Instant
+  )
+
   /** Per-game ledger row. One-to-one with `live_rating_games` rows.
     *
     * Either `whitePlayerId` or `blackPlayerId` is non-null (CHECK constraint in schema).
