@@ -23,6 +23,7 @@ val commonSettings = Seq(
     ScalacOptions.release("25"),
     ScalacOptions.other("-Wsafe-init")
   ),
+  resolvers += "jitpack".at("https://jitpack.io"),
   libraryDependencies ++= Seq(
     catsCore,
     catsEffect,
@@ -86,6 +87,19 @@ lazy val crawler = (project in file("modules/crawler"))
   )
   .dependsOn(domain, db)
 
+lazy val `broadcast-crawler` = (project in file("modules/broadcast-crawler"))
+  .settings(
+    commonSettings,
+    name := "broadcast-crawler",
+    libraryDependencies ++= Seq(
+      http4sClient,
+      http4sEmberClient % Test,
+      chess.rating,
+      catsMtl
+    )
+  )
+  .dependsOn(domain, db)
+
 lazy val backend = (project in file("modules/backend"))
   .settings(
     commonSettings,
@@ -108,7 +122,7 @@ lazy val backend = (project in file("modules/backend"))
     Docker / dockerRepository    := Some("ghcr.io")
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
-  .dependsOn(api, domain, full(db), crawler)
+  .dependsOn(api, domain, full(db), crawler, `broadcast-crawler`)
 
 lazy val cli = (project in file("modules/cli"))
   .settings(
@@ -134,7 +148,7 @@ lazy val cli = (project in file("modules/cli"))
     Docker / dockerRepository    := Some("ghcr.io")
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
-  .dependsOn(domain, full(db), api)
+  .dependsOn(domain, full(db), api, `broadcast-crawler`)
 
 lazy val gatling = (project in file("modules/gatling"))
   .settings(name := "gatling")
@@ -151,7 +165,7 @@ lazy val gatling = (project in file("modules/gatling"))
 lazy val root = project
   .in(file("."))
   .settings(publish := {}, publish / skip := true)
-  .aggregate(types, api, domain, db, crawler, backend, cli, gatling)
+  .aggregate(types, api, domain, db, crawler, `broadcast-crawler`, backend, cli, gatling)
 
 def full(p: Project) = p % "test->test;compile->compile"
 

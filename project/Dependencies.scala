@@ -20,6 +20,7 @@ object Dependencies {
 
   val catsCore   = "org.typelevel" %% "cats-core"   % "2.13.0"
   val catsEffect = "org.typelevel" %% "cats-effect" % V.catsEffect
+  val catsMtl    = "org.typelevel" %% "cats-mtl"    % "1.6.0"
 
   val fs2           = "co.fs2"    %% "fs2-core"             % V.fs2
   val fs2IO         = "co.fs2"    %% "fs2-io"               % V.fs2
@@ -51,6 +52,13 @@ object Dependencies {
   val logback  = "ch.qos.logback" % "logback-classic" % "1.5.32"
 
   val ducktape = "io.github.arainko" %% "ducktape" % "0.2.12"
+
+  object chess {
+    val version = "17.15.5"
+    val org     = "com.github.lichess-org.scalachess"
+    val core    = org %% "scalachess"        % version
+    val rating  = org %% "scalachess-rating" % version
+  }
 
   val gatlingTestFramework = "io.gatling"            % "gatling-test-framework"    % V.gatling % Test
   val gatlingHighCharts    = "io.gatling.highcharts" % "gatling-charts-highcharts" % V.gatling % Test
