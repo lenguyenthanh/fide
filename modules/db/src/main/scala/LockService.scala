@@ -75,9 +75,13 @@ object LockService:
 
     /** Atomic UPSERT: inserts a fresh row, or overwrites an *expired* holder's row.
       * Returns true iff this caller now holds the lock.
+      *
+      * The RETURNING clause emits a row only when the INSERT succeeds OR the ON CONFLICT
+      * DO UPDATE condition matches (lock was expired). If someone else holds a live lock,
+      * the WHERE predicate on DO UPDATE is false → zero rows returned → we didn't win.
       */
     private def tryAcquireOnce(holder: String): IO[Boolean] =
-      postgres.use(_.unique(Sql.tryAcquire)(holder)).map(_ == holder)
+      postgres.use(_.option(Sql.tryAcquire)(holder)).map(_.contains(holder))
 
     private def currentHolder: IO[Option[String]] =
       postgres.use(_.option(Sql.currentHolder))
