@@ -95,7 +95,9 @@ lazy val `broadcast-crawler` = (project in file("modules/broadcast-crawler"))
       http4sClient,
       http4sEmberClient % Test,
       chess.rating,
-      catsMtl
+      catsMtl,
+      jsoniterCore,
+      jsoniterMacro
     )
   )
   .dependsOn(domain, db)

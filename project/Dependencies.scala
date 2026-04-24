@@ -37,6 +37,9 @@ object Dependencies {
   val iron      = "io.github.iltotore" %% "iron"       % V.iron
   val ironCiris = "io.github.iltotore" %% "iron-ciris" % V.iron
 
+  val jsoniterCore  = "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-core"   % "2.37.10"
+  val jsoniterMacro = "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % "2.37.10" % "compile-internal"
+
   val http4sServer      = http4s("ember-server")
   val http4sClient      = http4s("client")
   val http4sEmberClient = http4s("ember-client")
