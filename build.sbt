@@ -1,18 +1,30 @@
 import Dependencies.*
 import org.typelevel.scalacoptions.ScalacOptions
 
-inThisBuild(
-  Seq(
-    scalaVersion                           := "3.8.3",
-    organization                           := "se.thanh",
-    organizationName                       := "Thanh Le",
-    licenses += ("agpl-v3" -> url("https://opensource.org/license/agpl-v3")),
-    semanticdbEnabled                      := true, // for scalafix
-    Compile / packageDoc / publishArtifact := false,
-    dockerBaseImage                        := "eclipse-temurin:25-jdk-noble",
-    dockerUpdateLatest                     := true,
-    dockerBuildxPlatforms                  := Seq("linux/amd64", "linux/arm64")
-  )
+scalaVersion                           := "3.8.3"
+organization                           := "se.thanh"
+organizationName                       := "Thanh Le"
+licenses += ("agpl-v3" -> url("https://opensource.org/license/agpl-v3"))
+semanticdbEnabled                      := true // for scalafix
+Compile / packageDoc / publishArtifact := false
+
+val dockerSettings = Seq(
+  dockerBaseImage       := "eclipse-temurin:25-jdk-noble",
+  dockerUpdateLatest    := true,
+  dockerBuildxPlatforms := Seq("linux/amd64", "linux/arm64")
+)
+
+Global / excludeLintKeys ++= Set(
+  Debian / executableScriptName,
+  Debian / sourceDirectory,
+  Rpm / daemonStdoutLogFile,
+  Rpm / executableScriptName,
+  Rpm / name,
+  Rpm / sourceDirectory,
+  Universal / executableScriptName,
+  UniversalDocs / name,
+  UniversalSrc / name,
+  rpmScriptsDirectory
 )
 
 val commonSettings = Seq(
@@ -21,7 +33,8 @@ val commonSettings = Seq(
     ScalacOptions.other("-indent"),
     ScalacOptions.explain,
     ScalacOptions.release("25"),
-    ScalacOptions.other("-Wsafe-init")
+    ScalacOptions.other("-Wsafe-init"),
+    ScalacOptions.other("-Wconf:src=target/out/scala[^/]*/src_managed/.*:silent")
   ),
   libraryDependencies ++= Seq(
     catsCore,
@@ -49,8 +62,7 @@ lazy val api = (project in file("modules/api"))
     smithy4sWildcardArgument := "?",
     libraryDependencies ++= Seq(
       smithy4sCore
-    ),
-    Compile / scalacOptions += "-Wconf:src=target/scala[^/]*/src_managed/.*:silent"
+    )
   )
   .dependsOn(types)
 
@@ -70,7 +82,13 @@ lazy val db = (project in file("modules/db"))
       dumbo,
       ducktape,
       testContainers
-    )
+    ),
+    Compile / dependencyClasspath := {
+      val prev      = (Compile / dependencyClasspath).value
+      val resDir    = (Compile / resourceDirectory).value
+      val converter = fileConverter.value
+      prev :+ Attributed.blank(converter.toVirtualFile(resDir.toPath))
+    }
   )
   .dependsOn(domain)
 
@@ -105,7 +123,8 @@ lazy val backend = (project in file("modules/backend"))
     Compile / run / connectInput := true,
     Docker / packageName         := "lenguyenthanh/fide",
     Docker / maintainer          := "Thanh Le",
-    Docker / dockerRepository    := Some("ghcr.io")
+    Docker / dockerRepository    := Some("ghcr.io"),
+    dockerSettings
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .dependsOn(api, domain, full(db), crawler)
@@ -131,27 +150,25 @@ lazy val cli = (project in file("modules/cli"))
     Compile / run / connectInput := true,
     Docker / packageName         := "lenguyenthanh/fide-cli",
     Docker / maintainer          := "Thanh Le",
-    Docker / dockerRepository    := Some("ghcr.io")
+    Docker / dockerRepository    := Some("ghcr.io"),
+    dockerSettings
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .dependsOn(domain, full(db), api)
 
-lazy val gatling = (project in file("modules/gatling"))
-  .settings(name := "gatling")
-  .enablePlugins(GatlingPlugin)
-  .settings(
-    tpolecatExcludeOptions ++= Set(ScalacOptions.warnNonUnitStatement),
-    libraryDependencies ++= Seq(
-      gatlingTestFramework,
-      gatlingHighCharts,
-      logback
-    )
-  )
+// lazy val gatling = (project in file("modules/gatling"))
+// .settings(name := "gatling")
+// .enablePlugins(GatlingPlugin)
+// .settings(
+// tpolecatExcludeOptions ++= Set(ScalacOptions.warnNonUnitStatement),
+// libraryDependencies ++= Seq(
+// gatlingTestFramework,
+// gatlingHighCharts,
+// logback
+// )
+// )
 
-lazy val root = project
-  .in(file("."))
-  .settings(publish := {}, publish / skip := true)
-  .aggregate(types, api, domain, db, crawler, backend, cli, gatling)
+lazy val root = rootProject.autoAggregate
 
 def full(p: Project) = p % "test->test;compile->compile"
 
