@@ -5,13 +5,13 @@ object Dependencies {
 
   object V {
     val catsEffect = "3.7.0"
-    val ciris      = "3.14.1"
+    val ciris      = "3.15.0"
     val decline    = "2.6.2"
     val fs2        = "3.13.0"
-    val fs2Data    = "1.13.0"
+    val fs2Data    = "1.14.0"
     val http4s     = "0.23.34"
     val iron       = "3.3.0"
-    val gatling    = "3.15.0"
+    val gatling    = "3.15.1"
   }
 
   def http4s(artifact: String) = "org.http4s" %% s"http4s-$artifact" % V.http4s
@@ -45,19 +45,19 @@ object Dependencies {
   val smithy4sHttp4sSwagger = smithy4s("http4s-swagger")
 
   val skunk = "org.tpolecat" %% "skunk-core" % "1.1.0-RC1"
-  val dumbo = "dev.rolang"   %% "dumbo"      % "0.9.0"
+  val dumbo = "dev.rolang"   %% "dumbo"      % "0.10.1"
 
   val log4Cats = "org.typelevel" %% "log4cats-slf4j"  % "2.8.0"
-  val logback  = "ch.qos.logback" % "logback-classic" % "1.5.32"
+  val logback  = "ch.qos.logback" % "logback-classic" % "1.5.34"
 
-  val ducktape = "io.github.arainko" %% "ducktape" % "0.2.12"
+  val ducktape = "io.github.arainko" %% "ducktape" % "0.2.13"
 
   val gatlingTestFramework = "io.gatling"            % "gatling-test-framework"    % V.gatling % Test
   val gatlingHighCharts    = "io.gatling.highcharts" % "gatling-charts-highcharts" % V.gatling % Test
 
   val testContainers    = "com.dimafeng"         %% "testcontainers-scala-postgresql" % "0.44.1"     % Test
-  val weaver            = "org.typelevel"        %% "weaver-cats"                     % "0.12.0"     % Test
-  val weaverScalaCheck  = "org.typelevel"        %% "weaver-scalacheck"               % "0.12.0"     % Test
+  val weaver            = "org.typelevel"        %% "weaver-cats"                     % "0.13.0"     % Test
+  val weaverScalaCheck  = "org.typelevel"        %% "weaver-scalacheck"               % "0.13.0"     % Test
   val catsEffectTestKit = "org.typelevel"        %% "cats-effect-testkit"             % V.catsEffect % Test
   val scalacheck        = "org.scalacheck"       %% "scalacheck"                      % "1.17.0"     % Test
   val scalacheckFaker   = "io.github.etspaceman" %% "scalacheck-faker"                % "9.0.2"      % Test

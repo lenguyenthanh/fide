@@ -28,8 +28,7 @@ object BackendTester:
         csvFiles <- discoverCsvFiles
         _        <- info"Found ${csvFiles.size} CSV files to test"
         report   <- Ref.of[IO, TestReport](TestReport.empty)
-        latestMonth = csvFiles.headOption.map(_._1)
-        _ <- csvFiles.traverse_ { case (ym, path) =>
+        _        <- csvFiles.traverse_ { case (ym, path) =>
           testMonth(ym, path, report)
         }
         result <- report.get

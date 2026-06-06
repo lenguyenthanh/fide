@@ -22,7 +22,7 @@ class FideApp(res: AppResources, config: AppConfig)(using Logger[IO]):
   def run(): Resource[IO, Unit] =
     for
       httpApp <- Routes(res)
-      server  <- MkHttpServer.apply.newEmber(config.server, httpApp)
+      _       <- MkHttpServer.apply.newEmber(config.server, httpApp)
       _       <- CrawlerJob(res.crawler, res.ingestor, config.crawlerJob).run()
       _       <- Logger[IO].info(s"Starting server on ${config.server.host}:${config.server.port}").toResource
     yield ()
