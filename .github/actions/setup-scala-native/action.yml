@@ -11,9 +11,11 @@ runs:
     - name: Install s2n + utf8proc (Linux)
       if: runner.os == 'Linux'
       shell: bash
-      run: /home/linuxbrew/.linuxbrew/bin/brew install s2n utf8proc
+      # The ScalaNativeBrewedConfigPlugin reads these brew installs and injects the
+      # right clang -L/-I flags (incl. keg-only openssl@3), so no LIBRARY_PATH hacks.
+      run: /home/linuxbrew/.linuxbrew/bin/brew install s2n utf8proc openssl@3
 
     - name: Install s2n + utf8proc (macOS)
       if: runner.os == 'macOS'
       shell: bash
-      run: brew install s2n utf8proc
+      run: brew install s2n utf8proc openssl@3

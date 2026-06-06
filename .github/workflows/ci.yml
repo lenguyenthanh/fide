@@ -6,43 +6,18 @@ on:
   push:
     branches: ['main']
 
-# The root project aggregates every platform variant (JVM, Scala.js, Scala Native),
-# so `compile`/`test`/`lintCheck` need the Scala.js (Node) and Scala Native
-# (clang + s2n/openssl/utf8proc) toolchains. Native link is memory-hungry.
+# Native code-gen/link is memory-hungry.
 env:
   SBT_OPTS: -Xmx6g -Xss8m
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-
-      - name: Checkout current branch
-        uses: actions/checkout@v4
-
-      - name: Setup JVM
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 25
-          cache: sbt
-
-      - name: Install sbt
-        uses: sbt/setup-sbt@v1
-
-      - name: Setup Node (Scala.js)
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Scala Native dependencies
-        uses: ./.github/actions/setup-scala-native
-
-      - name: Build project
-        run: sbt compile
-
   test:
-    runs-on: ubuntu-latest
+    name: Test (${{ matrix.platform }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [jvm, js, native]
     steps:
 
       - name: Checkout current branch
@@ -59,18 +34,32 @@ jobs:
         uses: sbt/setup-sbt@v1
 
       - name: Setup Node (Scala.js)
+        if: matrix.platform == 'js'
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Install Scala Native dependencies
+        if: matrix.platform == 'native'
         uses: ./.github/actions/setup-scala-native
 
-      - name: Test project
-        run: sbt test
+      - name: Test (JVM)
+        if: matrix.platform == 'jvm'
+        run: sbt rootJVM/test
+
+      - name: Test (JS)
+        if: matrix.platform == 'js'
+        run: sbt rootJS/test
+
+      # DB tests use testcontainers (JVM-only), so the native leg compiles every
+      # native module, runs the pure cross-platform tests (domain), and links the
+      # full TLS binary to prove the s2n native stack works end to end.
+      - name: Test (Native)
+        if: matrix.platform == 'native'
+        run: sbt 'rootNative/compile' 'domainNative/test' 'cliNative/nativeLink'
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
 
       - name: Checkout current branch
@@ -91,6 +80,7 @@ jobs:
         with:
           node-version: 20
 
+      # lintCheck (scalafix + scalafmt) compiles every platform for semanticdb.
       - name: Install Scala Native dependencies
         uses: ./.github/actions/setup-scala-native
 

@@ -11,3 +11,6 @@ addSbtPlugin("org.scala-js"       % "sbt-scalajs"                   % "1.21.0")
 addSbtPlugin("org.scala-native"   % "sbt-scala-native"              % "0.5.12")
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject"      % "1.3.2")
 addSbtPlugin("org.portable-scala" % "sbt-scala-native-crossproject" % "1.3.2")
+// Points Scala Native's clang at brew-installed libs (s2n/utf8proc) — same approach
+// typelevel/skunk uses to link its native TLS stack.
+addSbtPlugin("com.armanbilge" % "sbt-scala-native-config-brew" % "0.4.0")

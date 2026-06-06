@@ -1,6 +1,8 @@
 import Dependencies.*
 import org.typelevel.scalacoptions.ScalacOptions
 import sbtcrossproject.CrossPlugin.autoImport.{ CrossType, crossProject }
+import com.armanbilge.sbt.ScalaNativeBrewedConfigPlugin
+import com.armanbilge.sbt.ScalaNativeBrewedConfigPlugin.autoImport.nativeBrewFormulas
 
 inThisBuild(
   Seq(
@@ -99,9 +101,12 @@ lazy val db = crossProject(JVMPlatform, NativePlatform)
     jvmReleaseSettings,
     libraryDependencies += testContainers
   )
+  .nativeConfigure(_.enablePlugins(ScalaNativeBrewedConfigPlugin))
   .nativeSettings(
     // dumbo lists migration resources at compile time; the binary must embed them.
-    nativeConfig ~= (_.withEmbedResources(true))
+    nativeConfig ~= (_.withEmbedResources(true)),
+    // Point clang at the brew-installed TLS libs (libcrypto via openssl@3, s2n).
+    nativeBrewFormulas ++= Set("s2n", "utf8proc", "openssl@3")
   )
   .dependsOn(domain)
 
@@ -172,6 +177,11 @@ lazy val cli = crossProject(JVMPlatform, NativePlatform)
     Docker / dockerRepository := Some("ghcr.io")
   )
   .jvmConfigure(_.enablePlugins(JavaAppPackaging, DockerPlugin))
+  .nativeConfigure(_.enablePlugins(ScalaNativeBrewedConfigPlugin))
+  .nativeSettings(
+    // Point clang at the brew-installed TLS libs (libcrypto via openssl@3, s2n).
+    nativeBrewFormulas ++= Set("s2n", "utf8proc", "openssl@3")
+  )
   .dependsOn(domain, db % "test->test;compile->compile", api)
 
 lazy val gatling = (project in file("modules/gatling"))
@@ -207,6 +217,23 @@ lazy val root = project
     backend,
     gatling
   )
+
+// Per-platform aggregators so CI can build/test one platform per job (mirrors how
+// typelevel/skunk drives its JVM/JS/Native matrix legs).
+lazy val rootJVM = project
+  .in(file("target/rootJVM"))
+  .settings(publish := {}, publish / skip := true)
+  .aggregate(types.jvm, api.jvm, domain.jvm, db.jvm, cli.jvm, crawler, backend, gatling)
+
+lazy val rootJS = project
+  .in(file("target/rootJS"))
+  .settings(publish := {}, publish / skip := true)
+  .aggregate(types.js, api.js, domain.js)
+
+lazy val rootNative = project
+  .in(file("target/rootNative"))
+  .settings(publish := {}, publish / skip := true)
+  .aggregate(types.native, api.native, domain.native, db.native, cli.native)
 
 addCommandAlias("prepare", "scalafixAll; scalafmtAll; scalafmtSbt")
 addCommandAlias("lintCheck", "; scalafixAll --check ; scalafmtCheckAll; scalafmtSbtCheck")
