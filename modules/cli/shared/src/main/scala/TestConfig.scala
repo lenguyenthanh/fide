@@ -4,12 +4,11 @@ import cats.data.Validated
 import cats.syntax.all.*
 import com.monovore.decline.*
 import fide.types.{ PositiveInt, YearMonth }
+import fs2.io.file.Path
 import io.github.iltotore.iron.*
 import io.github.iltotore.iron.constraint.all.*
 import org.http4s.Uri
 import org.http4s.implicits.*
-
-import java.nio.file.Path
 
 case class TestConfig(
     csvDir: Path,
@@ -31,7 +30,7 @@ object TestConfig:
       Uri.fromString(s).fold(e => Validated.invalidNel(e.message), Validated.valid)
 
   private val csvDirOpt =
-    Opts.argument[String]("csvDir").map(Path.of(_))
+    Opts.argument[String]("csvDir").map(Path(_))
 
   private val startOpt =
     Opts.option[YearMonth]("start", "Only test files from this month onwards", "s").orNone

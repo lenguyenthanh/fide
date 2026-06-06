@@ -31,7 +31,7 @@ object HistoryIngestorSuite extends SimpleIOSuite:
       startMonth: Option[YearMonth] = none,
       endMonth: Option[YearMonth] = none
   ): IngestConfig =
-    IngestConfig(dir, startMonth, endMonth, dummyPg, 100)
+    IngestConfig(fs2.io.file.Path.fromNioPath(dir), startMonth, endMonth, dummyPg, 100)
 
   private def resourceWithFeds: Resource[IO, (HistoryDb, Db)] =
     Containers.createResource.map(x => (HistoryDb(x.postgres, 100), Db(x.postgres)))
