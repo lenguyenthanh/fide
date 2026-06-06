@@ -6,6 +6,12 @@ on:
   push:
     branches: ['main']
 
+# The root project aggregates every platform variant (JVM, Scala.js, Scala Native),
+# so `compile`/`test`/`lintCheck` need the Scala.js (Node) and Scala Native
+# (clang + s2n/openssl/utf8proc) toolchains. Native link is memory-hungry.
+env:
+  SBT_OPTS: -Xmx6g -Xss8m
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,6 +29,14 @@ jobs:
 
       - name: Install sbt
         uses: sbt/setup-sbt@v1
+
+      - name: Setup Node (Scala.js)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Scala Native dependencies
+        uses: ./.github/actions/setup-scala-native
 
       - name: Build project
         run: sbt compile
@@ -44,6 +58,14 @@ jobs:
       - name: Install sbt
         uses: sbt/setup-sbt@v1
 
+      - name: Setup Node (Scala.js)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Scala Native dependencies
+        uses: ./.github/actions/setup-scala-native
+
       - name: Test project
         run: sbt test
 
@@ -63,6 +85,14 @@ jobs:
 
       - name: Install sbt
         uses: sbt/setup-sbt@v1
+
+      - name: Setup Node (Scala.js)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Scala Native dependencies
+        uses: ./.github/actions/setup-scala-native
 
       - name: Check Formatting
         run: sbt lintCheck

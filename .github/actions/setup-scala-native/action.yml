@@ -1,0 +1,19 @@
+name: Setup Scala Native toolchain
+description: >
+  Install the system libraries the Scala Native link step needs for the TLS stack
+  (s2n-tls + utf8proc). Mirrors how typelevel/skunk's CI does it: Homebrew, which
+  ships prebuilt bottles on both Linux (Linuxbrew, preinstalled on GitHub runners)
+  and macOS.
+
+runs:
+  using: composite
+  steps:
+    - name: Install s2n + utf8proc (Linux)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: /home/linuxbrew/.linuxbrew/bin/brew install s2n utf8proc
+
+    - name: Install s2n + utf8proc (macOS)
+      if: runner.os == 'macOS'
+      shell: bash
+      run: brew install s2n utf8proc

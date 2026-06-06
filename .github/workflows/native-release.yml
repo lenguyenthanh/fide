@@ -1,0 +1,65 @@
+name: Build and publish native CLI binaries
+
+on:
+  push:
+    tags:
+      - v*
+
+# Native link is memory-hungry; give the forked sbt JVM a large heap.
+env:
+  SBT_OPTS: -Xmx6g -Xss8m
+
+jobs:
+  native-cli:
+    name: ${{ matrix.suffix }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write # upload release assets
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            suffix: linux-x86_64
+          - os: ubuntu-24.04-arm
+            suffix: linux-aarch64
+          - os: macos-14
+            suffix: macos-aarch64
+          - os: macos-13
+            suffix: macos-x86_64
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JVM
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+          cache: sbt
+
+      - name: Install sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: Install Scala Native dependencies
+        uses: ./.github/actions/setup-scala-native
+
+      - name: Build native CLI binary
+        run: sbt cliNative/nativeLink
+
+      - name: Stage binary
+        run: |
+          bin=$(ls modules/cli/native/target/scala-*/cli)
+          cp "$bin" "fide-cli-${{ matrix.suffix }}"
+          chmod +x "fide-cli-${{ matrix.suffix }}"
+
+      - name: Smoke-test binary
+        run: ./fide-cli-${{ matrix.suffix }} --help
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: fide-cli-${{ matrix.suffix }}

@@ -50,4 +50,4 @@ jobs:
         run: sbt backend/Docker/publish
 
       - name: Build and push CLI Docker image
-        run: sbt cli/Docker/publish
+        run: sbt cliJVM/Docker/publish
