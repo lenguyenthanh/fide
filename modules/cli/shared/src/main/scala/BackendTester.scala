@@ -37,7 +37,7 @@ object BackendTester:
 
     private def discoverCsvFiles: IO[List[(YearMonth, Path)]] =
       Files[IO]
-        .walk(Path.fromNioPath(config.csvDir), fs2.io.file.WalkOptions.Default.withMaxDepth(2))
+        .walk(config.csvDir, fs2.io.file.WalkOptions.Default.withMaxDepth(2))
         .filter(_.extName == ".csv")
         .mapFilter: path =>
           val filename = path.fileName.toString.stripSuffix(".csv")

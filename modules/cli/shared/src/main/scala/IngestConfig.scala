@@ -9,11 +9,9 @@ import com.comcast.ip4s.*
 import com.monovore.decline.*
 import fide.db.PostgresConfig
 import fide.types.{ PositiveInt, YearMonth }
+import fs2.io.file.Path
 import io.github.iltotore.iron.*
-import io.github.iltotore.iron.ciris.given
 import io.github.iltotore.iron.constraint.all.*
-
-import java.nio.file.Path
 
 case class IngestConfig(
     csvDir: Path,
@@ -32,12 +30,18 @@ case class IngestCliOpts(
 
 object IngestConfig:
 
+  // iron-ciris has no Scala Native artifact, so provide the one decoder we use by
+  // hand: decode the base Int, then refine to Positive.
+  private given ConfigDecoder[String, PositiveInt] =
+    ConfigDecoder[String, Int].mapOption("PositiveInt"): value =>
+      value.refineOption[Positive]
+
   given Argument[YearMonth] =
     Argument.from("yyyy-MM"): s =>
       YearMonth.fromString(s).fold(Validated.invalidNel(_), Validated.valid)
 
   private val csvDirOpt =
-    Opts.argument[String]("csvDir").map(Path.of(_))
+    Opts.argument[String]("csvDir").map(Path(_))
 
   private val startOpt =
     Opts.option[YearMonth]("start", "Only ingest files from this month onwards", "s").orNone
