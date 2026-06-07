@@ -8,6 +8,8 @@ on:
 # Native link is memory-hungry; give the forked sbt JVM a large heap.
 env:
   SBT_OPTS: -Xmx6g -Xss8m
+  # Match dumbo's release build: smaller, faster binaries.
+  SCALANATIVE_MODE: release-fast
 
 jobs:
   native-cli:
@@ -55,11 +57,81 @@ jobs:
           bin=$(ls modules/cli/native/target/scala-*/cli)
           cp "$bin" "fide-cli-${{ matrix.suffix }}"
           chmod +x "fide-cli-${{ matrix.suffix }}"
+          # Ship a zip alongside the bare binary, like dumbo.
+          zip -j "fide-cli-${{ matrix.suffix }}.zip" "fide-cli-${{ matrix.suffix }}"
 
-      - name: Smoke-test binary
+      # The binary is dynamically linked against the brew TLS libs (s2n, utf8proc,
+      # openssl@3's libcrypto), so the loader needs them on its path. On Linux the
+      # keg-only openssl@3 lives under opt/openssl@3/lib; on macOS brew --prefix/lib
+      # covers s2n/utf8proc and the openssl@3 keg is resolved via its install name.
+      - name: Smoke-test binary (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          brew="/home/linuxbrew/.linuxbrew"
+          export LD_LIBRARY_PATH="$brew/lib:$brew/opt/openssl@3/lib:$LD_LIBRARY_PATH"
+          ./fide-cli-${{ matrix.suffix }} --help
+
+      - name: Smoke-test binary (macOS)
+        if: runner.os == 'macOS'
         run: ./fide-cli-${{ matrix.suffix }} --help
 
       - name: Upload to release
         uses: softprops/action-gh-release@v2
         with:
-          files: fide-cli-${{ matrix.suffix }}
+          files: |
+            fide-cli-${{ matrix.suffix }}
+            fide-cli-${{ matrix.suffix }}.zip
+
+  # Self-contained deliverable: an Alpine image with the TLS libs provisioned via apk
+  # and gcompat (the binary is a glibc binary built on the Ubuntu runner). Mirrors
+  # rolang/dumbo's docker-build approach.
+  native-cli-docker:
+    name: native-cli-docker
+    needs: native-cli
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup JVM
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+          cache: sbt
+
+      - name: Install sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: Install Scala Native dependencies
+        uses: ./.github/actions/setup-scala-native
+
+      - name: Build native CLI binary
+        run: sbt cliNative/nativeLink
+
+      - name: Stage binary for Docker build
+        run: |
+          bin=$(ls modules/cli/native/target/scala-*/cli)
+          cp "$bin" docker-build/fide-cli-linux-x86_64
+          chmod +x docker-build/fide-cli-linux-x86_64
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build, smoke-test and push Alpine image
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          image="ghcr.io/${{ github.repository }}/fide-cli-native"
+          docker build ./docker-build -t "$image:$tag-alpine"
+          docker run --rm "$image:$tag-alpine" --help   # smoke test
+          docker tag "$image:$tag-alpine" "$image:latest-alpine"
+          docker push "$image:$tag-alpine"
+          docker push "$image:latest-alpine"
