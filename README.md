@@ -121,6 +121,29 @@ docker compose up -d
 
 You can use the pre-built CLI Docker image from [GitHub Container Registry](https://github.com/lenguyenthanh/fide/pkgs/container/fide-cli) to ingest historical CSV files into the database.
 
+### Native CLI binary
+
+Each release also ships standalone Scala Native binaries (`fide-cli-<os>-<arch>`,
+also as `.zip`) on the [Releases page](https://github.com/lenguyenthanh/fide/releases),
+for `linux-x86_64`, `linux-aarch64`, `macos-x86_64` and `macos-aarch64`.
+
+These binaries are **dynamically linked** against the TLS stack used for the
+PostgreSQL connection — `s2n-tls`, `utf8proc`, and OpenSSL's `libcrypto.so.3` —
+so those libraries must be present at runtime. Install them with your package
+manager:
+
+- **Arch:** `sudo pacman -S s2n-tls libutf8proc openssl`
+- **Alpine:** `apk add gcompat libgcc libstdc++ s2n-tls utf8proc libcrypto3`
+- **Ubuntu/Debian:** `s2n-tls` is not packaged, so install via
+  [Linuxbrew](https://docs.brew.sh/Homebrew-on-Linux)
+  (`brew install s2n utf8proc openssl@3`) and point the loader at it:
+  `export LD_LIBRARY_PATH="$(brew --prefix)/lib:$(brew --prefix openssl@3)/lib"`.
+- **macOS:** `brew install s2n utf8proc openssl@3`
+
+If you'd rather not manage these dependencies, use a Docker image instead — either
+the JVM image below, or the self-contained native Alpine image
+`ghcr.io/lenguyenthanh/fide/fide-cli-native:latest-alpine` (TLS libs preinstalled).
+
 ### CSV Format
 
 The CLI expects CSV files from [fide-rating-database](https://github.com/lenguyenthanh/fide-rating-database) with the following 16-column format:
