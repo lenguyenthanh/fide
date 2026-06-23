@@ -65,7 +65,7 @@ object Dependencies {
   val log4Cats     = "org.typelevel" %% "log4cats-slf4j"  % "2.8.0"
   val log4CatsCore = Def.setting("org.typelevel" %%% "log4cats-core" % "2.8.0")
   val log4CatsNoop = Def.setting("org.typelevel" %%% "log4cats-noop" % "2.8.0" % Test)
-  val logback      = "ch.qos.logback" % "logback-classic" % "1.5.34"
+  val logback      = "ch.qos.logback" % "logback-classic" % "1.5.35"
 
   val gatlingTestFramework = "io.gatling"            % "gatling-test-framework"    % V.gatling % Test
   val gatlingHighCharts    = "io.gatling.highcharts" % "gatling-charts-highcharts" % V.gatling % Test
