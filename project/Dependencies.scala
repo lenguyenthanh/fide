@@ -10,7 +10,7 @@ object Dependencies {
     val decline       = "2.6.2"
     val fs2           = "3.13.0"
     val fs2Data       = "1.14.0"
-    val http4s        = "0.23.34"
+    val http4s        = "0.23.35"
     val iron          = "3.3.0"
     val gatling       = "3.15.1"
     val scalaJavaTime = "2.6.0"
