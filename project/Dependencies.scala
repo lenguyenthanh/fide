@@ -54,7 +54,7 @@ object Dependencies {
   val smithy4sHttp4sSwagger = "com.disneystreaming.smithy4s" %% "smithy4s-http4s-swagger" % smithy4sVersion
 
   val skunk    = Def.setting("org.tpolecat" %%% "skunk-core" % "1.1.0-RC1")
-  val dumbo    = Def.setting("dev.rolang" %%% "dumbo" % "0.10.1")
+  val dumbo    = Def.setting("dev.rolang" %%% "dumbo" % "0.10.2")
   val ducktape = Def.setting("io.github.arainko" %%% "ducktape" % "0.2.13")
 
   // java.time implementation for Scala.js / Scala Native (provided by the JDK on the JVM)
