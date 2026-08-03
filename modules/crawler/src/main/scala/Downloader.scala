@@ -6,7 +6,6 @@ import fide.domain.*
 import fide.types.*
 import org.http4s.*
 import org.http4s.client.Client
-import org.http4s.implicits.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
 
@@ -16,16 +15,15 @@ trait Downloader:
   def fetch: fs2.Stream[IO, (CrawlPlayer, Option[NewFederation], String)]
 
 object Downloader:
-  val downloadUrl     = uri"http://ratings.fide.com/download/players_list.zip"
   val downloadTimeout = 10.minutes
   def currentYear     = java.time.Year.now.getValue
 
-  lazy val request = Request[IO](
-    method = Method.GET,
-    uri = downloadUrl
-  )
+  def apply(client: Client[IO], downloadUri: Uri)(using Logger[IO]): Downloader = new:
 
-  def apply(client: Client[IO])(using Logger[IO]): Downloader = new:
+    val request = Request[IO](
+      method = Method.GET,
+      uri = downloadUri
+    )
 
     def fetch =
       client

@@ -9,6 +9,7 @@ import fide.types.PositiveInt
 import io.github.iltotore.iron.*
 import io.github.iltotore.iron.ciris.given
 import io.github.iltotore.iron.constraint.all.*
+import org.http4s.Uri
 
 object AppConfig:
 
@@ -41,6 +42,7 @@ object HttpServerConfig:
 
 case class CrawlerJobConfig(delayInSeconds: Int :| Positive0, intervalInMinutes: PositiveInt)
 object CrawlerJobConfig:
+
   private def delayInSeconds =
     env("CRAWLER_JOB_DELAY").or(prop("crawler.job.delay")).as[Int :| Positive0].default(3)
   private def intervalInMinutes =
@@ -52,7 +54,12 @@ object CrawlerConfig:
     env("CRAWLER_CHUNK_SIZE").or(prop("crawler.chunk.size")).as[PositiveInt].default(100)
   private def concurrentUpsert =
     env("CRAWLER_CONCURRENT_UPSERT").or(prop("crawler.concurrent.upsert")).as[PositiveInt].default(10)
-  def config = (chunkSize, concurrentUpsert).parMapN(crawler.CrawlerConfig.apply)
+  private def fidePlayerUri =
+    env("CRAWLER_FIDE_PLAYER_URI")
+      .or(prop("crawler.fide.player.uri"))
+      .as[Uri]
+      .default(crawler.CrawlerConfig.defaultPlayerUri)
+  def config = (chunkSize, concurrentUpsert, fidePlayerUri).parMapN(crawler.CrawlerConfig.apply)
 
 object PostgresConfig:
 

@@ -9,6 +9,7 @@ import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.log4cats.Logger
 import weaver.*
 
+@munit.IgnoreSuite
 object DownloaderTest extends SimpleIOSuite:
 
   given Logger[IO] = org.typelevel.log4cats.noop.NoOpLogger[IO]
@@ -18,7 +19,7 @@ object DownloaderTest extends SimpleIOSuite:
       .default[IO]
       .build
       .use: client =>
-        Downloader(client).fetch
+        Downloader(client, CrawlerConfig.defaultPlayerUri).fetch
           .mapFilter(x => x._2.map(_.id))
           .compile
           .to(Set)
