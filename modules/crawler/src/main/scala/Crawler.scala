@@ -40,7 +40,7 @@ object Crawler:
       playerHashCache: HashCache[FideId]
   )(using Logger[IO]) =
     val syncer     = Syncer.instance(store, client)
-    val downloader = Downloader(client)
+    val downloader = Downloader(client, config.fidePlayerDownloadUri)
     new Crawler:
 
       def crawl: IO[CrawlStatus] =
