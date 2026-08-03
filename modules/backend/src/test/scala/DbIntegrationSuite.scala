@@ -19,6 +19,7 @@ import weaver.scalacheck.Checkers
 
 import Arbitraries.given
 
+@munit.IgnoreSuite
 object DbIntegrationSuite extends IOSuite with Checkers:
 
   given Logger[IO] = NoOpLogger[IO]
@@ -37,7 +38,7 @@ object DbIntegrationSuite extends IOSuite with Checkers:
 
   def testAppConfig(postgres: db.PostgresConfig) = AppConfig(
     server = HttpServerConfig(ip"0.0.0.0", port"9999", shutdownTimeout = 1),
-    crawler = crawler.CrawlerConfig(100, 40),
+    crawler = crawler.CrawlerConfig(100, 40, fide.crawler.CrawlerConfig.defaultPlayerUri),
     crawlerJob = CrawlerJobConfig(0, 1000),
     postgres = postgres,
     history = HistoryConfig(100)

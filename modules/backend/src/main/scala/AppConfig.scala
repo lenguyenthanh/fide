@@ -10,7 +10,6 @@ import io.github.iltotore.iron.*
 import io.github.iltotore.iron.ciris.given
 import io.github.iltotore.iron.constraint.all.*
 import org.http4s.Uri
-import org.http4s.implicits.*
 
 object AppConfig:
 
@@ -59,7 +58,7 @@ object CrawlerConfig:
     env("CRAWLER_FIDE_PLAYER_URI")
       .or(prop("crawler.fide.player.uri"))
       .as[Uri]
-      .default(uri"http://ratings.fide.com/download/players_list.zip")
+      .default(crawler.CrawlerConfig.defaultPlayerUri)
   def config = (chunkSize, concurrentUpsert, fidePlayerUri).parMapN(crawler.CrawlerConfig.apply)
 
 object PostgresConfig:

@@ -8,3 +8,7 @@ case class CrawlerConfig(
     concurrentUpsert: Int, // number of concurrent upserts
     fidePlayerDownloadUri: Uri
 )
+
+object CrawlerConfig:
+  import org.http4s.implicits.*
+  val defaultPlayerUri = uri"http://ratings.fide.com/download/players_list.zip"
