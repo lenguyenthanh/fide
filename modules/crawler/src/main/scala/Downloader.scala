@@ -36,6 +36,11 @@ object Downloader:
         .evalMapFilter: line =>
           parseLine(line).map(_.map((player, fed) => (player, fed, line)))
         .interruptAfter(downloadTimeout)
+        .handleErrorWith: t =>
+          // TODO handle it in crawler level so we don't say that we finished fetching players successfully when it's failed
+          fs2.Stream
+            .eval(Logger[IO].error(t)("Error when fetching player data from $downloadUri"))
+            *> fs2.Stream.empty
 
   def parseLine(line: String): Logger[IO] ?=> IO[Option[(CrawlPlayer, Option[NewFederation])]] =
 
