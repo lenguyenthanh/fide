@@ -39,7 +39,8 @@ object Crawler:
       config: CrawlerConfig,
       playerHashCache: HashCache[FideId]
   )(using Logger[IO]) =
-    val syncer     = Syncer.instance(store, client)
+    val checker    = UpdateChecker(client, config.fidePlayerDownloadUri)
+    val syncer     = Syncer(store, checker)
     val downloader = Downloader(client, config.fidePlayerDownloadUri)
     new Crawler:
 

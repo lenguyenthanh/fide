@@ -4,7 +4,6 @@ package crawler
 import cats.effect.IO
 import cats.syntax.all.*
 import fide.db.KVStore
-import org.http4s.client.Client
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.syntax.*
 
@@ -24,9 +23,6 @@ object Syncer:
       (local, remote).match
         case (Some(l), Some(r)) if l == r => Status.UpToDate
         case _                            => Status.OutDated(remote)
-
-  def instance(store: KVStore, client: Client[IO])(using Logger[IO]): Syncer =
-    Syncer(store, UpdateChecker(client))
 
   def apply(store: KVStore, scraper: UpdateChecker)(using Logger[IO]): Syncer = new:
     def fetchStatus: IO[Status] =

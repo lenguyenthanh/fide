@@ -4,23 +4,22 @@ import cats.effect.IO
 import org.http4s.*
 import org.http4s.client.Client
 import org.http4s.headers.`Last-Modified`
-import org.http4s.implicits.*
 
 trait UpdateChecker:
   def lastUpdate: IO[Option[String]]
 
 object UpdateChecker:
-  def apply(client: Client[IO]): UpdateChecker = new:
+  def apply(client: Client[IO], downloadUri: Uri): UpdateChecker = new:
 
     def lastUpdate: IO[Option[String]] =
       client
         .run(request)
         .use(extract.andThen(IO.pure))
 
-  private val request = Request[IO](
-    method = Method.HEAD,
-    uri = uri"http://ratings.fide.com/download/players_list.zip"
-  )
+    val request = Request[IO](
+      method = Method.HEAD,
+      uri = downloadUri
+    )
 
   private val extract: Response[IO] => Option[String] =
     _.headers.get[`Last-Modified`].map(_.date.toString)
