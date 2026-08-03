@@ -9,11 +9,11 @@ object Dependencies {
     val ciris         = "3.15.0"
     val decline       = "2.6.2"
     val fs2           = "3.13.0"
-    val fs2Data       = "1.14.0"
-    val http4s        = "0.23.34"
-    val iron          = "3.3.0"
+    val fs2Data       = "1.14.1"
+    val http4s        = "0.23.36"
+    val iron          = "3.3.2"
     val gatling       = "3.15.1"
-    val scalaJavaTime = "2.6.0"
+    val scalaJavaTime = "2.7.0"
   }
 
   // Cross-platform helpers (%%% picks the right JVM/JS/Native artifact). These are
@@ -54,7 +54,7 @@ object Dependencies {
   val smithy4sHttp4sSwagger = "com.disneystreaming.smithy4s" %% "smithy4s-http4s-swagger" % smithy4sVersion
 
   val skunk    = Def.setting("org.tpolecat" %%% "skunk-core" % "1.1.0-RC1")
-  val dumbo    = Def.setting("dev.rolang" %%% "dumbo" % "0.10.1")
+  val dumbo    = Def.setting("dev.rolang" %%% "dumbo" % "0.10.2")
   val ducktape = Def.setting("io.github.arainko" %%% "ducktape" % "0.2.13")
 
   // java.time implementation for Scala.js / Scala Native (provided by the JDK on the JVM)
@@ -65,7 +65,7 @@ object Dependencies {
   val log4Cats     = "org.typelevel" %% "log4cats-slf4j"  % "2.8.0"
   val log4CatsCore = Def.setting("org.typelevel" %%% "log4cats-core" % "2.8.0")
   val log4CatsNoop = Def.setting("org.typelevel" %%% "log4cats-noop" % "2.8.0" % Test)
-  val logback      = "ch.qos.logback" % "logback-classic" % "1.5.34"
+  val logback      = "ch.qos.logback" % "logback-classic" % "1.5.38"
 
   val gatlingTestFramework = "io.gatling"            % "gatling-test-framework"    % V.gatling % Test
   val gatlingHighCharts    = "io.gatling.highcharts" % "gatling-charts-highcharts" % V.gatling % Test
