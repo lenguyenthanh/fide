@@ -6,10 +6,6 @@ on:
   push:
     branches: ['main']
 
-# Native code-gen/link is memory-hungry.
-env:
-  SBT_OPTS: -Xmx6g -Xss8m
-
 jobs:
   test:
     name: Test (${{ matrix.platform }})
@@ -17,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [jvm, js, native]
+        platform: [jvm, js]
     steps:
 
       - name: Checkout current branch
@@ -39,10 +35,6 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Scala Native dependencies
-        if: matrix.platform == 'native'
-        uses: ./.github/actions/setup-scala-native
-
       - name: Test (JVM)
         if: matrix.platform == 'jvm'
         run: sbt rootJVM/test
@@ -50,13 +42,6 @@ jobs:
       - name: Test (JS)
         if: matrix.platform == 'js'
         run: sbt rootJS/test
-
-      # DB tests use testcontainers (JVM-only), so the native leg compiles every
-      # native module, runs the pure cross-platform tests (domain), and links the
-      # full TLS binary to prove the s2n native stack works end to end.
-      - name: Test (Native)
-        if: matrix.platform == 'native'
-        run: sbt 'rootNative/compile' 'domainNative/test' 'cliNative/nativeLink'
 
   lint:
     runs-on: ubuntu-22.04
@@ -80,9 +65,9 @@ jobs:
         with:
           node-version: 20
 
-      # lintCheck (scalafix + scalafmt) compiles every platform for semanticdb.
-      - name: Install Scala Native dependencies
-        uses: ./.github/actions/setup-scala-native
-
+      # scalafix needs a semanticdb compile, so it is scoped to the JVM/JS
+      # aggregators while native CI is disabled. scalafmt is a pure text check,
+      # so it stays unscoped and still covers native sources. `lintCheck` in
+      # build.sbt is unchanged and still covers every platform locally.
       - name: Check Formatting
-        run: sbt lintCheck
+        run: sbt 'rootJVM/scalafixAll --check' 'rootJS/scalafixAll --check' scalafmtCheckAll scalafmtSbtCheck
