@@ -46,11 +46,11 @@ object Crawler:
       def crawl: IO[CrawlStatus] =
         syncer.fetchStatus.flatMap:
           case OutDated(timestamp) =>
-            (fetchAndSave(timestamp) *> timestamp.traverse_(
-              syncer.saveLastUpdate
-            ) *> db.refreshFederationsSummary)
-              .as(CrawlStatus.Done)
-              .handleErrorWith(e => error"Error while crawling: $e".as(CrawlStatus.Skipped))
+            fetchAndSave(timestamp) *>
+              timestamp.traverse_(syncer.saveLastUpdate) *>
+              db.refreshFederationsSummary
+                .as(CrawlStatus.Done)
+                .handleErrorWith(e => error"Error while crawling: $e".as(CrawlStatus.Skipped))
           case _ => info"Skipping crawling as the data is up to date".as(CrawlStatus.Skipped)
 
       def fetchAndSave(timestamp: Option[String]): IO[Unit] =
