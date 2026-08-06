@@ -3,7 +3,7 @@ addSbtPlugin("com.disneystreaming.smithy4s" % "smithy4s-sbt-codegen" % "0.19.11"
 addSbtPlugin("com.github.sbt"               % "sbt-native-packager"  % "1.11.7")
 addSbtPlugin("org.scalameta"                % "sbt-scalafmt"         % "2.6.2")
 addSbtPlugin("org.typelevel"                % "sbt-tpolecat"         % "0.5.7")
-addSbtPlugin("io.gatling"                   % "gatling-sbt"          % "4.18.4")
+addSbtPlugin("io.gatling"                   % "gatling-sbt"          % "4.19.1")
 addSbtPlugin("com.github.sbt"               % "sbt-release"          % "1.4.0")
 
 // Cross-compilation to Scala.js and Scala Native
