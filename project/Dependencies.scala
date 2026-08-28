@@ -33,7 +33,7 @@ object Dependencies {
   val fs2DataCsvGen = Def.setting("org.gnieh" %%% "fs2-data-csv-generic" % V.fs2Data)
 
   // zip4j is JVM-only; crawler stays on the JVM
-  val fs2Compress = "de.lhns" %% "fs2-compress-zip4j" % "2.3.2"
+  val fs2Compress = "de.lhns" %% "fs2-compress-zip4j" % "3.0.1"
 
   val declineCore       = Def.setting("com.monovore" %%% "decline" % V.decline)
   val declineCatsEffect = Def.setting("com.monovore" %%% "decline-effect" % V.decline)
