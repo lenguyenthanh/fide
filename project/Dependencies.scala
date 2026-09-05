@@ -8,7 +8,7 @@ object Dependencies {
     val catsEffect    = "3.7.0"
     val ciris         = "3.15.0"
     val decline       = "2.6.2"
-    val fs2           = "3.13.0"
+    val fs2           = "3.14.0"
     val fs2Data       = "1.14.1"
     val http4s        = "0.23.36"
     val iron          = "3.3.2"
