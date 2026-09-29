@@ -12,7 +12,7 @@ object Dependencies {
     val fs2Data       = "1.14.1"
     val http4s        = "0.23.36"
     val iron          = "3.3.2"
-    val gatling       = "3.15.1"
+    val gatling       = "3.16.0"
     val scalaJavaTime = "2.7.0"
   }
 
