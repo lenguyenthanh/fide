@@ -72,8 +72,8 @@ object Dependencies {
 
   // testcontainers drives Docker via the JVM — JVM test scope only
   val testContainers    = "com.dimafeng"         %% "testcontainers-scala-postgresql" % "0.44.1" % Test
-  val weaver            = Def.setting("org.typelevel" %%% "weaver-cats" % "0.13.0" % Test)
-  val weaverScalaCheck  = Def.setting("org.typelevel" %%% "weaver-scalacheck" % "0.13.0" % Test)
+  val weaver            = Def.setting("org.typelevel" %%% "weaver-cats" % "0.13.1" % Test)
+  val weaverScalaCheck  = Def.setting("org.typelevel" %%% "weaver-scalacheck" % "0.13.1" % Test)
   val catsEffectTestKit = Def.setting("org.typelevel" %%% "cats-effect-testkit" % V.catsEffect % Test)
   val scalacheck        = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.0" % Test)
   val scalacheckFaker   = "io.github.etspaceman" %% "scalacheck-faker"                % "9.0.2"  % Test
