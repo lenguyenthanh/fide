@@ -8,7 +8,7 @@ addSbtPlugin("com.github.sbt"               % "sbt-release"          % "1.4.0")
 
 // Cross-compilation to Scala.js and Scala Native
 addSbtPlugin("org.scala-js"       % "sbt-scalajs"                   % "1.22.0")
-addSbtPlugin("org.scala-native"   % "sbt-scala-native"              % "0.5.12")
+addSbtPlugin("org.scala-native"   % "sbt-scala-native"              % "0.5.13")
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject"      % "1.3.2")
 addSbtPlugin("org.portable-scala" % "sbt-scala-native-crossproject" % "1.3.2")
 // Points Scala Native's clang at brew-installed libs (s2n/utf8proc) — same approach
